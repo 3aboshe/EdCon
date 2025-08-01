@@ -10,6 +10,7 @@ import homeworkRoutes from './routes/homework.js';
 import announcementRoutes from './routes/announcements.js';
 import attendanceRoutes from './routes/attendance.js';
 import messageRoutes from './routes/messages.js';
+import mongoose from 'mongoose';
 
 dotenv.config();
 
@@ -72,7 +73,6 @@ app.get('/api/debug', (req, res) => {
 // MongoDB connection test route
 app.get('/api/test-db', async (req, res) => {
   try {
-    const mongoose = await import('mongoose');
     const connectionState = mongoose.connection.readyState;
     const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
     
@@ -80,7 +80,8 @@ app.get('/api/test-db', async (req, res) => {
       message: 'Database connection test',
       state: states[connectionState],
       readyState: connectionState,
-      connected: connectionState === 1
+      connected: connectionState === 1,
+      mongoUri: process.env.MONGODB_URI ? 'Set' : 'Not set'
     });
   } catch (error) {
     res.status(500).json({ 
