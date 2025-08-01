@@ -120,6 +120,12 @@ router.get('/users', async (req, res) => {
       },
     });
     console.log(`Successfully fetched ${users.length} users`);
+    console.log('Users with avatars:', users.map(u => ({ 
+      id: u.id, 
+      name: u.name, 
+      avatar: u.avatar ? `has avatar (${u.avatar.length} chars)` : 'no avatar',
+      avatarPreview: u.avatar ? u.avatar.substring(0, 50) + '...' : 'none'
+    })));
     res.json(users);
   } catch (error) {
     console.error('Error fetching users:', error);
