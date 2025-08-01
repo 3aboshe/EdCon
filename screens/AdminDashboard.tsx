@@ -107,7 +107,13 @@ interface TabProps {
 const StatCard: React.FC<{ title: string; value: number | string; icon: string; color: string }> = ({ title, value, icon, color }) => (
     <div className={`rounded-xl shadow-md p-4 flex items-center ${color} text-white`}>
         <div className="p-3 rounded-full bg-white bg-opacity-25">
-             <i className={`fa-solid ${icon} text-xl`}></i>
+             <div className="w-6 h-6 flex items-center justify-center">
+                <div className="w-4 h-4 flex items-end space-x-1">
+                    <div className="w-1 bg-white rounded-sm" style={{height: '12px'}}></div>
+                    <div className="w-1 bg-white rounded-sm" style={{height: '16px'}}></div>
+                    <div className="w-1 bg-white rounded-sm" style={{height: '8px'}}></div>
+                </div>
+             </div>
         </div>
         <div className="ml-4 rtl:mr-4">
             <p className="text-2xl font-bold">{value}</p>
@@ -221,7 +227,17 @@ const OverviewTab: React.FC<TabProps> = ({ selectedClassId }) => {
                         return (
                             <li key={`${item.id}-${item.type}`} className="flex items-center space-x-3 rtl:space-x-reverse p-2 bg-gray-50 rounded-lg">
                                 <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${item.type === 'announcement' ? 'bg-yellow-100' : 'bg-green-100'}`}>
-                                    <i className={`fa-solid ${item.type === 'announcement' ? 'fa-bullhorn text-yellow-600' : 'fa-book text-green-600'}`}></i>
+                                    <div className={`w-5 h-5 ${item.type === 'announcement' ? 'text-yellow-600' : 'text-green-600'}`}>
+                                        {item.type === 'announcement' ? (
+                                            <div className="w-full h-full flex items-center justify-center">
+                                                <div className="w-3 h-3 border-2 border-current rounded-full"></div>
+                                            </div>
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center">
+                                                <div className="w-3 h-2 border border-current"></div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                                 <div className="flex-1 text-sm">
                                     <p className="text-gray-800">
@@ -316,7 +332,9 @@ const StudentsTab: React.FC<TabProps> = ({ selectedClassId }) => {
                                         className="text-gray-400 hover:text-red-600 transition-colors"
                                         title={t('delete')}
                                     >
-                                        <i className="fa-solid fa-trash"></i>
+                                        <div className="w-4 h-4 flex items-center justify-center">
+                                            <div className="w-3 h-3 border border-current rounded-sm"></div>
+                                        </div>
                                     </button>
                                 </td>
                              </tr>
@@ -392,7 +410,9 @@ const TeachersTab: React.FC<TabProps> = ({ selectedClassId }) => {
                                         className="text-gray-400 hover:text-red-600 transition-colors"
                                         title={t('delete')}
                                     >
-                                        <i className="fa-solid fa-trash"></i>
+                                        <div className="w-4 h-4 flex items-center justify-center">
+                                            <div className="w-3 h-3 border border-current rounded-sm"></div>
+                                        </div>
                                     </button>
                                 </td>
                              </tr>
@@ -781,14 +801,18 @@ const ManagementTab: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({
                                                 className="text-gray-400 hover:text-blue-600 transition-colors"
                                                 title={t('copy')}
                                             >
-                                                <i className="fa-solid fa-copy"></i>
+                                                <div className="w-4 h-4 flex items-center justify-center">
+                                                    <div className="w-3 h-2 border border-current"></div>
+                                                </div>
                                             </button>
                                             <button
                                                 onClick={() => handleDeleteUser(user.id, user.name)}
                                                 className="text-gray-400 hover:text-red-600 transition-colors"
                                                 title={t('delete')}
                                             >
-                                                <i className="fa-solid fa-trash"></i>
+                                                <div className="w-4 h-4 flex items-center justify-center">
+                                                    <div className="w-3 h-3 border border-current rounded-sm"></div>
+                                                </div>
                                             </button>
                                         </td>
                                     </tr>
