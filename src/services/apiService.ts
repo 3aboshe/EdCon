@@ -248,6 +248,15 @@ class ApiService {
     });
   }
 
+  // Update user
+  async updateUser(userId: string, updates: { avatar?: string; name?: string; messagingAvailability?: any }): Promise<User> {
+    const response = await this.request<User>(`/auth/users/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+    return response.data!;
+  }
+
   // Health check
   async healthCheck(): Promise<{ message: string }> {
     const response = await this.request<{ message: string }>('/health');

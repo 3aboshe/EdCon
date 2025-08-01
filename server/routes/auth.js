@@ -275,4 +275,35 @@ router.delete('/users/:id', async (req, res) => {
   }
 });
 
+// Update user (for avatar and other fields)
+router.put('/users/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { avatar, name, messagingAvailability } = req.body;
+    
+    const updateData = {};
+    if (avatar !== undefined) updateData.avatar = avatar;
+    if (name !== undefined) updateData.name = name;
+    if (messagingAvailability !== undefined) updateData.messagingAvailability = messagingAvailability;
+    
+    const user = await prisma.user.update({
+      where: { id: id },
+      data: updateData,
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ success: true, user });
+  } catch (error) {
+    console.error('Update user error:', error);
+    res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
 export default router; 
