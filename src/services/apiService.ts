@@ -184,10 +184,28 @@ class ApiService {
     return Array.isArray(response) ? response : (response as any).data || [];
   }
 
+  // Create a new class
+  async createClass(name: string): Promise<Class> {
+    const response = await this.request<Class>('/classes', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    });
+    return response.data!;
+  }
+
   // Get all subjects
   async getAllSubjects(): Promise<Subject[]> {
     const response = await this.request<Subject[]>('/subjects');
     return Array.isArray(response) ? response : (response as any).data || [];
+  }
+
+  // Create a new subject
+  async createSubject(name: string): Promise<Subject> {
+    const response = await this.request<Subject>('/subjects', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    });
+    return response.data!;
   }
 
   // Get all grades
