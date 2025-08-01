@@ -17,13 +17,6 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5005;
 
-// Connect to MongoDB with better error handling
-connectDB().then(() => {
-  console.log('MongoDB connected successfully');
-}).catch((error) => {
-  console.error('MongoDB connection failed:', error);
-});
-
 // CORS configuration for production
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
@@ -91,8 +84,22 @@ app.get('/api/test-db', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV}`);
-  console.log(`MongoDB URI set: ${!!process.env.MONGODB_URI}`);
-}); 
+// Start server only after MongoDB connection is established
+const startServer = async () => {
+  try {
+    console.log('Attempting to connect to MongoDB...');
+    await connectDB();
+    console.log('MongoDB connected successfully');
+    
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV}`);
+      console.log(`MongoDB URI set: ${!!process.env.MONGODB_URI}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer(); 
