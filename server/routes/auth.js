@@ -50,6 +50,22 @@ router.post('/create', async (req, res) => {
       exists = await prisma.user.findUnique({ where: { id: code } });
     }
     
+    // For students, ensure the class exists or create a default one
+    let classId = rest.classId;
+    if (userRole === 'STUDENT' && classId) {
+      const existingClass = await prisma.class.findUnique({
+        where: { id: classId }
+      });
+      
+      if (!existingClass) {
+        // Create the class if it doesn't exist
+        await prisma.class.create({
+          data: { id: classId, name: classId }
+        });
+        console.log(`Created class ${classId} for student`);
+      }
+    }
+    
     const user = await prisma.user.create({
       data: { 
         id: code, 
