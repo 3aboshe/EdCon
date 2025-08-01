@@ -17,7 +17,7 @@ const connectDB = async () => {
       serverSelectionTimeoutMS: 30000, // Give it 30 seconds to find server
       socketTimeoutMS: 45000,
       connectTimeoutMS: 30000, // 30 seconds connection timeout
-      bufferCommands: false, // Disable mongoose buffering
+      bufferCommands: true, // Re-enable buffering to queue commands until connected
       bufferMaxEntries: 0, // Disable mongoose buffering
       maxPoolSize: 5, // Smaller pool size for Railway
       minPoolSize: 1,

@@ -109,27 +109,33 @@ const startServer = async () => {
     // Only try to connect to MongoDB if URI is provided
     if (process.env.MONGODB_URI) {
       console.log('🔄 Attempting to connect to MongoDB...');
-      let retries = 3;
-      let connected = false;
       
-      while (retries > 0 && !connected) {
-        try {
-          await connectDB();
-          console.log('✅ MongoDB connected successfully');
-          connected = true;
-        } catch (dbError) {
-          retries--;
-          console.error(`❌ MongoDB connection failed (${3 - retries}/3):`, dbError.message);
-          
-          if (retries > 0) {
-            console.log(`🔄 Retrying in 5 seconds... (${retries} attempts left)`);
-            await new Promise(resolve => setTimeout(resolve, 5000));
-          } else {
-            console.log('⚠️  All MongoDB connection attempts failed');
-            console.log('⚠️  Server will start without database connection');
-            console.log('⚠️  API endpoints will return errors until database is connected');
+      // Try initial connection but don't block server startup
+      try {
+        await connectDB();
+        console.log('✅ MongoDB connected successfully on startup');
+      } catch (dbError) {
+        console.error('❌ Initial MongoDB connection failed:', dbError.message);
+        console.log('⚠️  Server will start and continue trying to connect in background');
+        
+        // Continue trying to connect in background
+        const retryConnection = async () => {
+          let retries = 10;
+          while (retries > 0) {
+            try {
+              await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10 seconds
+              await connectDB();
+              console.log('✅ MongoDB connected successfully (background retry)');
+              break;
+            } catch (error) {
+              retries--;
+              console.log(`🔄 Background MongoDB retry failed, ${retries} attempts remaining`);
+            }
           }
-        }
+        };
+        
+        // Don't await this - let it run in background
+        retryConnection();
       }
     } else {
       console.log('❌ No MongoDB URI provided, skipping database connection');
