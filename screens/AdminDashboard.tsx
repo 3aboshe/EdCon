@@ -107,7 +107,7 @@ interface TabProps {
 const StatCard: React.FC<{ title: string; value: number | string; icon: string; color: string }> = ({ title, value, icon, color }) => (
     <div className={`rounded-xl shadow-md p-4 flex items-center ${color} text-white`}>
         <div className="p-3 rounded-full bg-white bg-opacity-25">
-             <i className={`fas ${icon} text-xl`}></i>
+             <i className={`fa-solid ${icon} text-xl`}></i>
         </div>
         <div className="ml-4 rtl:mr-4">
             <p className="text-2xl font-bold">{value}</p>
@@ -160,9 +160,9 @@ const OverviewTab: React.FC<TabProps> = ({ selectedClassId }) => {
         <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <StatCard title={t('total_students')} value={filteredStudents.length} icon="fa-user-graduate" color="bg-blue-500"/>
-                <StatCard title={t('total_teachers')} value={totalTeachers} icon="fa-chalkboard-teacher" color="bg-teal-500"/>
-                <StatCard title={t('graded_assignments')} value={grades.length} icon="fa-marker" color="bg-indigo-500"/>
-                <StatCard title={t('total_submissions')} value={homework.reduce((sum, hw) => sum + hw.submitted.filter(sid => filteredStudents.some(s => s.id === sid)).length, 0)} icon="fa-file-signature" color="bg-rose-500"/>
+                <StatCard title={t('total_teachers')} value={totalTeachers} icon="fa-chalkboard-user" color="bg-teal-500"/>
+                <StatCard title={t('graded_assignments')} value={grades.length} icon="fa-pen-to-square" color="bg-indigo-500"/>
+                <StatCard title={t('total_submissions')} value={homework.reduce((sum, hw) => sum + hw.submitted.filter(sid => filteredStudents.some(s => s.id === sid)).length, 0)} icon="fa-file-lines" color="bg-rose-500"/>
             </div>
             
             <Card>
@@ -221,7 +221,7 @@ const OverviewTab: React.FC<TabProps> = ({ selectedClassId }) => {
                         return (
                             <li key={`${item.id}-${item.type}`} className="flex items-center space-x-3 rtl:space-x-reverse p-2 bg-gray-50 rounded-lg">
                                 <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${item.type === 'announcement' ? 'bg-yellow-100' : 'bg-green-100'}`}>
-                                    <i className={`fas ${item.type === 'announcement' ? 'fa-bullhorn text-yellow-600' : 'fa-book text-green-600'}`}></i>
+                                    <i className={`fa-solid ${item.type === 'announcement' ? 'fa-bullhorn text-yellow-600' : 'fa-book text-green-600'}`}></i>
                                 </div>
                                 <div className="flex-1 text-sm">
                                     <p className="text-gray-800">
@@ -254,11 +254,16 @@ const StudentsTab: React.FC<TabProps> = ({ selectedClassId }) => {
 
     const parentMap = useMemo(() => {
         const map = new Map<string, string>();
-        users.filter(u => u.role === 'parent').forEach(p => {
+        const parents = users.filter(u => u.role === 'parent');
+        console.log('Creating parent map from parents:', parents);
+        parents.forEach(p => {
+            console.log(`Parent ${p.name} has children:`, p.childrenIds);
             p.childrenIds?.forEach(childId => {
                 map.set(childId, p.name);
+                console.log(`Mapped child ${childId} to parent ${p.name}`);
             });
         });
+        console.log('Final parent map:', Object.fromEntries(map));
         return map;
     }, [users]);
     
@@ -311,7 +316,7 @@ const StudentsTab: React.FC<TabProps> = ({ selectedClassId }) => {
                                         className="text-gray-400 hover:text-red-600 transition-colors"
                                         title={t('delete')}
                                     >
-                                        <i className="fas fa-trash"></i>
+                                        <i className="fa-solid fa-trash"></i>
                                     </button>
                                 </td>
                              </tr>
@@ -387,7 +392,7 @@ const TeachersTab: React.FC<TabProps> = ({ selectedClassId }) => {
                                         className="text-gray-400 hover:text-red-600 transition-colors"
                                         title={t('delete')}
                                     >
-                                        <i className="fas fa-trash"></i>
+                                        <i className="fa-solid fa-trash"></i>
                                     </button>
                                 </td>
                              </tr>
@@ -438,7 +443,11 @@ const ManagementTab: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({
         }
     }, [subjects, newTeacherSubject]);
 
-    const parentUsers = useMemo(() => users.filter(u => u.role === 'parent'), [users]);
+    const parentUsers = useMemo(() => {
+        const parents = users.filter(u => u.role === 'parent');
+        console.log('Available parents:', parents);
+        return parents;
+    }, [users]);
     const subjectMap = useMemo(() => new Map(subjects.map(s => [s.id, s.name])), [subjects]);
 
     const fetchCodes = async (role?: string) => {
@@ -487,7 +496,15 @@ const ManagementTab: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({
                 avatar: ''
             });
             
-            setUsers(prevUsers => [...prevUsers, result.user]);
+            // Add the new parent to the users list
+            const newParent = { ...result.user, childrenIds: [] };
+            setUsers(prevUsers => [...prevUsers, newParent]);
+            
+            // If this is the first parent, select it automatically
+            if (parentUsers.length === 0) {
+                setSelectedParentForStudent(result.user.id);
+            }
+            
             setNewParentName('');
             setSuccessMessage(t('parent_added_with_code').replace('{code}', `<b>${result.code}</b>`));
         } catch (error) {
@@ -562,6 +579,7 @@ const ManagementTab: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({
             });
 
             setNewStudentName('');
+            setSelectedParentForStudent(''); // Reset selection
             setSuccessMessage(t('student_added_with_code').replace('{code}', `<b>${result.code}</b>`));
         } catch (error) {
             console.error('Error creating student:', error);
@@ -647,8 +665,12 @@ const ManagementTab: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({
                      <div>
                         <label className="block text-sm font-medium text-gray-700">{t('link_to_parent')}</label>
                         <select value={selectedParentForStudent} onChange={e => setSelectedParentForStudent(e.target.value)} className="w-full mt-1 p-2 border border-gray-300 rounded-lg" required>
+                            <option value="">{t('select_parent')}</option>
                             {parentUsers.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                         </select>
+                        {parentUsers.length === 0 && (
+                            <p className="text-sm text-red-600 mt-1">{t('no_parents_available')}</p>
+                        )}
                     </div>
                     <button type="submit" className="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition">{t('add_student')}</button>
                 </form>
@@ -736,14 +758,14 @@ const ManagementTab: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({
                                                 className="text-gray-400 hover:text-blue-600 transition-colors"
                                                 title={t('copy')}
                                             >
-                                                <i className="fas fa-copy"></i>
+                                                <i className="fa-solid fa-copy"></i>
                                             </button>
                                             <button
                                                 onClick={() => handleDeleteUser(user.id, user.name)}
                                                 className="text-gray-400 hover:text-red-600 transition-colors"
                                                 title={t('delete')}
                                             >
-                                                <i className="fas fa-trash"></i>
+                                                <i className="fa-solid fa-trash"></i>
                                             </button>
                                         </td>
                                     </tr>

@@ -29,7 +29,7 @@ const ProfileImage: React.FC<ProfileImageProps> = ({ name, avatarUrl, className 
         <div 
             className={`${className} rounded-full bg-gray-200 flex items-center justify-center border-2 border-gray-300`}
         >
-            <i className={`fas fa-user text-gray-400 ${textClassName}`}></i>
+            <i className={`fa-solid fa-user text-gray-400 ${textClassName}`}></i>
         </div>
     );
 };

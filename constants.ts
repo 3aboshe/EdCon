@@ -183,6 +183,8 @@ export const translations: Record<string, Record<string, string>> = {
     'no_grades_yet': 'No grades recorded yet',
     'no_teachers_yet': 'No teachers registered yet',
     'grades_assigned': 'grades assigned',
+    'select_parent': 'Select Parent',
+    'no_parents_available': 'No parents available. Please add a parent first.',
   },
   'ku-sorani': {
     'app_name': 'ئیدکۆن',
@@ -366,6 +368,8 @@ export const translations: Record<string, Record<string, string>> = {
     'no_grades_yet': 'هێشتا هیچ نمرە نەکراوە.',
     'no_teachers_yet': 'هێشتا هیچ مامۆستای نەکراوە.',
     'grades_assigned': 'نمرەکان بە سەرکەوتوویی پاشەکەوت کران.',
+    'select_parent': 'دایبابی هەڵبژێرە',
+    'no_parents_available': 'هیچ دایبابەکان نەبوو. لەوەی بەردەست بنووسە بە دایبابەکان.',
   },
   'ku-badini': {
     'app_name': 'ئیدکۆن',
@@ -549,6 +553,8 @@ export const translations: Record<string, Record<string, string>> = {
     'no_grades_yet': 'هێشتا هیچ نمرە نەکراوە.',
     'no_teachers_yet': 'هێشتا هیچ مامۆستای نەکراوە.',
     'grades_assigned': 'نمرەکان بە سەرکەوتوویی پاشەکەوت کران.',
+    'select_parent': 'دایبابی هەڵبژێرە',
+    'no_parents_available': 'هیچ دایبابەکان نەبوو. لەوەی بەردەست بنووسە بە دایبابەکان.',
   },
   'ar': {
     'app_name': 'إدكون',
@@ -732,6 +738,8 @@ export const translations: Record<string, Record<string, string>> = {
     'no_grades_yet': 'لم يتم إنشاء درجات بعد.',
     'no_teachers_yet': 'لم يتم إنشاء معلمين بعد.',
     'grades_assigned': 'تم تعيين درجات بنجاح.',
+    'select_parent': 'اختيار ولي الأمر',
+    'no_parents_available': 'لا توجد أولياء أمور. يرجى إضافة ولي الأمر أولاً.',
   },
   'syr': {
     'app_name': 'ܐܕܩܘܢ',
@@ -915,5 +923,7 @@ export const translations: Record<string, Record<string, string>> = {
     'no_grades_yet': 'هێشتا هیچ نمرە نەکراوە.',
     'no_teachers_yet': 'هێشتا هیچ مامۆستای نەکراوە.',
     'grades_assigned': 'نمرەکان بە سەرکەوتوویی پاشەکەوت کران.',
+    'select_parent': 'دایبابی هەڵبژێرە',
+    'no_parents_available': 'هیچ دایبابەکان نەبوو. لەوەی بەردەست بنووسە بە دایبابەکان.',
   }
 };

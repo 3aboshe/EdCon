@@ -16,16 +16,16 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onBack }
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4 w-1/3">
                     {showBackButton && (
-                         <button onClick={onBack} className="text-xl hover:bg-slate-700 p-2 rounded-full">
-                            <i className="fas fa-arrow-left"></i>
+                         <button onClick={onBack} className="text-white hover:text-gray-200 transition-colors">
+                            <i className="fa-solid fa-arrow-left"></i>
                         </button>
                     )}
                 </div>
                 <h1 className="text-xl font-bold text-center truncate w-1/3">{title || APP_NAME}</h1>
                 <div className="flex items-center justify-end gap-2 w-1/3">
                     {user && (
-                         <button onClick={logout} title={t('logout')} className="text-xl hover:bg-red-500 hover:text-white p-2 rounded-full">
-                            <i className="fas fa-sign-out-alt"></i>
+                         <button onClick={logout} title={t('logout')} className="text-white hover:text-gray-200 transition-colors">
+                            <i className="fa-solid fa-sign-out-alt"></i>
                         </button>
                     )}
                 </div>
