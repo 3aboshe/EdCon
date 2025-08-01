@@ -69,6 +69,27 @@ app.get('/api/debug', (req, res) => {
   });
 });
 
+// MongoDB connection test route
+app.get('/api/test-db', async (req, res) => {
+  try {
+    const mongoose = await import('mongoose');
+    const connectionState = mongoose.connection.readyState;
+    const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+    
+    res.json({ 
+      message: 'Database connection test',
+      state: states[connectionState],
+      readyState: connectionState,
+      connected: connectionState === 1
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      message: 'Database test failed',
+      error: error.message 
+    });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);

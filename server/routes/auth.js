@@ -53,39 +53,70 @@ router.post('/create', async (req, res) => {
   }
 });
 
-// Login route
-router.post('/login', async (req, res) => {
+// Get all users with better error handling
+router.get('/users', async (req, res) => {
   try {
-    const { code } = req.body;
-    
-    const user = await User.findOne({ id: code });
-    
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid code. Please try again.' });
-    }
-    
-    res.json({
-      success: true,
-      user: {
-        id: user.id,
-        name: user.name,
-        role: user.role,
-        avatar: user.avatar
-      }
-    });
+    console.log('Attempting to fetch users from MongoDB...');
+    const users = await User.find({}).sort({ name: 1 });
+    console.log(`Successfully fetched ${users.length} users`);
+    res.json(users);
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching users:', error);
+    res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
-// Get all users
-router.get('/users', async (req, res) => {
+// Get user by code with better error handling
+router.get('/user/:code', async (req, res) => {
   try {
-    const users = await User.find({});
-    res.json(users);
+    console.log('Attempting to fetch user by code:', req.params.code);
+    const user = await User.findOne({ id: req.params.code });
+    if (!user) {
+      console.log('User not found for code:', req.params.code);
+      return res.status(404).json({ message: 'User not found' });
+    }
+    console.log('User found:', user.name);
+    res.json(user);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching user by code:', error);
+    res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+// Login with better error handling
+router.post('/login', async (req, res) => {
+  try {
+    console.log('Login attempt for code:', req.body.code);
+    const { code } = req.body;
+    
+    if (!code) {
+      console.log('No code provided');
+      return res.status(400).json({ message: 'Code is required' });
+    }
+    
+    const user = await User.findOne({ id: code });
+    if (!user) {
+      console.log('User not found for login code:', code);
+      return res.status(404).json({ message: 'Invalid code' });
+    }
+    
+    console.log('Login successful for user:', user.name);
+    res.json(user);
+  } catch (error) {
+    console.error('Error during login:', error);
+    res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
