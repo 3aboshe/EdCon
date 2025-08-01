@@ -15,6 +15,17 @@ export default defineConfig(({ mode }) => {
       },
       css: {
         postcss: './postcss.config.js'
+      },
+      build: {
+        cssCodeSplit: false,
+        rollupOptions: {
+          output: {
+            assetFileNames: (assetInfo) => {
+              if (assetInfo.name === 'style.css') return 'assets/[name]-[hash][extname]';
+              return 'assets/[name]-[hash][extname]';
+            }
+          }
+        }
       }
     };
 });

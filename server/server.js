@@ -17,11 +17,17 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5005;
 
-// CORS configuration for production
+// CORS configuration for production - more flexible
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://ed-co.vercel.app', 'https://your-frontend-domain.vercel.app', 'https://your-frontend-domain.netlify.app']
-    : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:5176'],
+    ? [
+        'https://ed-co.vercel.app',
+        'https://edcon-app.vercel.app',
+        'https://edcon-app.netlify.app',
+        'https://edcon-app.pages.dev',
+        process.env.FRONTEND_URL // Allow environment variable override
+      ].filter(Boolean) // Remove undefined values
+    : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:5176', 'http://localhost:5177'],
   credentials: true,
   optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -59,7 +65,8 @@ app.get('/api/debug', (req, res) => {
     message: 'Debug info',
     nodeEnv: process.env.NODE_ENV,
     hasMongoUri: !!process.env.MONGODB_URI,
-    port: PORT
+    port: PORT,
+    corsOrigins: corsOptions.origin
   });
 });
 
@@ -87,19 +94,42 @@ app.get('/api/test-db', async (req, res) => {
 // Start server only after MongoDB connection is established
 const startServer = async () => {
   try {
-    console.log('Attempting to connect to MongoDB...');
-    await connectDB();
-    console.log('MongoDB connected successfully');
+    console.log('Starting EdCon server...');
+    console.log('Environment:', process.env.NODE_ENV);
+    console.log('Port:', PORT);
+    console.log('MongoDB URI set:', !!process.env.MONGODB_URI);
+    
+    // Only try to connect to MongoDB if URI is provided
+    if (process.env.MONGODB_URI) {
+      console.log('Attempting to connect to MongoDB...');
+      await connectDB();
+      console.log('MongoDB connected successfully');
+    } else {
+      console.log('No MongoDB URI provided, skipping database connection');
+    }
     
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`Environment: ${process.env.NODE_ENV}`);
-      console.log(`MongoDB URI set: ${!!process.env.MONGODB_URI}`);
+      console.log(`✅ Server running on port ${PORT}`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
+      console.log(`🗄️ MongoDB URI set: ${!!process.env.MONGODB_URI}`);
+      console.log('🚀 EdCon API is ready!');
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    console.error('❌ Failed to start server:', error);
+    console.error('Error details:', error.message);
     process.exit(1);
   }
 };
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
 
 startServer(); 
