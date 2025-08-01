@@ -100,7 +100,7 @@ const App: React.FC = () => {
     useEffect(() => {
         const fetchAllData = async () => {
             try {
-                console.log('Fetching data from MongoDB...');
+                console.log('Fetching data from PostgreSQL...');
                 const [allUsers, allClasses, allSubjects, allGrades, allHomework, allAnnouncements, allAttendance, allMessages] = await Promise.all([
                     apiService.getAllUsers(),
                     apiService.getAllClasses(),
@@ -121,7 +121,7 @@ const App: React.FC = () => {
                 console.log('Fetched attendance:', allAttendance.length);
                 console.log('Fetched messages:', allMessages.length);
 
-                // Always update with MongoDB data when available
+                // Always update with PostgreSQL data when available
                 setUsers(allUsers);
                 setClasses(allClasses);
                 setSubjects(allSubjects);
@@ -131,7 +131,7 @@ const App: React.FC = () => {
                 setAttendance(allAttendance);
                 setMessages(allMessages);
 
-                // Process students from MongoDB data
+                // Process students from PostgreSQL data
                 const studentUsers = allUsers.filter(u => u.role === 'student').map(u => ({
                     ...u,
                     grade: 1, // Default grade
@@ -149,11 +149,11 @@ const App: React.FC = () => {
                 })) as Teacher[];
                 setTeachers(teacherUsers);
 
-                console.log('Successfully loaded all data from MongoDB');
+                console.log('Successfully loaded all data from PostgreSQL');
 
             } catch (error) {
-                console.error("Failed to fetch initial data from MongoDB", error);
-                // Keep using empty arrays if MongoDB fetch fails
+                console.error("Failed to fetch initial data from PostgreSQL", error);
+                // Keep using empty arrays if PostgreSQL fetch fails
             }
         };
 
