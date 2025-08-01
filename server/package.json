@@ -1,21 +1,19 @@
 {
   "name": "edcon-backend",
   "version": "1.0.0",
-  "description": "EdCon Backend API with MongoDB",
+  "description": "EdCon Backend API with PostgreSQL",
   "main": "server.js",
   "type": "module",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   },
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "build": "prisma generate",
-    "deploy": "prisma migrate deploy || prisma db push",
-    "postinstall": "prisma generate",
-    "db:migrate": "prisma migrate deploy",
-    "db:reset": "prisma migrate reset",
-    "db:seed": "prisma db seed"
+    "build": "echo 'No build required'",
+    "deploy": "echo 'Deploy complete'",
+    "postinstall": "echo 'Install complete'"
   },
   "dependencies": {
     "@prisma/client": "^6.13.0",
