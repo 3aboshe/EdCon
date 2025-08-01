@@ -135,7 +135,7 @@ router.post('/login', async (req, res) => {
     }
     
     console.log('Login successful for user:', user.name);
-    res.json(user);
+    res.json({ success: true, user });
   } catch (error) {
     console.error('Error during login:', error);
     res.status(500).json({ 
