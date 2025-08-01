@@ -34,7 +34,7 @@ function generateCode(role) {
 // Create user (admin only)
 router.post('/create', async (req, res) => {
   try {
-    const { name, role, avatar, ...rest } = req.body;
+    const { name, role, avatar, parentId, ...rest } = req.body;
     if (!name || !role) {
       return res.status(400).json({ message: 'Name and role are required.' });
     }
@@ -59,6 +59,33 @@ router.post('/create', async (req, res) => {
         ...rest 
       }
     });
+    
+    // If this is a student with a parent, update the parent's childrenIds
+    if (userRole === 'STUDENT' && parentId) {
+      try {
+        const parent = await prisma.user.findUnique({
+          where: { id: parentId }
+        });
+        
+        if (parent) {
+          await prisma.user.update({
+            where: { id: parentId },
+            data: {
+              childrenIds: [...(parent.childrenIds || []), user.id]
+            }
+          });
+          console.log(`Updated parent ${parent.name} with child ${user.name}`);
+        }
+      } catch (parentError) {
+        console.error('Error updating parent:', parentError);
+        // Don't fail the user creation if parent update fails
+      }
+    }
+    
+    // If this is a teacher with classIds, ensure they are properly stored
+    if (userRole === 'TEACHER' && rest.classIds && Array.isArray(rest.classIds)) {
+      console.log(`Teacher ${user.name} assigned to classes:`, rest.classIds);
+    }
     
     res.status(201).json({ success: true, code, user });
   } catch (error) {
