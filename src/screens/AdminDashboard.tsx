@@ -108,6 +108,8 @@ const StatCard: React.FC<{ title: string; value: number | string; icon: string; 
     <div className={`rounded-xl shadow-md p-4 flex items-center ${color} text-white`}>
         <div className="p-3 rounded-full bg-white bg-opacity-25">
              <i className={`fa-solid ${icon} text-xl`}></i>
+             {/* Fallback icon test */}
+             <span className="ml-2 text-xs opacity-75">📊</span>
         </div>
         <div className="ml-4 rtl:mr-4">
             <p className="text-2xl font-bold">{value}</p>
@@ -449,7 +451,11 @@ const ManagementTab: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({
 
     const parentUsers = useMemo(() => {
         const parents = users.filter(u => u.role === 'parent');
+        console.log('=== PARENT DEBUG ===');
+        console.log('All users:', users);
         console.log('Available parents:', parents);
+        console.log('Parent IDs:', parents.map(p => p.id));
+        console.log('Parent names:', parents.map(p => p.name));
         return parents;
     }, [users]);
     const subjectMap = useMemo(() => new Map(subjects.map(s => [s.id, s.name])), [subjects]);

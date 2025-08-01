@@ -139,10 +139,16 @@ class ApiService {
 
   // Create user (admin only)
   async createUser(user: { name: string; role: string; avatar?: string; [key: string]: any }): Promise<{ code: string; user: User }> {
+    console.log('=== API CREATE USER DEBUG ===');
+    console.log('Creating user with data:', user);
+    console.log('API URL:', `${API_BASE_URL}/auth/create`);
+    
     const response = await this.request<{ code: string; user: User }>('/auth/create', {
       method: 'POST',
       body: JSON.stringify(user),
     });
+    
+    console.log('API response:', response);
     return response.data!;
   }
 
