@@ -536,22 +536,40 @@ const ManagementTab: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({
         }
     };
 
-    const handleAddSubject = (e: React.FormEvent) => {
+    const handleAddSubject = async (e: React.FormEvent) => {
         e.preventDefault();
         if(!newSubjectName.trim()) return;
-        const newSubId = `SUB${String(subjects.length + 1)}`;
-        setSubjects([...subjects, { id: newSubId, name: newSubjectName.trim() }]);
-        setNewSubjectName('');
-        setSuccessMessage(t('subject_added'));
+        
+        try {
+            console.log('Creating subject:', newSubjectName.trim());
+            const newSubject = await apiService.createSubject(newSubjectName.trim());
+            console.log('Created subject:', newSubject);
+            
+            setSubjects([...subjects, newSubject]);
+            setNewSubjectName('');
+            setSuccessMessage(t('subject_added'));
+        } catch (error) {
+            console.error('Error creating subject:', error);
+            setSuccessMessage('Error creating subject. Please try again.');
+        }
     };
 
-    const handleAddClass = (e: React.FormEvent) => {
+    const handleAddClass = async (e: React.FormEvent) => {
         e.preventDefault();
         if(!newClassName.trim()) return;
-        const newClassId = `C${String(classes.length + 1)}`;
-        setClasses([...classes, { id: newClassId, name: newClassName.trim() }]);
-        setNewClassName('');
-        setSuccessMessage(t('class_added'));
+        
+        try {
+            console.log('Creating class:', newClassName.trim());
+            const newClass = await apiService.createClass(newClassName.trim());
+            console.log('Created class:', newClass);
+            
+            setClasses([...classes, newClass]);
+            setNewClassName('');
+            setSuccessMessage(t('class_added'));
+        } catch (error) {
+            console.error('Error creating class:', error);
+            setSuccessMessage('Error creating class. Please try again.');
+        }
     };
 
     const handleAddStudent = async (e: React.FormEvent) => {

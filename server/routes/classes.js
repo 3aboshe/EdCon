@@ -19,4 +19,24 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Create a new class
+router.post('/', async (req, res) => {
+  try {
+    const { name } = req.body;
+    console.log('Creating class:', name);
+    
+    const classData = await prisma.class.create({
+      data: {
+        name: name
+      }
+    });
+    
+    console.log('Created class:', classData);
+    res.json({ success: true, class: classData });
+  } catch (error) {
+    console.error('Error creating class:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 export default router; 
