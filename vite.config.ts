@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => {
           output: {
             assetFileNames: (assetInfo) => {
               if (assetInfo.name && assetInfo.name.endsWith('.css')) {
-                return 'assets/[name]-[hash][extname]';
+                return 'assets/style.css';
               }
               return 'assets/[name]-[hash][extname]';
             }
