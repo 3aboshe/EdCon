@@ -64,6 +64,37 @@ app.get('/api/health', (req, res) => {
   res.json({ message: 'EdCon API is running!' });
 });
 
+// Network connectivity test route
+app.get('/api/test-network', async (req, res) => {
+  try {
+    console.log('🌐 Testing network connectivity to MongoDB Atlas...');
+    const { URL } = await import('url');
+    const uri = new URL(process.env.MONGODB_URI);
+    const host = uri.hostname;
+    
+    console.log('🎯 Target host:', host);
+    
+    // Test DNS resolution
+    const dns = await import('dns').then(m => m.promises);
+    const addresses = await dns.lookup(host);
+    console.log('🔍 DNS resolved to:', addresses);
+    
+    res.json({
+      message: 'Network connectivity test',
+      host: host,
+      dnsResolved: addresses,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Network test failed:', error);
+    res.status(500).json({
+      message: 'Network test failed',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Debug route to check environment
 app.get('/api/debug', (req, res) => {
   res.json({ 

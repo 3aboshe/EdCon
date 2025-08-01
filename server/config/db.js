@@ -12,25 +12,33 @@ const connectDB = async () => {
       throw new Error('MONGODB_URI environment variable is not set');
     }
     
-    // Enhanced connection options for Railway
+    // Log the actual URI (first part only for security)
+    const uriParts = process.env.MONGODB_URI.split('@');
+    console.log('🔍 Connecting to cluster:', uriParts[1] ? uriParts[1].split('/')[0] : 'unknown');
+    
+    // Railway-optimized connection options for MongoDB Atlas
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 30000, // Give it 30 seconds to find server
-      socketTimeoutMS: 45000,
-      connectTimeoutMS: 30000, // 30 seconds connection timeout
-      bufferCommands: true, // Re-enable buffering to queue commands until connected
-      bufferMaxEntries: 0, // Disable mongoose buffering
-      maxPoolSize: 5, // Smaller pool size for Railway
+      serverSelectionTimeoutMS: 15000, // Reduced timeout
+      connectTimeoutMS: 15000,
+      socketTimeoutMS: 30000,
+      bufferCommands: true,
+      bufferMaxEntries: 0,
+      maxPoolSize: 3, // Even smaller pool for Railway
       minPoolSize: 1,
       maxIdleTimeMS: 30000,
       retryWrites: true,
       w: 'majority',
       authSource: 'admin',
       ssl: true,
-      tlsAllowInvalidCertificates: false,
-      tlsAllowInvalidHostnames: false,
+      family: 4, // Force IPv4 for Railway compatibility
+      // Railway-specific options
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
     });
     
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+    console.log(`📊 Database: ${conn.connection.db.databaseName}`);
+    console.log(`🔌 Connection state: ${conn.connection.readyState}`);
     
     // Handle connection events
     conn.connection.on('error', (error) => {
@@ -51,6 +59,7 @@ const connectDB = async () => {
     console.error('🔍 MongoDB URI:', process.env.MONGODB_URI ? 'Set' : 'Not set');
     console.error('🔍 Error type:', error.name);
     console.error('🔍 Error message:', error.message);
+    console.error('🔍 Error code:', error.code);
     throw error;
   }
 };
