@@ -28,14 +28,26 @@ const ProfileScreen: React.FC = () => {
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file && user) {
+            console.log('=== AVATAR UPDATE DEBUG ===');
+            console.log('File selected:', file.name, file.size, file.type);
+            console.log('User ID:', user.id);
+            console.log('Current avatar:', user.avatar ? 'has avatar' : 'no avatar');
+            
             const reader = new FileReader();
             reader.onloadend = async () => {
                 const base64String = reader.result as string;
+                console.log('Base64 string length:', base64String.length);
+                console.log('Base64 preview:', base64String.substring(0, 100) + '...');
+                
                 try {
-                    // Update in database first
-                    await apiService.updateUser(user.id, { avatar: base64String });
-                    // Then update local state
+                    console.log('Calling API to update avatar...');
+                    const result = await apiService.updateUser(user.id, { avatar: base64String });
+                    console.log('API update result:', result);
+                    
+                    console.log('Updating local state...');
                     updateUserAvatar(user.id, base64String);
+                    
+                    console.log('Avatar update completed successfully');
                     setSuccessMessage(t('photo_updated_success'));
                     setTimeout(() => setSuccessMessage(''), 3000);
                 } catch (error) {
