@@ -15,7 +15,15 @@ const StudentDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState<StudentTab>('dashboard');
 
     const currentStudent = useMemo(() => {
-        return students.find(s => s.id === user?.id);
+        console.log('=== STUDENT DASHBOARD DEBUG ===');
+        console.log('User:', user);
+        console.log('User ID:', user?.id);
+        console.log('All students:', students);
+        console.log('Student IDs:', students.map(s => s.id));
+        
+        const found = students.find(s => s.id === user?.id);
+        console.log('Found student:', found);
+        return found;
     }, [user, students]);
     
     const tabTitles: Record<StudentTab, string> = {

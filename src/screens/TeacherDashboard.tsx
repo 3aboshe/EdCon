@@ -28,7 +28,15 @@ const TeacherDashboard: React.FC = () => {
     const [successMessage, setSuccessMessage] = useState('');
 
     const teacherClasses = useMemo(() => {
-        return user?.classIds?.map(cid => classes.find(c => c.id === cid)).filter(Boolean) as {id: string, name: string}[] || [];
+        console.log('=== TEACHER DASHBOARD DEBUG ===');
+        console.log('User:', user);
+        console.log('User classIds:', user?.classIds);
+        console.log('All classes:', classes);
+        console.log('Class IDs:', classes.map(c => c.id));
+        
+        const mapped = user?.classIds?.map(cid => classes.find(c => c.id === cid)).filter(Boolean) as {id: string, name: string}[] || [];
+        console.log('Teacher classes:', mapped);
+        return mapped;
     }, [user, classes]);
     
     const [selectedClassId, setSelectedClassId] = useState<string | null>(null);

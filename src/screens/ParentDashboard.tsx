@@ -20,11 +20,23 @@ const ParentDashboard: React.FC = () => {
     const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<ParentTab>('dashboard');
 
-    const parentStudents = useMemo(() => students.filter(s => user?.childrenIds?.includes(s.id)), [user, students]);
+    const parentStudents = useMemo(() => {
+        console.log('=== PARENT DASHBOARD DEBUG ===');
+        console.log('User:', user);
+        console.log('User childrenIds:', user?.childrenIds);
+        console.log('All students:', students);
+        console.log('Students IDs:', students.map(s => s.id));
+        
+        const filtered = students.filter(s => user?.childrenIds?.includes(s.id));
+        console.log('Parent students:', filtered);
+        return filtered;
+    }, [user, students]);
 
     useEffect(() => {
+        console.log('Parent students effect:', parentStudents);
         if (parentStudents.length > 0 && !selectedStudentId) {
             setSelectedStudentId(parentStudents[0].id);
+            console.log('Selected first student:', parentStudents[0].id);
         }
     }, [parentStudents, selectedStudentId]);
 
