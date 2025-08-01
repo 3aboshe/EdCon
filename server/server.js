@@ -22,6 +22,7 @@ const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
     ? [
         'https://ed-co.vercel.app',
+        'https://ed-co-3aboshes-projects.vercel.app',
         'https://edcon-app.vercel.app',
         'https://edcon-app.netlify.app',
         'https://edcon-app.pages.dev',
