@@ -25,7 +25,7 @@ const corsOptions = {
         'https://ed-co-3aboshes-projects.vercel.app',
         'https://edcon-app.vercel.app',
         'https://edcon-app.netlify.app',
-        'https://edcon-app.pages.dev',
+        'https://ed-eb22y6x9n-3aboshes-projects.vercel.app', // Added this URL
         process.env.FRONTEND_URL // Allow environment variable override
       ].filter(Boolean) // Remove undefined values
     : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:5176', 'http://localhost:5177'],
