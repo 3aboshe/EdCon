@@ -63,7 +63,7 @@ const ProfileScreen: React.FC = () => {
                         className="absolute -bottom-2 -right-2 bg-blue-600 text-white rounded-full h-10 w-10 flex items-center justify-center shadow-md border-2 border-white hover:bg-blue-700 transition"
                         title={t('change_photo')}
                     >
-                        <i className="fas fa-camera"></i>
+                        <i className="fa-solid fa-camera"></i>
                     </button>
                 </div>
                 

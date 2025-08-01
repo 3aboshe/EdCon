@@ -234,7 +234,7 @@ const ProfileView: React.FC<{ student: Student }> = ({ student }) => {
                             />
                             {student.avatar === avatar && (
                                 <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full h-6 w-6 flex items-center justify-center">
-                                    <i className="fas fa-check"></i>
+                                    <i className="fa-solid fa-check"></i>
                                 </div>
                             )}
                         </div>

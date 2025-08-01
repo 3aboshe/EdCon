@@ -134,8 +134,8 @@ const seedData = async () => {
             data: {
                 ...parentData,
                 childrenIds: [],
-            }
-        });
+        }
+    });
     }
     console.log('Created parent users');
 
@@ -170,7 +170,7 @@ const seedData = async () => {
                 childrenIds: [],
             }
         });
-    }
+        }
     console.log('Created student users');
 
     // Update parents with their children

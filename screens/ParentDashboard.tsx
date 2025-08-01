@@ -187,7 +187,7 @@ const Top5Briefing: React.FC<{student: Student}> = ({student}) => {
 
     return (
          <Card className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
-            <h2 className="text-xl font-bold mb-2 flex items-center"><i className="fas fa-star mr-2"></i>{t('top_5_things')}</h2>
+            <h2 className="text-xl font-bold mb-2 flex items-center"><i className="fa-solid fa-star mr-2"></i>{t('top_5_things')}</h2>
             {isLoading ? <LoadingSpinner /> : (
                 <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{__html: briefing.replace(/\*/g, '•').replace(/\n/g, '<br />')}}></div>
             )}
@@ -448,7 +448,7 @@ const ParentMessaging: React.FC<{ student: Student }> = ({ student }) => {
                                     <p className="font-semibold text-gray-800">{teacherUser.name}</p>
                                     <p className="text-sm text-gray-500">{teacherDetails.subject}</p>
                                 </div>
-                                <i className="fas fa-chevron-right text-gray-400 ml-auto rtl:mr-auto rtl:rotate-180"></i>
+                                <i className="fa-solid fa-chevron-right text-gray-400 ml-auto rtl:mr-auto rtl:rotate-180"></i>
                             </div>
                         )
                     })}
@@ -562,8 +562,8 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
                     {audioUrl ? (
                          <div className="flex items-center gap-2">
                              <audio src={audioUrl} controls className="flex-grow h-10"></audio>
-                             <button onClick={() => setAudioUrl(null)} className="bg-gray-400 text-white rounded-full w-10 h-10"><i className="fas fa-times"></i></button>
-                             <button onClick={() => handleSendMessage()} className="bg-blue-600 text-white rounded-full w-10 h-10"><i className="fas fa-paper-plane"></i></button>
+                             <button onClick={() => setAudioUrl(null)} className="bg-gray-400 text-white rounded-full w-10 h-10"><i className="fa-solid fa-times"></i></button>
+                             <button onClick={() => handleSendMessage()} className="bg-blue-600 text-white rounded-full w-10 h-10"><i className="fa-solid fa-paper-plane"></i></button>
                          </div>
                     ) : (
                         <form onSubmit={handleSendMessage} className="flex items-center gap-2">
@@ -583,7 +583,7 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
                                 <i className={`fas ${isRecording ? 'fa-stop' : 'fa-microphone'}`}></i>
                             </button>
                             <button type="submit" className="bg-blue-600 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-blue-700 transition" disabled={!newMessage.trim()}>
-                                <i className="fas fa-paper-plane"></i>
+                                <i className="fa-solid fa-paper-plane"></i>
                             </button>
                         </form>
                     )}

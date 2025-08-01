@@ -14,7 +14,7 @@ type Screen = 'dashboard' | 'attendance' | 'homework' | 'announcements' | 'marks
 const SuccessBanner: React.FC<{ message: string }> = ({ message }) => (
     <div className="bg-green-100 border-t-4 border-green-500 text-green-700 px-4 py-3 rounded-b-lg shadow-md mb-4" role="alert">
       <div className="flex">
-        <div className="py-1"><i className="fas fa-check-circle mr-3"></i></div>
+        <div className="py-1"><i className="fa-solid fa-check-circle mr-3"></i></div>
         <div>
           <p className="font-bold">{message}</p>
         </div>
@@ -175,7 +175,7 @@ const AttendanceManager: React.FC<{ students: Student[], setSuccessMessage: (msg
                 <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="p-2 border border-gray-300 rounded-md shadow-sm" />
             </div>
             <button onClick={markAllPresent} className="w-full bg-green-100 text-green-700 font-semibold py-2 rounded-lg hover:bg-green-200 transition mb-4">
-                <i className="fas fa-check-double mr-2"></i>{t('mark_all_present')}
+                <i className="fa-solid fa-check-double mr-2"></i>{t('mark_all_present')}
             </button>
             <div className="space-y-3 max-h-[60vh] overflow-y-auto">
                 {students.map(student => (
@@ -279,7 +279,7 @@ const HomeworkManager: React.FC<{ studentsInClass: Student[], setSuccessMessage:
                                     {t('submissions')} ({hw.submitted.length}/{studentsInClass.length})
                                 </button>
                                 <button onClick={() => openDeleteModal(hw)} className="text-red-600 text-sm hover:underline ml-4 rtl:mr-4">
-                                    <i className="fas fa-trash mr-1 rtl:ml-1"></i>{t('delete')}
+                                    <i className="fa-solid fa-trash mr-1 rtl:ml-1"></i>{t('delete')}
                                 </button>
                             </div>
                         </div>
@@ -472,7 +472,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({ studentsInClass, onEdit
                              <div>
                                 <button onClick={() => onEdit(assign)} className="text-blue-600 hover:underline text-sm">{t('edit_grades')}</button>
                                 <button onClick={() => openDeleteModal(assign)} className="text-red-600 hover:underline ml-4 text-sm rtl:mr-4">
-                                    <i className="fas fa-trash mr-1 rtl:ml-1"></i>{t('delete')}
+                                    <i className="fa-solid fa-trash mr-1 rtl:ml-1"></i>{t('delete')}
                                 </button>
                             </div>
                         </div>
@@ -799,8 +799,8 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
                     {audioUrl ? (
                          <div className="flex items-center gap-2">
                              <audio src={audioUrl} controls className="flex-grow h-10"></audio>
-                             <button onClick={() => setAudioUrl(null)} className="bg-gray-400 text-white rounded-full w-10 h-10"><i className="fas fa-times"></i></button>
-                             <button onClick={() => handleSendMessage()} className="bg-blue-600 text-white rounded-full w-10 h-10"><i className="fas fa-paper-plane"></i></button>
+                             <button onClick={() => setAudioUrl(null)} className="bg-gray-400 text-white rounded-full w-10 h-10"><i className="fa-solid fa-times"></i></button>
+                             <button onClick={() => handleSendMessage()} className="bg-blue-600 text-white rounded-full w-10 h-10"><i className="fa-solid fa-paper-plane"></i></button>
                          </div>
                     ) : (
                         <form onSubmit={handleSendMessage} className="flex items-center gap-2">
@@ -817,10 +817,10 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
                                 onClick={isRecording ? handleStopRecording : handleStartRecording}
                                 className={`text-white rounded-full w-12 h-12 flex items-center justify-center transition ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-500 hover:bg-gray-600'}`}
                             >
-                                <i className={`fas ${isRecording ? 'fa-stop' : 'fa-microphone'}`}></i>
+                                <i className={`fa-solid ${isRecording ? 'fa-stop' : 'fa-microphone'}`}></i>
                             </button>
                             <button type="submit" className="bg-blue-600 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-blue-700 transition" disabled={!newMessage.trim()}>
-                                <i className="fas fa-paper-plane"></i>
+                                <i className="fa-solid fa-paper-plane"></i>
                             </button>
                         </form>
                     )}
