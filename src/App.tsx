@@ -115,7 +115,8 @@ const App: React.FC = () => {
                 console.log('Fetched users with avatars:', allUsers.map(u => ({ 
                     id: u.id, 
                     name: u.name, 
-                    avatar: u.avatar ? `has avatar (${u.avatar.length} chars)` : 'no avatar' 
+                    avatar: u.avatar ? `has avatar (${u.avatar.length} chars)` : 'no avatar',
+                    avatarPreview: u.avatar ? u.avatar.substring(0, 50) + '...' : 'none'
                 })));
 
                 console.log('Fetched users:', allUsers.length);
@@ -220,6 +221,7 @@ const App: React.FC = () => {
             console.log('Previous users count:', currentUsers.length);
             const updated = currentUsers.map(u => u.id === userId ? { ...u, avatar: avatarDataUrl } : u);
             console.log('Updated users count:', updated.length);
+            console.log('Updated user avatar:', updated.find(u => u.id === userId)?.avatar ? 'has avatar' : 'no avatar');
             return updated;
         });
         
@@ -228,6 +230,13 @@ const App: React.FC = () => {
             console.log('Updating current user avatar');
             setUser(prevUser => prevUser ? { ...prevUser, avatar: avatarDataUrl } : null);
         }
+        
+        // Also update students array if the user is a student
+        setStudents(currentStudents => {
+            const updated = currentStudents.map(s => s.id === userId ? { ...s, avatar: avatarDataUrl } : s);
+            console.log('Updated students with new avatar:', updated.find(s => s.id === userId)?.avatar ? 'has avatar' : 'no avatar');
+            return updated;
+        });
         
         console.log('Avatar update completed in App context');
     }, [user?.id]);
