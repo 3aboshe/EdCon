@@ -4,6 +4,7 @@ import { AppContext } from '../App';
 import Card from '../components/common/Card';
 import ProfileImage from '../components/common/ProfileImage';
 import { UserRole } from '../types';
+import apiService from '../services/apiService';
 
 const ProfileScreen: React.FC = () => {
     const { user, t, updateUserAvatar, updateUser } = useContext(AppContext);
@@ -28,22 +29,40 @@ const ProfileScreen: React.FC = () => {
         const file = event.target.files?.[0];
         if (file && user) {
             const reader = new FileReader();
-            reader.onloadend = () => {
+            reader.onloadend = async () => {
                 const base64String = reader.result as string;
-                updateUserAvatar(user.id, base64String);
-                setSuccessMessage(t('photo_updated_success'));
-                setTimeout(() => setSuccessMessage(''), 3000);
+                try {
+                    // Update in database first
+                    await apiService.updateUser(user.id, { avatar: base64String });
+                    // Then update local state
+                    updateUserAvatar(user.id, base64String);
+                    setSuccessMessage(t('photo_updated_success'));
+                    setTimeout(() => setSuccessMessage(''), 3000);
+                } catch (error) {
+                    console.error('Error updating avatar:', error);
+                    setSuccessMessage('Error updating photo. Please try again.');
+                    setTimeout(() => setSuccessMessage(''), 3000);
+                }
             };
             reader.readAsDataURL(file);
         }
     };
 
-    const handleSaveAvailability = (e: React.FormEvent) => {
+    const handleSaveAvailability = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user) return;
-        updateUser(user.id, { messagingAvailability: availability });
-        setSuccessMessage(t('availability_saved_success'));
-        setTimeout(() => setSuccessMessage(''), 3000);
+        try {
+            // Update in database first
+            await apiService.updateUser(user.id, { messagingAvailability: availability });
+            // Then update local state
+            updateUser(user.id, { messagingAvailability: availability });
+            setSuccessMessage(t('availability_saved_success'));
+            setTimeout(() => setSuccessMessage(''), 3000);
+        } catch (error) {
+            console.error('Error updating availability:', error);
+            setSuccessMessage('Error saving availability. Please try again.');
+            setTimeout(() => setSuccessMessage(''), 3000);
+        }
     };
 
     if (!user) return null;

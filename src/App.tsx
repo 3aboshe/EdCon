@@ -112,6 +112,8 @@ const App: React.FC = () => {
                     apiService.getAllMessages(),
                 ]);
 
+                console.log('Fetched users with avatars:', allUsers.map(u => ({ id: u.id, name: u.name, avatar: u.avatar ? 'has avatar' : 'no avatar' })));
+
                 console.log('Fetched users:', allUsers.length);
                 console.log('Fetched classes:', allClasses.length);
                 console.log('Fetched subjects:', allSubjects.length);
