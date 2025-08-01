@@ -103,8 +103,14 @@ const startServer = async () => {
     // Only try to connect to MongoDB if URI is provided
     if (process.env.MONGODB_URI) {
       console.log('Attempting to connect to MongoDB...');
-      await connectDB();
-      console.log('MongoDB connected successfully');
+      try {
+        await connectDB();
+        console.log('MongoDB connected successfully');
+      } catch (dbError) {
+        console.error('❌ MongoDB connection failed:', dbError.message);
+        console.log('⚠️  Server will start without database connection');
+        console.log('⚠️  Some features may not work properly');
+      }
     } else {
       console.log('No MongoDB URI provided, skipping database connection');
     }

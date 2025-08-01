@@ -13,14 +13,21 @@ const connectDB = async () => {
     }
     
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 30000, // Increased timeout to 30s
+      serverSelectionTimeoutMS: 60000, // Increased timeout to 60s
       socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
       bufferCommands: true, // Enable buffering for now
       maxPoolSize: 10, // Maintain up to 10 socket connections
       minPoolSize: 2, // Maintain at least 2 socket connections
       maxIdleTimeMS: 30000, // Close sockets after 30s of inactivity
       retryWrites: true,
-      w: 'majority'
+      w: 'majority',
+      // Add DNS resolution options
+      family: 4, // Force IPv4
+      lookup: (hostname, options, callback) => {
+        // Custom DNS lookup with timeout
+        const dns = require('dns');
+        dns.lookup(hostname, { family: 4, timeout: 30000 }, callback);
+      }
     });
     
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
