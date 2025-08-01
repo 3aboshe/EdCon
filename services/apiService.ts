@@ -120,10 +120,21 @@ class ApiService {
 
   // Authentication
   async login(code: string): Promise<ApiResponse<{ user: User }>> {
-    return this.request<{ user: User }>('/auth/login', {
+    const response = await this.request<any>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ code }),
     });
+    
+    // Handle both response formats (direct user object or { success: true, user })
+    const responseAny = response as any;
+    if (responseAny.success && responseAny.user) {
+      return response as ApiResponse<{ user: User }>;
+    } else if (responseAny.id && responseAny.name && responseAny.role) {
+      // Backend returns user object directly
+      return { success: true, user: responseAny } as ApiResponse<{ user: User }>;
+    } else {
+      throw new Error('Invalid response format from login endpoint');
+    }
   }
 
   // Create user (admin only)
