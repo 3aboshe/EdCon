@@ -27,6 +27,16 @@ router.post('/', async (req, res) => {
     const { name } = req.body;
     console.log('Creating subject:', name);
     
+    // Check if subject already exists
+    const existingSubject = await prisma.subject.findFirst({
+      where: { name: name }
+    });
+    
+    if (existingSubject) {
+      console.log('Subject already exists:', existingSubject);
+      return res.json({ success: true, subject: existingSubject });
+    }
+    
     const subject = await prisma.subject.create({
       data: {
         name: name
@@ -37,7 +47,19 @@ router.post('/', async (req, res) => {
     res.json({ success: true, subject });
   } catch (error) {
     console.error('Error creating subject:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      meta: error.meta
+    });
+    res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message,
+      details: {
+        code: error.code,
+        meta: error.meta
+      }
+    });
   }
 });
 
