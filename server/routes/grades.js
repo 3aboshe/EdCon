@@ -1,16 +1,21 @@
 import express from 'express';
-import Grade from '../models/Grade.js';
+import { PrismaClient } from '@prisma/client';
 
 const router = express.Router();
+const prisma = new PrismaClient();
 
 // Get all grades
 router.get('/', async (req, res) => {
   try {
-    const grades = await Grade.find({}).sort({ date: -1 });
+    const grades = await prisma.grade.findMany({
+      orderBy: {
+        date: 'desc'
+      }
+    });
     res.json(grades);
   } catch (error) {
-    console.error('Get all grades error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching grades:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -18,7 +23,12 @@ router.get('/', async (req, res) => {
 router.get('/student/:studentId', async (req, res) => {
   try {
     const { studentId } = req.params;
-    const grades = await Grade.find({ studentId }).sort({ date: -1 });
+    const grades = await prisma.grade.findMany({
+      where: { studentId },
+      orderBy: {
+        date: 'desc'
+      }
+    });
     res.json(grades);
   } catch (error) {
     console.error('Get grades error:', error);
@@ -31,17 +41,18 @@ router.post('/', async (req, res) => {
   try {
     const { studentId, subject, assignment, marksObtained, maxMarks, type } = req.body;
     
-    const newGrade = new Grade({
-      studentId,
-      subject,
-      assignment,
-      marksObtained,
-      maxMarks,
-      type
+    const newGrade = await prisma.grade.create({
+      data: {
+        studentId,
+        subject,
+        assignment,
+        marksObtained,
+        maxMarks,
+        type
+      }
     });
     
-    const savedGrade = await newGrade.save();
-    res.status(201).json(savedGrade);
+    res.status(201).json(newGrade);
   } catch (error) {
     console.error('Add grade error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -54,7 +65,10 @@ router.put('/:id', async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
     
-    const updatedGrade = await Grade.findByIdAndUpdate(id, updateData, { new: true });
+    const updatedGrade = await prisma.grade.update({
+      where: { id },
+      data: updateData
+    });
     
     if (!updatedGrade) {
       return res.status(404).json({ message: 'Grade not found' });
@@ -72,7 +86,9 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    const deletedGrade = await Grade.findByIdAndDelete(id);
+    const deletedGrade = await prisma.grade.delete({
+      where: { id }
+    });
     
     if (!deletedGrade) {
       return res.status(404).json({ message: 'Grade not found' });

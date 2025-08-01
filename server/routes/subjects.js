@@ -1,15 +1,21 @@
 import express from 'express';
-import Subject from '../models/Subject.js';
+import { PrismaClient } from '@prisma/client';
 
 const router = express.Router();
+const prisma = new PrismaClient();
 
 // Get all subjects
 router.get('/', async (req, res) => {
   try {
-    const subjects = await Subject.find({});
+    const subjects = await prisma.subject.findMany({
+      orderBy: {
+        name: 'asc'
+      }
+    });
     res.json(subjects);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching subjects:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 

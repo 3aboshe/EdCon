@@ -1,15 +1,21 @@
 import express from 'express';
-import Homework from '../models/Homework.js';
+import { PrismaClient } from '@prisma/client';
 
 const router = express.Router();
+const prisma = new PrismaClient();
 
 // Get all homework
 router.get('/', async (req, res) => {
   try {
-    const homework = await Homework.find({}).sort({ assignedDate: -1 });
+    const homework = await prisma.homework.findMany({
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
     res.json(homework);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching homework:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -17,10 +23,18 @@ router.get('/', async (req, res) => {
 router.get('/teacher/:teacherId', async (req, res) => {
   try {
     const { teacherId } = req.params;
-    const homework = await Homework.find({ teacherId }).sort({ assignedDate: -1 });
+    const homework = await prisma.homework.findMany({
+      where: {
+        teacherId: teacherId
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
     res.json(homework);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching homework by teacher:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -29,21 +43,21 @@ router.post('/', async (req, res) => {
   try {
     const { title, subject, dueDate, assignedDate, teacherId, submitted } = req.body;
     
-    const newHomework = new Homework({
-      id: `HW${Date.now()}`,
-      title,
-      subject,
-      dueDate,
-      assignedDate,
-      teacherId,
-      submitted: submitted || []
+    const newHomework = await prisma.homework.create({
+      data: {
+        title,
+        subject,
+        dueDate,
+        assignedDate,
+        teacherId,
+        submitted: submitted || []
+      }
     });
     
-    const savedHomework = await newHomework.save();
-    res.status(201).json(savedHomework);
+    res.status(201).json(newHomework);
   } catch (error) {
     console.error('Add homework error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -53,7 +67,12 @@ router.put('/:id', async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
     
-    const updatedHomework = await Homework.findOneAndUpdate({ id }, updateData, { new: true });
+    const updatedHomework = await prisma.homework.update({
+      where: {
+        id: id
+      },
+      data: updateData
+    });
     
     if (!updatedHomework) {
       return res.status(404).json({ message: 'Homework not found' });
@@ -62,7 +81,7 @@ router.put('/:id', async (req, res) => {
     res.json(updatedHomework);
   } catch (error) {
     console.error('Update homework error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -71,7 +90,11 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    const deletedHomework = await Homework.findOneAndDelete({ id });
+    const deletedHomework = await prisma.homework.delete({
+      where: {
+        id: id
+      }
+    });
     
     if (!deletedHomework) {
       return res.status(404).json({ message: 'Homework not found' });
@@ -80,7 +103,7 @@ router.delete('/:id', async (req, res) => {
     res.json({ message: 'Homework deleted successfully' });
   } catch (error) {
     console.error('Delete homework error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 

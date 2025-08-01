@@ -1,15 +1,21 @@
 import express from 'express';
-import Attendance from '../models/Attendance.js';
+import { PrismaClient } from '@prisma/client';
 
 const router = express.Router();
+const prisma = new PrismaClient();
 
 // Get all attendance
 router.get('/', async (req, res) => {
   try {
-    const attendance = await Attendance.find({}).sort({ date: -1 });
+    const attendance = await prisma.attendance.findMany({
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
     res.json(attendance);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching attendance:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -17,10 +23,16 @@ router.get('/', async (req, res) => {
 router.get('/student/:studentId', async (req, res) => {
   try {
     const { studentId } = req.params;
-    const attendance = await Attendance.find({ studentId }).sort({ date: -1 });
+    const attendance = await prisma.attendance.findMany({
+      where: { studentId },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
     res.json(attendance);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching attendance by student:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -28,10 +40,16 @@ router.get('/student/:studentId', async (req, res) => {
 router.get('/date/:date', async (req, res) => {
   try {
     const { date } = req.params;
-    const attendance = await Attendance.find({ date });
+    const attendance = await prisma.attendance.findMany({
+      where: { date },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
     res.json(attendance);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching attendance by date:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -40,17 +58,18 @@ router.post('/', async (req, res) => {
   try {
     const { date, studentId, status } = req.body;
     
-    const newAttendance = new Attendance({
-      date,
-      studentId,
-      status
+    const newAttendance = await prisma.attendance.create({
+      data: {
+        date,
+        studentId,
+        status
+      }
     });
     
-    const savedAttendance = await newAttendance.save();
-    res.status(201).json(savedAttendance);
+    res.status(201).json(newAttendance);
   } catch (error) {
     console.error('Add attendance error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -60,7 +79,10 @@ router.put('/:id', async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
     
-    const updatedAttendance = await Attendance.findByIdAndUpdate(id, updateData, { new: true });
+    const updatedAttendance = await prisma.attendance.update({
+      where: { id },
+      data: updateData
+    });
     
     if (!updatedAttendance) {
       return res.status(404).json({ message: 'Attendance record not found' });
@@ -69,7 +91,7 @@ router.put('/:id', async (req, res) => {
     res.json(updatedAttendance);
   } catch (error) {
     console.error('Update attendance error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -78,7 +100,9 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    const deletedAttendance = await Attendance.findByIdAndDelete(id);
+    const deletedAttendance = await prisma.attendance.delete({
+      where: { id }
+    });
     
     if (!deletedAttendance) {
       return res.status(404).json({ message: 'Attendance record not found' });
@@ -87,7 +111,7 @@ router.delete('/:id', async (req, res) => {
     res.json({ message: 'Attendance record deleted successfully' });
   } catch (error) {
     console.error('Delete attendance error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 

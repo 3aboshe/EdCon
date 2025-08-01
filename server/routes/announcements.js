@@ -1,15 +1,21 @@
 import express from 'express';
-import Announcement from '../models/Announcement.js';
+import { PrismaClient } from '@prisma/client';
 
 const router = express.Router();
+const prisma = new PrismaClient();
 
 // Get all announcements
 router.get('/', async (req, res) => {
   try {
-    const announcements = await Announcement.find({}).sort({ date: -1 });
+    const announcements = await prisma.announcement.findMany({
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
     res.json(announcements);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching announcements:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -17,10 +23,16 @@ router.get('/', async (req, res) => {
 router.get('/teacher/:teacherId', async (req, res) => {
   try {
     const { teacherId } = req.params;
-    const announcements = await Announcement.find({ teacherId }).sort({ date: -1 });
+    const announcements = await prisma.announcement.findMany({
+      where: { teacherId },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
     res.json(announcements);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching announcements by teacher:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -29,20 +41,20 @@ router.post('/', async (req, res) => {
   try {
     const { title, content, date, teacherId, priority } = req.body;
     
-    const newAnnouncement = new Announcement({
-      id: `AN${Date.now()}`,
-      title,
-      content,
-      date,
-      teacherId,
-      priority: priority || 'medium'
+    const newAnnouncement = await prisma.announcement.create({
+      data: {
+        title,
+        content,
+        date,
+        teacherId,
+        priority: priority || 'medium'
+      }
     });
     
-    const savedAnnouncement = await newAnnouncement.save();
-    res.status(201).json(savedAnnouncement);
+    res.status(201).json(newAnnouncement);
   } catch (error) {
     console.error('Add announcement error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -52,7 +64,10 @@ router.put('/:id', async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
     
-    const updatedAnnouncement = await Announcement.findOneAndUpdate({ id }, updateData, { new: true });
+    const updatedAnnouncement = await prisma.announcement.update({
+      where: { id },
+      data: updateData
+    });
     
     if (!updatedAnnouncement) {
       return res.status(404).json({ message: 'Announcement not found' });
@@ -61,7 +76,7 @@ router.put('/:id', async (req, res) => {
     res.json(updatedAnnouncement);
   } catch (error) {
     console.error('Update announcement error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -70,7 +85,9 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    const deletedAnnouncement = await Announcement.findOneAndDelete({ id });
+    const deletedAnnouncement = await prisma.announcement.delete({
+      where: { id }
+    });
     
     if (!deletedAnnouncement) {
       return res.status(404).json({ message: 'Announcement not found' });
@@ -79,7 +96,7 @@ router.delete('/:id', async (req, res) => {
     res.json({ message: 'Announcement deleted successfully' });
   } catch (error) {
     console.error('Delete announcement error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
