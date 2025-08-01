@@ -195,12 +195,16 @@ class ApiService {
     });
     
     console.log('Raw API response:', response);
-    console.log('Response data:', response.data);
+    console.log('Response type:', typeof response);
+    console.log('Response keys:', Object.keys(response));
     
     // The server returns {success: true, class: {...}}
-    // So we need to extract the class from the response
-    if (response.data && response.data.class) {
-      console.log('Extracted class:', response.data.class);
+    // But response.data might be undefined, so check the response directly
+    if (response && response.class) {
+      console.log('Extracted class from response:', response.class);
+      return response.class;
+    } else if (response.data && response.data.class) {
+      console.log('Extracted class from response.data:', response.data.class);
       return response.data.class;
     } else {
       console.error('Invalid response format:', response);
@@ -225,12 +229,16 @@ class ApiService {
     });
     
     console.log('Raw API response:', response);
-    console.log('Response data:', response.data);
+    console.log('Response type:', typeof response);
+    console.log('Response keys:', Object.keys(response));
     
     // The server returns {success: true, subject: {...}}
-    // So we need to extract the subject from the response
-    if (response.data && response.data.subject) {
-      console.log('Extracted subject:', response.data.subject);
+    // But response.data might be undefined, so check the response directly
+    if (response && response.subject) {
+      console.log('Extracted subject from response:', response.subject);
+      return response.subject;
+    } else if (response.data && response.data.subject) {
+      console.log('Extracted subject from response.data:', response.data.subject);
       return response.data.subject;
     } else {
       console.error('Invalid response format:', response);
