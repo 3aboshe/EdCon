@@ -192,8 +192,11 @@ const App: React.FC = () => {
                 setUser(fullUser);
             }
         } else {
+            console.log('Setting user for admin/student:', fullUser);
             setUser(fullUser);
         }
+        
+        console.log('Login completed for user:', fullUser.name);
     };
 
     const handleLogout = () => {
@@ -270,16 +273,22 @@ const App: React.FC = () => {
         if (!user) {
             return <LoginScreen />;
         }
-        switch (user.role) {
-            case UserRole.Parent:
+        
+        // Convert role to lowercase for comparison
+        const userRole = user.role.toLowerCase();
+        console.log('Rendering content for role:', userRole);
+        
+        switch (userRole) {
+            case 'parent':
                 return <ParentDashboard />;
-            case UserRole.Teacher:
+            case 'teacher':
                 return <TeacherDashboard />;
-            case UserRole.Admin:
+            case 'admin':
                 return <AdminDashboard />;
-            case UserRole.Student:
+            case 'student':
                 return <StudentDashboard />;
             default:
+                console.log('Unknown role:', userRole);
                 return <LoginScreen />;
         }
     };
