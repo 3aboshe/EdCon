@@ -201,10 +201,17 @@ class ApiService {
 
   // Create a new subject
   async createSubject(name: string): Promise<Subject> {
+    console.log('=== CREATE SUBJECT API DEBUG ===');
+    console.log('Subject name:', name);
+    
     const response = await this.request<Subject>('/subjects', {
       method: 'POST',
       body: JSON.stringify({ name }),
     });
+    
+    console.log('Raw API response:', response);
+    console.log('Response data:', response.data);
+    
     return response.data!;
   }
 

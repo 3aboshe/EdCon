@@ -48,6 +48,7 @@ router.post('/', async (req, res) => {
     });
     
     console.log('Created subject:', subject);
+    console.log('Sending response:', { success: true, subject });
     res.json({ success: true, subject });
   } catch (error) {
     console.error('Error creating subject:', error);

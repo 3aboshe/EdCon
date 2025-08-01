@@ -308,7 +308,13 @@ router.put('/users/:id', async (req, res) => {
       data: updateData,
     });
 
-    console.log('Updated user:', { id: user.id, name: user.name, hasAvatar: !!user.avatar });
+    console.log('Updated user:', { 
+      id: user.id, 
+      name: user.name, 
+      hasAvatar: !!user.avatar,
+      avatarLength: user.avatar ? user.avatar.length : 0,
+      avatarPreview: user.avatar ? user.avatar.substring(0, 50) + '...' : 'none'
+    });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
