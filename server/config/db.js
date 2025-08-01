@@ -12,29 +12,45 @@ const connectDB = async () => {
       throw new Error('MONGODB_URI environment variable is not set');
     }
     
+    // Enhanced connection options for Railway
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 60000, // Increased timeout to 60s
-      socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
-      bufferCommands: true, // Enable buffering for now
-      maxPoolSize: 10, // Maintain up to 10 socket connections
-      minPoolSize: 2, // Maintain at least 2 socket connections
-      maxIdleTimeMS: 30000, // Close sockets after 30s of inactivity
+      serverSelectionTimeoutMS: 30000, // Give it 30 seconds to find server
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 30000, // 30 seconds connection timeout
+      bufferCommands: false, // Disable mongoose buffering
+      bufferMaxEntries: 0, // Disable mongoose buffering
+      maxPoolSize: 5, // Smaller pool size for Railway
+      minPoolSize: 1,
+      maxIdleTimeMS: 30000,
       retryWrites: true,
       w: 'majority',
-      // Add DNS resolution options
-      family: 4, // Force IPv4
-      lookup: (hostname, options, callback) => {
-        // Custom DNS lookup with timeout
-        const dns = require('dns');
-        dns.lookup(hostname, { family: 4, timeout: 30000 }, callback);
-      }
+      authSource: 'admin',
+      ssl: true,
+      tlsAllowInvalidCertificates: false,
+      tlsAllowInvalidHostnames: false,
     });
     
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+    
+    // Handle connection events
+    conn.connection.on('error', (error) => {
+      console.error('❌ MongoDB connection error:', error);
+    });
+    
+    conn.connection.on('disconnected', () => {
+      console.log('📴 MongoDB disconnected');
+    });
+    
+    conn.connection.on('reconnected', () => {
+      console.log('🔄 MongoDB reconnected');
+    });
+    
     return conn;
   } catch (error) {
     console.error('❌ Error connecting to MongoDB:', error);
     console.error('🔍 MongoDB URI:', process.env.MONGODB_URI ? 'Set' : 'Not set');
+    console.error('🔍 Error type:', error.name);
+    console.error('🔍 Error message:', error.message);
     throw error;
   }
 };

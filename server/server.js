@@ -109,13 +109,27 @@ const startServer = async () => {
     // Only try to connect to MongoDB if URI is provided
     if (process.env.MONGODB_URI) {
       console.log('🔄 Attempting to connect to MongoDB...');
-      try {
-        await connectDB();
-        console.log('✅ MongoDB connected successfully');
-      } catch (dbError) {
-        console.error('❌ MongoDB connection failed:', dbError.message);
-        console.log('⚠️  Server will start without database connection');
-        console.log('⚠️  Some features may not work properly');
+      let retries = 3;
+      let connected = false;
+      
+      while (retries > 0 && !connected) {
+        try {
+          await connectDB();
+          console.log('✅ MongoDB connected successfully');
+          connected = true;
+        } catch (dbError) {
+          retries--;
+          console.error(`❌ MongoDB connection failed (${3 - retries}/3):`, dbError.message);
+          
+          if (retries > 0) {
+            console.log(`🔄 Retrying in 5 seconds... (${retries} attempts left)`);
+            await new Promise(resolve => setTimeout(resolve, 5000));
+          } else {
+            console.log('⚠️  All MongoDB connection attempts failed');
+            console.log('⚠️  Server will start without database connection');
+            console.log('⚠️  API endpoints will return errors until database is connected');
+          }
+        }
       }
     } else {
       console.log('❌ No MongoDB URI provided, skipping database connection');
