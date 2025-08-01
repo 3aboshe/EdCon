@@ -1,0 +1,8 @@
+{
+  "name": "EdCon - Smart Parent-Teacher Connect",
+  "description": "A unified platform for parents and teachers to connect, track student progress, and stay informed. Features AI-powered summaries, multi-language support (Bahdeni Kurdish, Sorani Kurdish, Assyrian, English), smart progress tracking, homework management, and announcements, all designed with cultural sensitivity and high data protection standards.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "prompt": ""
+}
