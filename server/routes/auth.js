@@ -192,24 +192,43 @@ router.post('/login', async (req, res) => {
 // Get user codes for admin panel
 router.get('/codes', async (req, res) => {
   try {
+    console.log('Fetching user codes with query:', req.query);
     const { role } = req.query;
-    let query = {};
-    if (role) {
-      query.role = role;
+    
+    let whereClause = {};
+    if (role && role !== 'all') {
+      // Convert role to uppercase to match enum
+      whereClause.role = role.toUpperCase();
     }
     
+    console.log('Where clause:', whereClause);
+    
     const users = await prisma.user.findMany({
-      where: query,
+      where: whereClause,
       select: {
         id: true,
         name: true,
         role: true,
+        childrenIds: true,
+        classId: true,
+        parentId: true,
+        subject: true,
+        classIds: true,
+      },
+      orderBy: {
+        name: 'asc',
       },
     });
+    
+    console.log(`Found ${users.length} users for role: ${role}`);
     res.json(users);
   } catch (error) {
     console.error('Get codes error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
