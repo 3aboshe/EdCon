@@ -5,13 +5,11 @@ const getApiBaseUrl = () => {
     return import.meta.env.VITE_API_URL;
   }
   
-  // In production, default to Railway URL
-  if (import.meta.env.PROD) {
-    return 'https://edcon-production.up.railway.app/api';
-  }
+  // Always use Railway URL for now (since local server isn't running)
+  return 'https://edcon-production.up.railway.app/api';
   
-  // In development, default to localhost
-  return 'http://localhost:5005/api';
+  // In development, default to localhost (uncomment when local server is running)
+  // return 'http://localhost:5005/api';
 };
 
 const API_BASE_URL = getApiBaseUrl();
