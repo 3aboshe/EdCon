@@ -9,6 +9,11 @@ interface ProfileImageProps {
 }
 
 const ProfileImage: React.FC<ProfileImageProps> = ({ name, avatarUrl, className = 'w-12 h-12', textClassName = 'text-xl' }) => {
+    console.log('=== PROFILE IMAGE DEBUG ===');
+    console.log('Name:', name);
+    console.log('Avatar URL:', avatarUrl ? `has avatar (${avatarUrl.length} chars)` : 'no avatar');
+    console.log('Avatar preview:', avatarUrl ? avatarUrl.substring(0, 100) + '...' : 'none');
+    
     const getInitials = (name: string) => {
         const names = name.split(' ');
         if (names.length === 1) return names[0].charAt(0).toUpperCase();
@@ -16,11 +21,18 @@ const ProfileImage: React.FC<ProfileImageProps> = ({ name, avatarUrl, className 
     };
 
     if (avatarUrl) {
+        console.log('Rendering avatar image for:', name);
         return (
             <img 
                 src={avatarUrl}
                 alt={name}
                 className={`${className} rounded-full object-cover bg-gray-200`}
+                onError={(e) => {
+                    console.error('Image failed to load for:', name, e);
+                }}
+                onLoad={() => {
+                    console.log('Image loaded successfully for:', name);
+                }}
             />
         );
     }

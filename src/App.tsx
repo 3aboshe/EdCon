@@ -112,7 +112,11 @@ const App: React.FC = () => {
                     apiService.getAllMessages(),
                 ]);
 
-                console.log('Fetched users with avatars:', allUsers.map(u => ({ id: u.id, name: u.name, avatar: u.avatar ? 'has avatar' : 'no avatar' })));
+                console.log('Fetched users with avatars:', allUsers.map(u => ({ 
+                    id: u.id, 
+                    name: u.name, 
+                    avatar: u.avatar ? `has avatar (${u.avatar.length} chars)` : 'no avatar' 
+                })));
 
                 console.log('Fetched users:', allUsers.length);
                 console.log('Fetched classes:', allClasses.length);
@@ -206,11 +210,26 @@ const App: React.FC = () => {
     };
 
     const handleUpdateUserAvatar = useCallback((userId: string, avatarDataUrl: string) => {
-        setUsers(currentUsers => currentUsers.map(u => u.id === userId ? { ...u, avatar: avatarDataUrl } : u));
+        console.log('=== UPDATE USER AVATAR DEBUG ===');
+        console.log('User ID:', userId);
+        console.log('Avatar length:', avatarDataUrl.length);
+        console.log('Current user ID:', user?.id);
+        console.log('Is updating current user:', user?.id === userId);
+        
+        setUsers(currentUsers => {
+            console.log('Previous users count:', currentUsers.length);
+            const updated = currentUsers.map(u => u.id === userId ? { ...u, avatar: avatarDataUrl } : u);
+            console.log('Updated users count:', updated.length);
+            return updated;
+        });
+        
         // Also update the current user if they are the one being changed
         if(user?.id === userId) {
+            console.log('Updating current user avatar');
             setUser(prevUser => prevUser ? { ...prevUser, avatar: avatarDataUrl } : null);
         }
+        
+        console.log('Avatar update completed in App context');
     }, [user?.id]);
 
     const handleUpdateUser = useCallback((userId: string, updates: Partial<User>) => {

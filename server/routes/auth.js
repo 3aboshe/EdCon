@@ -281,15 +281,28 @@ router.put('/users/:id', async (req, res) => {
     const { id } = req.params;
     const { avatar, name, messagingAvailability } = req.body;
     
+    console.log('=== SERVER UPDATE USER DEBUG ===');
+    console.log('User ID:', id);
+    console.log('Request body:', { avatar: avatar ? 'has avatar' : 'no avatar', name, messagingAvailability });
+    console.log('Has avatar update:', !!avatar);
+    if (avatar) {
+      console.log('Avatar length:', avatar.length);
+      console.log('Avatar preview:', avatar.substring(0, 100) + '...');
+    }
+    
     const updateData = {};
     if (avatar !== undefined) updateData.avatar = avatar;
     if (name !== undefined) updateData.name = name;
     if (messagingAvailability !== undefined) updateData.messagingAvailability = messagingAvailability;
     
+    console.log('Update data:', updateData);
+    
     const user = await prisma.user.update({
       where: { id: id },
       data: updateData,
     });
+
+    console.log('Updated user:', { id: user.id, name: user.name, hasAvatar: !!user.avatar });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });

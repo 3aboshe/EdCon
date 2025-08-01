@@ -268,10 +268,21 @@ class ApiService {
 
   // Update user
   async updateUser(userId: string, updates: { avatar?: string; name?: string; messagingAvailability?: any }): Promise<User> {
+    console.log('=== API UPDATE USER DEBUG ===');
+    console.log('User ID:', userId);
+    console.log('Updates:', updates);
+    console.log('Has avatar update:', !!updates.avatar);
+    if (updates.avatar) {
+      console.log('Avatar length:', updates.avatar.length);
+      console.log('Avatar preview:', updates.avatar.substring(0, 100) + '...');
+    }
+    
     const response = await this.request<User>(`/auth/users/${userId}`, {
       method: 'PUT',
       body: JSON.stringify(updates),
     });
+    
+    console.log('API response:', response);
     return response.data!;
   }
 
