@@ -6,7 +6,9 @@ const getApiBaseUrl = () => {
   }
   
   // Always use Railway URL for now (since local server isn't running)
-  return 'https://edcon-production.up.railway.app/api';
+  const url = 'https://edcon-production.up.railway.app/api';
+  console.log('🔗 Using API URL:', url);
+  return url;
   
   // In development, default to localhost (uncomment when local server is running)
   // return 'http://localhost:5005/api';
