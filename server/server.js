@@ -99,35 +99,39 @@ app.get('/api/test-db', async (req, res) => {
 // Start server only after MongoDB connection is established
 const startServer = async () => {
   try {
-    console.log('Starting EdCon server...');
-    console.log('Environment:', process.env.NODE_ENV);
-    console.log('Port:', PORT);
-    console.log('MongoDB URI set:', !!process.env.MONGODB_URI);
+    console.log('🚀 Starting EdCon server...');
+    console.log('📍 Working directory:', process.cwd());
+    console.log('🌍 Environment:', process.env.NODE_ENV);
+    console.log('🔌 Port:', PORT);
+    console.log('🔑 MongoDB URI set:', !!process.env.MONGODB_URI);
+    console.log('📋 All env vars:', Object.keys(process.env).filter(key => key.includes('MONGO')));
     
     // Only try to connect to MongoDB if URI is provided
     if (process.env.MONGODB_URI) {
-      console.log('Attempting to connect to MongoDB...');
+      console.log('🔄 Attempting to connect to MongoDB...');
       try {
         await connectDB();
-        console.log('MongoDB connected successfully');
+        console.log('✅ MongoDB connected successfully');
       } catch (dbError) {
         console.error('❌ MongoDB connection failed:', dbError.message);
         console.log('⚠️  Server will start without database connection');
         console.log('⚠️  Some features may not work properly');
       }
     } else {
-      console.log('No MongoDB URI provided, skipping database connection');
+      console.log('❌ No MongoDB URI provided, skipping database connection');
     }
     
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`✅ Server running on port ${PORT}`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
       console.log(`🗄️ MongoDB URI set: ${!!process.env.MONGODB_URI}`);
       console.log('🚀 EdCon API is ready!');
+      console.log(`📡 Health check: http://localhost:${PORT}/api/health`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     console.error('Error details:', error.message);
+    console.error('Stack trace:', error.stack);
     process.exit(1);
   }
 };
