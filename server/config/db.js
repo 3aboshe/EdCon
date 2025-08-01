@@ -16,7 +16,6 @@ const connectDB = async () => {
       serverSelectionTimeoutMS: 30000, // Increased timeout to 30s
       socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
       bufferCommands: true, // Enable buffering for now
-      bufferMaxEntries: 0, // Disable mongoose buffering
       maxPoolSize: 10, // Maintain up to 10 socket connections
       minPoolSize: 2, // Maintain at least 2 socket connections
       maxIdleTimeMS: 30000, // Close sockets after 30s of inactivity
