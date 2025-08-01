@@ -22,7 +22,7 @@ connectDB();
 // CORS configuration for production
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-frontend-domain.vercel.app', 'https://your-frontend-domain.netlify.app']
+    ? ['https://ed-co.vercel.app', 'https://your-frontend-domain.vercel.app', 'https://your-frontend-domain.netlify.app']
     : ['http://localhost:5173', 'http://localhost:3000'],
   credentials: true,
   optionsSuccessStatus: 200
