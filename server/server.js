@@ -23,9 +23,11 @@ connectDB();
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://ed-co.vercel.app', 'https://your-frontend-domain.vercel.app', 'https://your-frontend-domain.netlify.app']
-    : ['http://localhost:5173', 'http://localhost:3000'],
+    : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:5176'],
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 };
 
 // Middleware
