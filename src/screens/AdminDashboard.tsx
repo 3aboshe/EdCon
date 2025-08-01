@@ -542,12 +542,18 @@ const ManagementTab: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({
         
         try {
             console.log('Creating subject:', newSubjectName.trim());
-            const newSubject = await apiService.createSubject(newSubjectName.trim());
-            console.log('Created subject:', newSubject);
+            const response = await apiService.createSubject(newSubjectName.trim());
+            console.log('API response:', response);
             
-            setSubjects([...subjects, newSubject]);
-            setNewSubjectName('');
-            setSuccessMessage(t('subject_added'));
+            if (response && response.id) {
+                console.log('Created subject:', response);
+                setSubjects([...subjects, response]);
+                setNewSubjectName('');
+                setSuccessMessage(t('subject_added'));
+            } else {
+                console.error('Invalid subject response:', response);
+                setSuccessMessage('Error: Invalid response from server');
+            }
         } catch (error) {
             console.error('Error creating subject:', error);
             setSuccessMessage('Error creating subject. Please try again.');
