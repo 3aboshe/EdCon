@@ -56,6 +56,10 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/messages', messageRoutes);
 
 // Health check route
+app.get('/', (req, res) => {
+  res.json({ message: 'EdCon API Server is running!', status: 'ok', timestamp: new Date().toISOString() });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ message: 'EdCon API is running!' });
 });
