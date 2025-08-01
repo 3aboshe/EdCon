@@ -42,13 +42,25 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Server error', error: err.message });
 });
 
-// Health check route
+// Health check routes - Railway might check these
 app.get('/', (req, res) => {
   res.json({ message: 'EdCon API Server is running!', status: 'ok', timestamp: new Date().toISOString() });
 });
 
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'healthy', timestamp: new Date().toISOString() });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ message: 'EdCon API is running!' });
+});
+
+app.get('/healthz', (req, res) => {
+  res.status(200).send('OK');
+});
+
+app.get('/ping', (req, res) => {
+  res.status(200).send('pong');
 });
 
 // Debug route to check environment
