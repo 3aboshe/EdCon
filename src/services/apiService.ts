@@ -186,11 +186,26 @@ class ApiService {
 
   // Create a new class
   async createClass(name: string): Promise<Class> {
-    const response = await this.request<Class>('/classes', {
+    console.log('=== CREATE CLASS API DEBUG ===');
+    console.log('Class name:', name);
+    
+    const response = await this.request<{success: boolean, class: Class}>('/classes', {
       method: 'POST',
       body: JSON.stringify({ name }),
     });
-    return response.data!;
+    
+    console.log('Raw API response:', response);
+    console.log('Response data:', response.data);
+    
+    // The server returns {success: true, class: {...}}
+    // So we need to extract the class from the response
+    if (response.data && response.data.class) {
+      console.log('Extracted class:', response.data.class);
+      return response.data.class;
+    } else {
+      console.error('Invalid response format:', response);
+      throw new Error('Invalid response format from server');
+    }
   }
 
   // Get all subjects
@@ -204,7 +219,7 @@ class ApiService {
     console.log('=== CREATE SUBJECT API DEBUG ===');
     console.log('Subject name:', name);
     
-    const response = await this.request<Subject>('/subjects', {
+    const response = await this.request<{success: boolean, subject: Subject}>('/subjects', {
       method: 'POST',
       body: JSON.stringify({ name }),
     });
@@ -212,7 +227,15 @@ class ApiService {
     console.log('Raw API response:', response);
     console.log('Response data:', response.data);
     
-    return response.data!;
+    // The server returns {success: true, subject: {...}}
+    // So we need to extract the subject from the response
+    if (response.data && response.data.subject) {
+      console.log('Extracted subject:', response.data.subject);
+      return response.data.subject;
+    } else {
+      console.error('Invalid response format:', response);
+      throw new Error('Invalid response format from server');
+    }
   }
 
   // Get all grades
