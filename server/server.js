@@ -5,7 +5,14 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
+// Railway provides PORT environment variable, fallback to 5005 for local dev
 const PORT = process.env.PORT || 5005;
+
+console.log('🔧 Port configuration:', {
+  PORT_ENV: process.env.PORT,
+  FINAL_PORT: PORT,
+  NODE_ENV: process.env.NODE_ENV
+});
 
 // CORS configuration for production - more flexible
 const corsOptions = {
@@ -77,12 +84,22 @@ const startServer = async () => {
     console.log('🔑 Database URL set:', !!process.env.DATABASE_URL);
     console.log('⚠️  Database operations disabled for testing');
     
-    app.listen(PORT, '0.0.0.0', () => {
+    // Start server with proper Railway configuration
+    const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`✅ Server running on port ${PORT}`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
       console.log(`🗄️ Database URL set: ${!!process.env.DATABASE_URL}`);
       console.log('🚀 EdCon API is ready! (Minimal Mode)');
-      console.log(`📡 Health check: http://localhost:${PORT}/api/health`);
+      console.log(`📡 Health check: https://edcon-production.up.railway.app/api/health`);
+      console.log(`🌐 External URL: https://edcon-production.up.railway.app/`);
+    });
+    
+    // Handle server errors
+    server.on('error', (error) => {
+      console.error('❌ Server error:', error);
+      if (error.code === 'EADDRINUSE') {
+        console.error(`❌ Port ${PORT} is already in use`);
+      }
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);
