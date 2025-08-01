@@ -37,8 +37,12 @@ router.post('/', async (req, res) => {
       return res.json({ success: true, subject: existingSubject });
     }
     
+    // Generate a unique ID for the subject
+    const subjectId = `SUB${Date.now()}`;
+    
     const subject = await prisma.subject.create({
       data: {
+        id: subjectId,
         name: name
       }
     });
