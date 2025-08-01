@@ -126,7 +126,7 @@ const OverviewTab: React.FC<TabProps> = ({ selectedClassId }) => {
         [selectedClassId, students]
     );
 
-    const totalTeachers = useMemo(() => users.filter(u => u.role === 'teacher').length, [users]);
+    const totalTeachers = useMemo(() => users.filter(u => u.role?.toLowerCase() === 'teacher').length, [users]);
 
     const recentActivity = useMemo(() => {
         const homeworkActivities = homework.map(h => ({ ...h, type: 'homework', date: h.assignedDate }));
@@ -256,7 +256,7 @@ const StudentsTab: React.FC<TabProps> = ({ selectedClassId }) => {
 
     const parentMap = useMemo(() => {
         const map = new Map<string, string>();
-        const parents = users.filter(u => u.role === 'parent');
+        const parents = users.filter(u => u.role?.toLowerCase() === 'parent');
         console.log('Creating parent map from parents:', parents);
         parents.forEach(p => {
             console.log(`Parent ${p.name} has children:`, p.childrenIds);
@@ -344,7 +344,7 @@ const TeachersTab: React.FC<TabProps> = ({ selectedClassId }) => {
         }
     };
 
-    const teacherUsers = useMemo(() => users.filter(u => u.role === UserRole.Teacher), [users]);
+    const teacherUsers = useMemo(() => users.filter(u => u.role?.toLowerCase() === 'teacher'), [users]);
 
     const filteredTeachers = useMemo(() => {
         const teachersInScope = selectedClassId === 'all' 
@@ -433,10 +433,10 @@ const ManagementTab: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({
     }, [classes, selectedClassForStudent]);
 
     useEffect(() => {
-        const parentUsers = users.filter(u => u.role === 'parent');
+        const parentUsers = users.filter(u => u.role?.toLowerCase() === 'parent');
         console.log('ManagementTab - Available parents:', parentUsers);
         console.log('ManagementTab - Selected parent:', selectedParentForStudent);
-        console.log('ManagementTab - All users:', users.filter(u => u.role === 'parent'));
+        console.log('ManagementTab - All users:', users.filter(u => u.role?.toLowerCase() === 'parent'));
         if (parentUsers.length > 0 && !selectedParentForStudent) {
             setSelectedParentForStudent(parentUsers[0].id);
             console.log('Auto-selected first parent:', parentUsers[0].id);
@@ -450,9 +450,22 @@ const ManagementTab: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({
     }, [subjects, newTeacherSubject]);
 
     const parentUsers = useMemo(() => {
-        const parents = users.filter(u => u.role === 'parent');
         console.log('=== PARENT DEBUG ===');
         console.log('All users:', users);
+        console.log('User roles:', users.map(u => ({ id: u.id, name: u.name, role: u.role })));
+        
+        // Try different role matching approaches
+        const parents1 = users.filter(u => u.role === 'parent');
+        const parents2 = users.filter(u => u.role === 'PARENT');
+        const parents3 = users.filter(u => u.role?.toLowerCase() === 'parent');
+        
+        console.log('Parents (exact "parent"):', parents1);
+        console.log('Parents (exact "PARENT"):', parents2);
+        console.log('Parents (case-insensitive):', parents3);
+        
+        // Use case-insensitive matching
+        const parents = users.filter(u => u.role?.toLowerCase() === 'parent');
+        
         console.log('Available parents:', parents);
         console.log('Parent IDs:', parents.map(p => p.id));
         console.log('Parent names:', parents.map(p => p.name));

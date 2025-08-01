@@ -132,7 +132,7 @@ const App: React.FC = () => {
                 setMessages(allMessages);
 
                 // Process students from PostgreSQL data
-                const studentUsers = allUsers.filter(u => u.role === 'student').map(u => ({
+                const studentUsers = allUsers.filter(u => u.role?.toLowerCase() === 'student').map(u => ({
                     ...u,
                     grade: 1, // Default grade
                     classId: (u as any).classId || '',
@@ -141,7 +141,7 @@ const App: React.FC = () => {
                 setStudents(studentUsers);
 
                 // Load teachers with their classIds
-                const teacherUsers = allUsers.filter(u => u.role === 'teacher').map(u => ({
+                const teacherUsers = allUsers.filter(u => u.role?.toLowerCase() === 'teacher').map(u => ({
                     id: u.id,
                     name: u.name,
                     subject: (u as any).subject || '',
