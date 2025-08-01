@@ -152,6 +152,21 @@ const startServer = async () => {
       try {
         await connectDB();
         console.log('✅ PostgreSQL connected successfully on startup');
+        
+        // Run migrations if in production
+        if (process.env.NODE_ENV === 'production') {
+          console.log('🔄 Running database migrations...');
+          try {
+            const { exec } = await import('child_process');
+            const { promisify } = await import('util');
+            const execAsync = promisify(exec);
+            
+            await execAsync('npx prisma migrate deploy');
+            console.log('✅ Database migrations completed successfully');
+          } catch (migrationError) {
+            console.error('⚠️ Migration failed, but server will continue:', migrationError.message);
+          }
+        }
       } catch (dbError) {
         console.error('❌ Initial PostgreSQL connection failed:', dbError.message);
         console.log('⚠️  Server will start and continue trying to connect in background');
@@ -164,6 +179,20 @@ const startServer = async () => {
               await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10 seconds
               await connectDB();
               console.log('✅ PostgreSQL connected successfully (background retry)');
+              
+              // Try migrations after connection is established
+              if (process.env.NODE_ENV === 'production') {
+                try {
+                  const { exec } = await import('child_process');
+                  const { promisify } = await import('util');
+                  const execAsync = promisify(exec);
+                  
+                  await execAsync('npx prisma migrate deploy');
+                  console.log('✅ Database migrations completed (background)');
+                } catch (migrationError) {
+                  console.error('⚠️ Background migration failed:', migrationError.message);
+                }
+              }
               break;
             } catch (error) {
               retries--;
