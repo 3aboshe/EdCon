@@ -152,6 +152,31 @@ const startServer = async () => {
       try {
         await connectDB();
         console.log('✅ PostgreSQL connected successfully on startup');
+        
+        // Try to run migrations in background (non-blocking)
+        if (process.env.NODE_ENV === 'production') {
+          console.log('🔄 Running database setup in background...');
+          setTimeout(async () => {
+            try {
+              const { exec } = await import('child_process');
+              const { promisify } = await import('util');
+              const execAsync = promisify(exec);
+              
+              console.log('📋 Attempting database migration...');
+              await execAsync('npx prisma db push --force-reset');
+              console.log('✅ Database schema synchronized successfully');
+            } catch (migrationError) {
+              console.error('⚠️ Database setup failed:', migrationError.message);
+              console.log('🔄 Trying alternative approach...');
+              try {
+                await execAsync('npx prisma migrate deploy');
+                console.log('✅ Database migrations completed successfully');
+              } catch (altError) {
+                console.error('❌ All database setup attempts failed:', altError.message);
+              }
+            }
+          }, 5000); // Wait 5 seconds after server starts
+        }
       } catch (dbError) {
         console.error('❌ Initial PostgreSQL connection failed:', dbError.message);
         console.log('⚠️  Server will start and continue trying to connect in background');
