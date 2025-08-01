@@ -1,0 +1,177 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id
+  name      String
+  role      UserRole
+  email     String?
+  avatar    String   @default("")
+  
+  // Student-specific fields
+  classId   String?
+  parentId  String?
+  
+  // Parent-specific fields  
+  childrenIds String[]
+  
+  // Teacher-specific fields
+  subject   String?
+  classIds  String[]
+  
+  createdAt DateTime @default(now())
+  
+  // Relations
+  class     Class?   @relation("StudentClass", fields: [classId], references: [id])
+  parent    User?    @relation("ParentChild", fields: [parentId], references: [id])
+  children  User[]   @relation("ParentChild")
+  
+  // Teacher relations
+  homework      Homework[]
+  announcements Announcement[]
+  
+  // Student relations
+  grades        Grade[]      @relation("StudentGrades")
+  attendance    Attendance[]
+  sentMessages     Message[] @relation("MessageSender")
+  receivedMessages Message[] @relation("MessageReceiver")
+  submittedHomework Homework[] @relation("HomeworkSubmissions")
+  
+  @@map("users")
+}
+
+model Class {
+  id       String @id
+  name     String
+  students User[] @relation("StudentClass")
+  
+  @@map("classes")
+}
+
+model Subject {
+  id   String @id
+  name String
+  
+  @@map("subjects")
+}
+
+model Grade {
+  id           String    @id @default(cuid())
+  studentId    String
+  subject      String
+  assignment   String
+  marksObtained Int
+  maxMarks     Int
+  date         DateTime  @default(now())
+  type         GradeType @default(QUIZ)
+  
+  // Relations
+  student      User      @relation("StudentGrades", fields: [studentId], references: [id])
+  
+  @@map("grades")
+}
+
+model Homework {
+  id           String   @id
+  title        String
+  subject      String
+  dueDate      String
+  assignedDate String
+  teacherId    String
+  submitted    String[] @default([])
+  createdAt    DateTime @default(now())
+  
+  // Relations
+  teacher      User     @relation(fields: [teacherId], references: [id])
+  submittedBy  User[]   @relation("HomeworkSubmissions")
+  
+  @@map("homework")
+}
+
+model Announcement {
+  id        String             @id
+  title     String
+  content   String
+  date      String
+  teacherId String
+  priority  AnnouncementPriority @default(MEDIUM)
+  createdAt DateTime           @default(now())
+  
+  // Relations
+  teacher   User               @relation(fields: [teacherId], references: [id])
+  
+  @@map("announcements")
+}
+
+model Attendance {
+  id        String           @id @default(cuid())
+  date      String
+  studentId String
+  status    AttendanceStatus
+  createdAt DateTime         @default(now())
+  
+  // Relations
+  student   User             @relation(fields: [studentId], references: [id])
+  
+  @@map("attendance")
+}
+
+model Message {
+  id         String      @id
+  senderId   String
+  receiverId String
+  timestamp  String
+  isRead     Boolean     @default(false)
+  type       MessageType @default(TEXT)
+  content    String?
+  audioSrc   String?
+  createdAt  DateTime    @default(now())
+  
+  // Relations
+  sender     User        @relation("MessageSender", fields: [senderId], references: [id])
+  receiver   User        @relation("MessageReceiver", fields: [receiverId], references: [id])
+  
+  @@map("messages")
+}
+
+// Enums
+enum UserRole {
+  STUDENT
+  TEACHER
+  PARENT
+  ADMIN
+}
+
+enum GradeType {
+  QUIZ
+  TEST
+  HOMEWORK
+  PROJECT
+  EXAM
+}
+
+enum AnnouncementPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+}
+
+enum MessageType {
+  TEXT
+  VOICE
+}

@@ -10,7 +10,6 @@ import homeworkRoutes from './routes/homework.js';
 import announcementRoutes from './routes/announcements.js';
 import attendanceRoutes from './routes/attendance.js';
 import messageRoutes from './routes/messages.js';
-import mongoose from 'mongoose';
 
 dotenv.config();
 
@@ -100,29 +99,37 @@ app.get('/api/debug', (req, res) => {
   res.json({ 
     message: 'Debug info',
     nodeEnv: process.env.NODE_ENV,
-    hasMongoUri: !!process.env.MONGODB_URI,
+    hasDatabaseUrl: !!process.env.DATABASE_URL,
     port: PORT,
-    corsOrigins: corsOptions.origin
+    corsOrigins: corsOptions.origin,
+    database: 'PostgreSQL'
   });
 });
 
-// MongoDB connection test route
+// PostgreSQL connection test route
 app.get('/api/test-db', async (req, res) => {
   try {
-    const connectionState = mongoose.connection.readyState;
-    const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+    const { prisma } = await import('./config/db.js');
+    
+    // Test connection by running a simple query
+    const userCount = await prisma.user.count();
     
     res.json({ 
       message: 'Database connection test',
-      state: states[connectionState],
-      readyState: connectionState,
-      connected: connectionState === 1,
-      mongoUri: process.env.MONGODB_URI ? 'Set' : 'Not set'
+      status: 'connected',
+      connected: true,
+      userCount: userCount,
+      database: 'PostgreSQL',
+      timestamp: new Date().toISOString()
     });
   } catch (error) {
     res.status(500).json({ 
       message: 'Database test failed',
-      error: error.message 
+      status: 'disconnected',
+      connected: false,
+      error: error.message,
+      database: 'PostgreSQL',
+      timestamp: new Date().toISOString()
     });
   }
 });
@@ -134,19 +141,19 @@ const startServer = async () => {
     console.log('📍 Working directory:', process.cwd());
     console.log('🌍 Environment:', process.env.NODE_ENV);
     console.log('🔌 Port:', PORT);
-    console.log('🔑 MongoDB URI set:', !!process.env.MONGODB_URI);
-    console.log('📋 All env vars:', Object.keys(process.env).filter(key => key.includes('MONGO')));
+    console.log('🔑 Database URL set:', !!process.env.DATABASE_URL);
+    console.log('📋 Database env vars:', Object.keys(process.env).filter(key => key.includes('DATABASE')));
     
-    // Only try to connect to MongoDB if URI is provided
-    if (process.env.MONGODB_URI) {
-      console.log('🔄 Attempting to connect to MongoDB...');
+    // Only try to connect to PostgreSQL if DATABASE_URL is provided
+    if (process.env.DATABASE_URL) {
+      console.log('🔄 Attempting to connect to PostgreSQL...');
       
       // Try initial connection but don't block server startup
       try {
         await connectDB();
-        console.log('✅ MongoDB connected successfully on startup');
+        console.log('✅ PostgreSQL connected successfully on startup');
       } catch (dbError) {
-        console.error('❌ Initial MongoDB connection failed:', dbError.message);
+        console.error('❌ Initial PostgreSQL connection failed:', dbError.message);
         console.log('⚠️  Server will start and continue trying to connect in background');
         
         // Continue trying to connect in background
@@ -156,11 +163,11 @@ const startServer = async () => {
             try {
               await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10 seconds
               await connectDB();
-              console.log('✅ MongoDB connected successfully (background retry)');
+              console.log('✅ PostgreSQL connected successfully (background retry)');
               break;
             } catch (error) {
               retries--;
-              console.log(`🔄 Background MongoDB retry failed, ${retries} attempts remaining`);
+              console.log(`🔄 Background PostgreSQL retry failed, ${retries} attempts remaining`);
             }
           }
         };
@@ -169,13 +176,13 @@ const startServer = async () => {
         retryConnection();
       }
     } else {
-      console.log('❌ No MongoDB URI provided, skipping database connection');
+      console.log('❌ No DATABASE_URL provided, skipping database connection');
     }
     
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`✅ Server running on port ${PORT}`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
-      console.log(`🗄️ MongoDB URI set: ${!!process.env.MONGODB_URI}`);
+      console.log(`🗄️ Database URL set: ${!!process.env.DATABASE_URL}`);
       console.log('🚀 EdCon API is ready!');
       console.log(`📡 Health check: http://localhost:${PORT}/api/health`);
     });

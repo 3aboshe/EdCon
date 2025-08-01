@@ -1,8 +1,9 @@
 import express from 'express';
-import User from '../models/User.js';
+import { PrismaClient } from '@prisma/client';
 import { nanoid } from 'nanoid';
 
 const router = express.Router();
+const prisma = new PrismaClient();
 
 // Helper to generate unique code by role
 function generateCode(role) {
@@ -37,27 +38,44 @@ router.post('/create', async (req, res) => {
     if (!name || !role) {
       return res.status(400).json({ message: 'Name and role are required.' });
     }
+    
+    // Convert role to uppercase for enum
+    const userRole = role.toUpperCase();
+    
     // Generate unique code
     let code;
     let exists = true;
     while (exists) {
       code = generateCode(role);
-      exists = await User.findOne({ id: code });
+      exists = await prisma.user.findUnique({ where: { id: code } });
     }
-    const user = new User({ id: code, name, role, avatar: avatar || '', ...rest });
-    await user.save();
+    
+    const user = await prisma.user.create({
+      data: { 
+        id: code, 
+        name, 
+        role: userRole, 
+        avatar: avatar || '', 
+        ...rest 
+      }
+    });
+    
     res.status(201).json({ success: true, code, user });
   } catch (error) {
-    console.error('Create user error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error creating user:', error);
+    res.status(500).json({ message: 'Error creating user', error: error.message });
   }
 });
 
 // Get all users with better error handling
 router.get('/users', async (req, res) => {
   try {
-    console.log('Attempting to fetch users from MongoDB...');
-    const users = await User.find({}).sort({ name: 1 });
+    console.log('Attempting to fetch users from PostgreSQL...');
+    const users = await prisma.user.findMany({
+      orderBy: {
+        name: 'asc',
+      },
+    });
     console.log(`Successfully fetched ${users.length} users`);
     res.json(users);
   } catch (error) {
@@ -74,7 +92,11 @@ router.get('/users', async (req, res) => {
 router.get('/user/:code', async (req, res) => {
   try {
     console.log('Attempting to fetch user by code:', req.params.code);
-    const user = await User.findOne({ id: req.params.code });
+    const user = await prisma.user.findUnique({
+      where: {
+        id: req.params.code,
+      },
+    });
     if (!user) {
       console.log('User not found for code:', req.params.code);
       return res.status(404).json({ message: 'User not found' });
@@ -102,7 +124,11 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Code is required' });
     }
     
-    const user = await User.findOne({ id: code });
+    const user = await prisma.user.findUnique({
+      where: {
+        id: code,
+      },
+    });
     if (!user) {
       console.log('User not found for login code:', code);
       return res.status(404).json({ message: 'Invalid code' });
@@ -129,7 +155,14 @@ router.get('/codes', async (req, res) => {
       query.role = role;
     }
     
-    const users = await User.find(query).select('id name role');
+    const users = await prisma.user.findMany({
+      where: query,
+      select: {
+        id: true,
+        name: true,
+        role: true,
+      },
+    });
     res.json(users);
   } catch (error) {
     console.error('Get codes error:', error);
@@ -141,18 +174,36 @@ router.get('/codes', async (req, res) => {
 router.delete('/users/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const user = await User.findOneAndDelete({ id });
+    const user = await prisma.user.delete({
+      where: {
+        id: id,
+      },
+    });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     // Optional: Clean up related data (e.g., remove student from parent's childrenIds)
-    if (user.role === 'student') {
-      await User.updateMany(
-        { childrenIds: user.id },
-        { $pull: { childrenIds: user.id } }
-      );
+    if (user.role === 'STUDENT') {
+      // Find all parents that have this student in their childrenIds
+      const parents = await prisma.user.findMany({
+        where: {
+          childrenIds: {
+            has: user.id,
+          },
+        },
+      });
+      
+      // Update each parent to remove this student from their childrenIds
+      for (const parent of parents) {
+        await prisma.user.update({
+          where: { id: parent.id },
+          data: {
+            childrenIds: parent.childrenIds.filter(childId => childId !== user.id),
+          },
+        });
+      }
     }
 
     res.json({ success: true, message: 'User deleted successfully' });
