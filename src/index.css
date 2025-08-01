@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* TEST: If you see this background, CSS is loading */
 body {
   background-color: #e5f3ff !important;

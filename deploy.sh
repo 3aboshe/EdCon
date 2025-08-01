@@ -1,36 +1,32 @@
 #!/bin/bash
 
-echo "🚀 EdCon Deployment Script"
-echo "=========================="
+echo "🚀 Starting EdCon deployment..."
 
-# Check if git is initialized
-if [ ! -d ".git" ]; then
-    echo "❌ Git repository not found. Please initialize git first:"
-    echo "   git init"
-    echo "   git add ."
-    echo "   git commit -m 'Initial commit'"
+# Build the frontend
+echo "📦 Building frontend..."
+npm run build
+
+# Check if build was successful
+if [ $? -eq 0 ]; then
+    echo "✅ Frontend build successful"
+else
+    echo "❌ Frontend build failed"
     exit 1
 fi
 
-# Check if all files are committed
-if [ -n "$(git status --porcelain)" ]; then
-    echo "⚠️  You have uncommitted changes. Please commit them first:"
-    echo "   git add ."
-    echo "   git commit -m 'Prepare for deployment'"
-    exit 1
-fi
+# Copy built files to server/public if needed
+echo "📁 Copying built files..."
+mkdir -p server/public
+cp -r dist/* server/public/
 
-echo "✅ Repository is ready for deployment"
+echo "🎉 Deployment preparation complete!"
 echo ""
-echo "📋 Next Steps:"
-echo "1. Push to GitHub: git push origin main"
-echo "2. Deploy Backend (Railway):"
-echo "   - Go to railway.app"
-echo "   - Connect your GitHub repo"
-echo "   - Set environment variables"
-echo "3. Deploy Frontend (Vercel):"
-echo "   - Go to vercel.com"
-echo "   - Connect your GitHub repo"
-echo "   - Set VITE_API_URL environment variable"
-echo ""
-echo "📖 See DEPLOYMENT.md for detailed instructions" 
+echo "Next steps:"
+echo "1. Deploy backend to Railway: cd server && railway up"
+echo "2. Deploy frontend to Vercel: vercel --prod"
+echo "3. Set environment variables in Railway dashboard"
+echo "   - MONGODB_URI"
+echo "   - NODE_ENV=production"
+echo "4. Set environment variables in Vercel dashboard"
+echo "   - VITE_API_URL=https://your-railway-url.railway.app/api"
+echo "   - VITE_GEMINI_API_KEY" 

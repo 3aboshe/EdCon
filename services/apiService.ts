@@ -1,4 +1,20 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
+// Determine API base URL based on environment
+const getApiBaseUrl = () => {
+  // If VITE_API_URL is set, use it
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // In production, default to Railway URL
+  if (import.meta.env.PROD) {
+    return 'https://edcon-production.up.railway.app/api';
+  }
+  
+  // In development, default to localhost
+  return 'http://localhost:5005/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export interface ApiResponse<T> {
   success: boolean;
