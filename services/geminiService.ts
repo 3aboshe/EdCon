@@ -3,7 +3,11 @@ import { GoogleGenAI } from "@google/genai";
 import type { GenerateContentResponse } from "@google/genai";
 import { Grade, Student, Announcement, Homework, Attendance } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY as string });
+// Check if we're in a browser environment
+const isBrowser = typeof window !== 'undefined';
+
+// Only initialize AI if we have an API key and we're not in browser
+const ai = isBrowser ? null : new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY as string });
 
 interface ParentBriefingData {
     student: Student;
@@ -14,6 +18,18 @@ interface ParentBriefingData {
 }
 
 export const generateStudentSummary = async (student: Student, grades: Grade[], languageName: string): Promise<string> => {
+    // If in browser or no AI available, return a fallback response
+    if (isBrowser || !ai) {
+        if (!grades || grades.length === 0) {
+            return "No performance data available to generate a summary.";
+        }
+        
+        const averageScore = grades.reduce((sum, grade) => sum + (grade.marksObtained / grade.maxMarks), 0) / grades.length;
+        const percentage = Math.round(averageScore * 100);
+        
+        return `**Student Summary for ${student.name}**\n\n**Overall Performance:** ${percentage}% average across all subjects.\n\n**Recent Activity:** ${grades.length} assignments completed.\n\n*This is a simplified summary. For detailed AI analysis, please contact your teacher.*`;
+    }
+
     if (!grades || grades.length === 0) {
         return "No performance data available to generate a summary.";
     }
@@ -58,6 +74,30 @@ export const generateStudentSummary = async (student: Student, grades: Grade[], 
 
 
 export const generateTop5ParentBriefing = async (data: ParentBriefingData, languageName: string): Promise<string> => {
+    // If in browser or no AI available, return a fallback response
+    if (isBrowser || !ai) {
+        const urgentItems = [];
+        
+        if (data.announcements.length > 0) {
+            urgentItems.push("• Check recent announcements from teachers");
+        }
+        if (data.homework.length > 0) {
+            urgentItems.push("• Review upcoming homework assignments");
+        }
+        if (data.grades.length > 0) {
+            urgentItems.push("• Review recent grades and performance");
+        }
+        if (data.attendance.length > 0) {
+            urgentItems.push("• Check attendance records");
+        }
+        
+        if (urgentItems.length === 0) {
+            return "Things are looking great! No urgent updates for " + data.student.name + " right now.";
+        }
+        
+        return `**Top Updates for ${data.student.name}:**\n\n${urgentItems.join('\n')}\n\n*This is a simplified summary. For detailed AI analysis, please contact your teacher.*`;
+    }
+
     const prompt = `
         You are an AI assistant for the EdCon school app. Your task is to create a "Top 5 Things to Know" summary for a parent about their child, ${data.student.name}.
         Use the provided JSON data to identify the most critical and recent information.
