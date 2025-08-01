@@ -16,8 +16,12 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5005;
 
-// Connect to MongoDB
-connectDB();
+// Connect to MongoDB with better error handling
+connectDB().then(() => {
+  console.log('MongoDB connected successfully');
+}).catch((error) => {
+  console.error('MongoDB connection failed:', error);
+});
 
 // CORS configuration for production
 const corsOptions = {
@@ -34,6 +38,12 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
+// Add error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Server error:', err);
+  res.status(500).json({ message: 'Server error', error: err.message });
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/grades', gradeRoutes);
@@ -49,6 +59,18 @@ app.get('/api/health', (req, res) => {
   res.json({ message: 'EdCon API is running!' });
 });
 
+// Debug route to check environment
+app.get('/api/debug', (req, res) => {
+  res.json({ 
+    message: 'Debug info',
+    nodeEnv: process.env.NODE_ENV,
+    hasMongoUri: !!process.env.MONGODB_URI,
+    port: PORT
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV}`);
+  console.log(`MongoDB URI set: ${!!process.env.MONGODB_URI}`);
 }); 
