@@ -1,15 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import connectDB from './config/db.js';
-import authRoutes from './routes/auth.js';
-import gradeRoutes from './routes/grades.js';
-import classRoutes from './routes/classes.js';
-import subjectRoutes from './routes/subjects.js';
-import homeworkRoutes from './routes/homework.js';
-import announcementRoutes from './routes/announcements.js';
-import attendanceRoutes from './routes/attendance.js';
-import messageRoutes from './routes/messages.js';
 
 dotenv.config();
 
@@ -44,16 +35,6 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Server error', error: err.message });
 });
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/grades', gradeRoutes);
-app.use('/api/classes', classRoutes);
-app.use('/api/subjects', subjectRoutes);
-app.use('/api/homework', homeworkRoutes);
-app.use('/api/announcements', announcementRoutes);
-app.use('/api/attendance', attendanceRoutes);
-app.use('/api/messages', messageRoutes);
-
 // Health check route
 app.get('/', (req, res) => {
   res.json({ message: 'EdCon API Server is running!', status: 'ok', timestamp: new Date().toISOString() });
@@ -61,37 +42,6 @@ app.get('/', (req, res) => {
 
 app.get('/api/health', (req, res) => {
   res.json({ message: 'EdCon API is running!' });
-});
-
-// Network connectivity test route
-app.get('/api/test-network', async (req, res) => {
-  try {
-    console.log('🌐 Testing network connectivity to MongoDB Atlas...');
-    const { URL } = await import('url');
-    const uri = new URL(process.env.MONGODB_URI);
-    const host = uri.hostname;
-    
-    console.log('🎯 Target host:', host);
-    
-    // Test DNS resolution
-    const dns = await import('dns').then(m => m.promises);
-    const addresses = await dns.lookup(host);
-    console.log('🔍 DNS resolved to:', addresses);
-    
-    res.json({
-      message: 'Network connectivity test',
-      host: host,
-      dnsResolved: addresses,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('❌ Network test failed:', error);
-    res.status(500).json({
-      message: 'Network test failed',
-      error: error.message,
-      timestamp: new Date().toISOString()
-    });
-  }
 });
 
 // Debug route to check environment
@@ -102,113 +52,36 @@ app.get('/api/debug', (req, res) => {
     hasDatabaseUrl: !!process.env.DATABASE_URL,
     port: PORT,
     corsOrigins: corsOptions.origin,
-    database: 'PostgreSQL'
+    database: 'PostgreSQL (Pending Setup)',
+    status: 'Server Running - Database Setup Disabled for Testing'
   });
 });
 
-// PostgreSQL connection test route
-app.get('/api/test-db', async (req, res) => {
-  try {
-    const { prisma } = await import('./config/db.js');
-    
-    // Test connection by running a simple query
-    const userCount = await prisma.user.count();
-    
-    res.json({ 
-      message: 'Database connection test',
-      status: 'connected',
-      connected: true,
-      userCount: userCount,
-      database: 'PostgreSQL',
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      message: 'Database test failed',
-      status: 'disconnected',
-      connected: false,
-      error: error.message,
-      database: 'PostgreSQL',
-      timestamp: new Date().toISOString()
-    });
-  }
+// Simple test route
+app.get('/api/test-simple', (req, res) => {
+  res.json({ 
+    message: 'Simple test successful',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
+    status: 'ok'
+  });
 });
 
 // Start server only after MongoDB connection is established
 const startServer = async () => {
   try {
-    console.log('🚀 Starting EdCon server...');
+    console.log('🚀 Starting EdCon server (minimal mode)...');
     console.log('📍 Working directory:', process.cwd());
     console.log('🌍 Environment:', process.env.NODE_ENV);
     console.log('🔌 Port:', PORT);
     console.log('🔑 Database URL set:', !!process.env.DATABASE_URL);
-    console.log('📋 Database env vars:', Object.keys(process.env).filter(key => key.includes('DATABASE')));
-    
-    // Only try to connect to PostgreSQL if DATABASE_URL is provided
-    if (process.env.DATABASE_URL) {
-      console.log('🔄 Attempting to connect to PostgreSQL...');
-      
-      // Try initial connection but don't block server startup
-      try {
-        await connectDB();
-        console.log('✅ PostgreSQL connected successfully on startup');
-        
-        // Try to run migrations in background (non-blocking)
-        if (process.env.NODE_ENV === 'production') {
-          console.log('🔄 Running database setup in background...');
-          setTimeout(async () => {
-            try {
-              const { exec } = await import('child_process');
-              const { promisify } = await import('util');
-              const execAsync = promisify(exec);
-              
-              console.log('📋 Attempting database migration...');
-              await execAsync('npx prisma db push --force-reset');
-              console.log('✅ Database schema synchronized successfully');
-            } catch (migrationError) {
-              console.error('⚠️ Database setup failed:', migrationError.message);
-              console.log('🔄 Trying alternative approach...');
-              try {
-                await execAsync('npx prisma migrate deploy');
-                console.log('✅ Database migrations completed successfully');
-              } catch (altError) {
-                console.error('❌ All database setup attempts failed:', altError.message);
-              }
-            }
-          }, 5000); // Wait 5 seconds after server starts
-        }
-      } catch (dbError) {
-        console.error('❌ Initial PostgreSQL connection failed:', dbError.message);
-        console.log('⚠️  Server will start and continue trying to connect in background');
-        
-        // Continue trying to connect in background
-        const retryConnection = async () => {
-          let retries = 10;
-          while (retries > 0) {
-            try {
-              await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10 seconds
-              await connectDB();
-              console.log('✅ PostgreSQL connected successfully (background retry)');
-              break;
-            } catch (error) {
-              retries--;
-              console.log(`🔄 Background PostgreSQL retry failed, ${retries} attempts remaining`);
-            }
-          }
-        };
-        
-        // Don't await this - let it run in background
-        retryConnection();
-      }
-    } else {
-      console.log('❌ No DATABASE_URL provided, skipping database connection');
-    }
+    console.log('⚠️  Database operations disabled for testing');
     
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`✅ Server running on port ${PORT}`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
       console.log(`🗄️ Database URL set: ${!!process.env.DATABASE_URL}`);
-      console.log('🚀 EdCon API is ready!');
+      console.log('🚀 EdCon API is ready! (Minimal Mode)');
       console.log(`📡 Health check: http://localhost:${PORT}/api/health`);
     });
   } catch (error) {
