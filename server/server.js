@@ -1,6 +1,15 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import connectDB from './config/db.js';
+import authRoutes from './routes/auth.js';
+import gradeRoutes from './routes/grades.js';
+import classRoutes from './routes/classes.js';
+import subjectRoutes from './routes/subjects.js';
+import homeworkRoutes from './routes/homework.js';
+import announcementRoutes from './routes/announcements.js';
+import attendanceRoutes from './routes/attendance.js';
+import messageRoutes from './routes/messages.js';
 
 dotenv.config();
 
@@ -22,10 +31,10 @@ const corsOptions = {
         'https://ed-co-3aboshes-projects.vercel.app',
         'https://edcon-app.vercel.app',
         'https://edcon-app.netlify.app',
-        'https://ed-eb22y6x9n-3aboshes-projects.vercel.app', // Added this URL
-        process.env.FRONTEND_URL // Allow environment variable override
-      ].filter(Boolean) // Remove undefined values
-    : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:5176', 'http://localhost:5177'],
+        'https://ed-eb22y6x9n-3aboshes-projects.vercel.app',
+        process.env.FRONTEND_URL
+      ].filter(Boolean)
+    : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:5176', 'http://localhost:5177', 'http://localhost:5179'],
   credentials: true,
   optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -42,7 +51,17 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Server error', error: err.message });
 });
 
-// Health check routes - Railway might check these
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/grades', gradeRoutes);
+app.use('/api/classes', classRoutes);
+app.use('/api/subjects', subjectRoutes);
+app.use('/api/homework', homeworkRoutes);
+app.use('/api/announcements', announcementRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/messages', messageRoutes);
+
+// Health check routes
 app.get('/', (req, res) => {
   res.json({ message: 'EdCon API Server is running!', status: 'ok', timestamp: new Date().toISOString() });
 });
@@ -71,39 +90,83 @@ app.get('/api/debug', (req, res) => {
     hasDatabaseUrl: !!process.env.DATABASE_URL,
     port: PORT,
     corsOrigins: corsOptions.origin,
-    database: 'PostgreSQL (Pending Setup)',
-    status: 'Server Running - Database Setup Disabled for Testing'
+    database: 'PostgreSQL'
   });
 });
 
-// Simple test route
-app.get('/api/test-simple', (req, res) => {
-  res.json({ 
-    message: 'Simple test successful',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV,
-    status: 'ok'
-  });
+// PostgreSQL connection test route
+app.get('/api/test-db', async (req, res) => {
+  try {
+    const { prisma } = await import('./config/db.js');
+    
+    // Test connection by running a simple query
+    const userCount = await prisma.user.count();
+    
+    res.json({ 
+      message: 'Database connection test',
+      status: 'connected',
+      connected: true,
+      userCount: userCount,
+      database: 'PostgreSQL',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      message: 'Database test failed',
+      status: 'disconnected',
+      connected: false,
+      error: error.message,
+      database: 'PostgreSQL',
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
-// Start server only after MongoDB connection is established
+// Start server
 const startServer = async () => {
   try {
-    console.log('🚀 Starting EdCon server (minimal mode)...');
+    console.log('🚀 Starting EdCon server...');
     console.log('📍 Working directory:', process.cwd());
     console.log('🌍 Environment:', process.env.NODE_ENV);
     console.log('🔌 Port:', PORT);
     console.log('🔑 Database URL set:', !!process.env.DATABASE_URL);
-    console.log('⚠️  Database operations disabled for testing');
+    
+    // Connect to PostgreSQL and run migrations
+    if (process.env.DATABASE_URL) {
+      console.log('🔄 Attempting to connect to PostgreSQL...');
+      try {
+        await connectDB();
+        console.log('✅ PostgreSQL connected successfully');
+        
+        // Run database setup in background (non-blocking)
+        if (process.env.NODE_ENV === 'production') {
+          console.log('🔄 Running database setup...');
+          setTimeout(async () => {
+            try {
+              const { exec } = await import('child_process');
+              const { promisify } = await import('util');
+              const execAsync = promisify(exec);
+              
+              await execAsync('npx prisma db push');
+              console.log('✅ Database schema synchronized');
+            } catch (error) {
+              console.error('⚠️ Database setup failed:', error.message);
+            }
+          }, 3000);
+        }
+      } catch (dbError) {
+        console.error('❌ PostgreSQL connection failed:', dbError.message);
+        console.log('⚠️ Server will start without database');
+      }
+    }
     
     // Start server with proper Railway configuration
     const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`✅ Server running on port ${PORT}`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
       console.log(`🗄️ Database URL set: ${!!process.env.DATABASE_URL}`);
-      console.log('🚀 EdCon API is ready! (Minimal Mode)');
-      console.log(`📡 Health check: https://edcon-production.up.railway.app/api/health`);
-      console.log(`🌐 External URL: https://edcon-production.up.railway.app/`);
+      console.log('🚀 EdCon API is ready!');
+      console.log(`📡 Health check: http://localhost:${PORT}/api/health`);
     });
     
     // Handle server errors

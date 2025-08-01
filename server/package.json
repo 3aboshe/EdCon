@@ -11,7 +11,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "build": "echo 'No build required'",
+    "build": "prisma generate",
+    "vercel-build": "prisma generate && prisma migrate deploy",
     "deploy": "echo 'Deploy complete'",
     "postinstall": "echo 'Install complete'"
   },
