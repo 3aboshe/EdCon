@@ -7,7 +7,7 @@ import Header from '../components/common/Header';
 import Card from '../components/common/Card';
 import SpeakButton from '../components/common/SpeakButton';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import { generateStudentSummary, generateTop5ParentBriefing } from '../services/geminiService';
+import { generateStudentSummary, generateTop5ParentBriefing, generateAcademicInsights, generateAttendanceAnalysis, generateHomeworkSummary } from '../services/geminiService';
 import TabBar from '../components/common/TabBar';
 import Modal from '../components/common/Modal';
 import ProfileImage from '../components/common/ProfileImage';
