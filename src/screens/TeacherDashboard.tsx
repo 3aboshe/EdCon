@@ -840,16 +840,15 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
                                 className="flex-grow p-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 disabled={isRecording}
                             />
-                            {/* Voice messaging temporarily disabled */}
                             <button
                                 type="button"
                                 onClick={isRecording ? handleStopRecording : handleStartRecording}
-                                className={`text-white rounded-full w-12 h-12 flex items-center justify-center transition ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-500 hover:bg-gray-600'} hidden`}
+                                className={`text-white rounded-full w-12 h-12 flex items-center justify-center transition ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-500 hover:bg-gray-600'}`}
                             >
-                                <i className={`fa-solid ${isRecording ? 'fa-stop' : 'fa-microphone'}`}></i>
+                                <span className="text-lg">{isRecording ? '⏹️' : '🎤'}</span>
                             </button>
                             <button type="submit" className="bg-blue-600 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-blue-700 transition" disabled={!newMessage.trim()}>
-                                <i className="fa-solid fa-paper-plane"></i>
+                                <span className="text-lg">📤</span>
                             </button>
                         </form>
                     )}

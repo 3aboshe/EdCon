@@ -98,18 +98,20 @@ router.post('/', async (req, res) => {
     
     console.log('Validated users - Sender:', sender.name, 'Receiver:', receiver.name);
     
-    // For voice messages, limit audioSrc size to prevent database issues
-    if (type === 'voice' && audioSrc && audioSrc.length > 1000000) { // 1MB limit
-      console.error('Audio file too large:', audioSrc.length, 'characters');
-      return res.status(400).json({ message: 'Audio file too large. Please use a shorter recording.' });
-    }
-    
-    // Temporary fix: For voice messages, store a placeholder instead of the actual audio data
-    // This will help us test if the issue is with the audio data storage
+    // For voice messages, compress and store audio data
     let processedAudioSrc = audioSrc;
     if (type === 'voice' && audioSrc) {
-      console.log('Voice message detected, using placeholder for audio data');
-      processedAudioSrc = `VOICE_MESSAGE_PLACEHOLDER_${audioSrc.length}_CHARS`;
+      console.log('Voice message detected, audio data length:', audioSrc.length);
+      
+      // For now, limit audio size to prevent database issues
+      if (audioSrc.length > 500000) { // 500KB limit
+        console.error('Audio file too large:', audioSrc.length, 'characters');
+        return res.status(400).json({ message: 'Audio recording too long. Please use a shorter recording.' });
+      }
+      
+      // Store the audio data as-is for now (base64)
+      processedAudioSrc = audioSrc;
+      console.log('Voice message audio will be stored, size:', audioSrc.length, 'chars');
     }
     
     const newMessage = await prisma.message.create({
