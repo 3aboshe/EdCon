@@ -602,7 +602,7 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
                     marksObtained: marks as number, 
                     maxMarks: details.maxMarks, 
                     date: details.date, 
-                    type: 'exam'
+                    type: 'EXAM'
                 };
                 console.log('Creating grade data:', gradeData);
                 return gradeData;
