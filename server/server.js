@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import fs from 'fs';
 import connectDB from './config/db.js';
 import authRoutes from './routes/auth.js';
 import gradeRoutes from './routes/grades.js';
@@ -60,6 +62,44 @@ app.use('/api/homework', homeworkRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/messages', messageRoutes);
+
+// File serving route
+app.get('/uploads/:filename', (req, res) => {
+  try {
+    const { filename } = req.params;
+    const filePath = path.join(__dirname, 'uploads', filename);
+    
+    console.log('=== FILE DOWNLOAD DEBUG ===');
+    console.log('Requested filename:', filename);
+    console.log('File path:', filePath);
+    console.log('File exists:', fs.existsSync(filePath));
+    
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      console.error('File not found:', filePath);
+      return res.status(404).json({ message: 'File not found' });
+    }
+    
+    // Get file stats
+    const stats = fs.statSync(filePath);
+    console.log('File stats:', {
+      size: stats.size,
+      created: stats.birthtime,
+      modified: stats.mtime
+    });
+    
+    // Set appropriate headers
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Length', stats.size);
+    
+    console.log('Serving file:', filename);
+    res.sendFile(filePath);
+  } catch (error) {
+    console.error('File serving error:', error);
+    res.status(500).json({ message: 'Error serving file', error: error.message });
+  }
+});
 
 // Health check routes
 app.get('/', (req, res) => {
