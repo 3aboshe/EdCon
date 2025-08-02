@@ -607,6 +607,11 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
             // Update local state
             const updatedGrades = allGrades.filter(g => !(g.assignment === details.title && g.subject === details.subject));
             setGrades([...updatedGrades, ...savedGrades]);
+            
+            // Refresh grades from server to ensure consistency
+            const refreshedGrades = await apiService.getAllGrades();
+            setGrades(refreshedGrades);
+            
             onSave(t('grades_saved_success'));
         } catch (error) {
             console.error('Error saving grades:', error);
