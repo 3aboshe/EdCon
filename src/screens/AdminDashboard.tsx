@@ -105,22 +105,53 @@ interface TabProps {
 }
 
 const StatCard: React.FC<{ title: string; value: number | string; icon: string; color: string }> = ({ title, value, icon, color }) => {
-    const getIconEmoji = (iconName: string) => {
+    const getCSSIcon = (iconName: string) => {
         switch (iconName) {
-            case 'fa-users': return '👥';
-            case 'fa-user-graduate': return '🎓';
-            case 'fa-chalkboard-teacher': return '👨‍🏫';
-            case 'fa-clipboard-check': return '✅';
-            case 'fa-book': return '📚';
-            case 'fa-chart-bar': return '📊';
-            default: return '📊';
+            case 'fa-users': 
+                return <div className="w-6 h-6 bg-white rounded-full relative">
+                    <div className="absolute top-1 left-1 w-4 h-4 bg-current rounded-full opacity-80"></div>
+                    <div className="absolute bottom-0 left-0 w-6 h-2 bg-current rounded-b-full opacity-60"></div>
+                </div>;
+            case 'fa-user-graduate':
+                return <div className="w-6 h-6 bg-white rounded-full relative">
+                    <div className="absolute top-0 left-1 w-4 h-1 bg-current"></div>
+                    <div className="absolute top-1 left-1.5 w-3 h-3 bg-current rounded-full"></div>
+                </div>;
+            case 'fa-chalkboard-teacher':
+                return <div className="w-6 h-6 bg-white relative">
+                    <div className="absolute top-1 right-1 w-2 h-3 bg-current rounded"></div>
+                    <div className="absolute bottom-1 left-0 w-4 h-3 bg-current"></div>
+                </div>;
+            case 'fa-clipboard-check':
+                return <div className="w-6 h-6 bg-white relative">
+                    <div className="w-5 h-6 bg-current"></div>
+                    <div className="absolute top-2 left-1 w-1 h-2 bg-white transform rotate-45"></div>
+                </div>;
+            case 'fa-book':
+                return <div className="w-6 h-6 bg-white relative">
+                    <div className="w-4 h-5 bg-current"></div>
+                    <div className="absolute top-0 right-0 w-1 h-5 bg-white"></div>
+                </div>;
+            case 'fa-chart-bar':
+                return <div className="w-6 h-6 bg-white flex items-end space-x-1">
+                    <div className="w-1 h-3 bg-current"></div>
+                    <div className="w-1 h-5 bg-current"></div>
+                    <div className="w-1 h-4 bg-current"></div>
+                    <div className="w-1 h-6 bg-current"></div>
+                </div>;
+            default: 
+                return <div className="w-6 h-6 bg-white flex items-end space-x-1">
+                    <div className="w-1 h-3 bg-current"></div>
+                    <div className="w-1 h-5 bg-current"></div>
+                    <div className="w-1 h-4 bg-current"></div>
+                </div>;
         }
     };
     
     return (
         <div className={`rounded-xl shadow-md p-4 flex items-center ${color} text-white`}>
-            <div className="p-3 rounded-full bg-white bg-opacity-25">
-                <span className="text-2xl">{getIconEmoji(icon)}</span>
+            <div className="p-3 rounded-full bg-white bg-opacity-25 flex items-center justify-center">
+                {getCSSIcon(icon)}
             </div>
             <div className="ml-4 rtl:mr-4">
                 <p className="text-2xl font-bold">{value}</p>
@@ -235,7 +266,18 @@ const OverviewTab: React.FC<TabProps> = ({ selectedClassId }) => {
                         return (
                             <li key={`${item.id}-${item.type}`} className="flex items-center space-x-3 rtl:space-x-reverse p-2 bg-gray-50 rounded-lg">
                                 <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${item.type === 'announcement' ? 'bg-yellow-100' : 'bg-green-100'}`}>
-                                    <span className="text-lg">{item.type === 'announcement' ? '📢' : '📚'}</span>
+                                    {item.type === 'announcement' ? (
+                                        <div className="w-4 h-4 bg-yellow-600 relative">
+                                            <div className="absolute -top-1 -left-1 w-2 h-2 border-2 border-yellow-600 rounded-full"></div>
+                                            <div className="absolute top-1 left-1 w-2 h-1 bg-white"></div>
+                                        </div>
+                                    ) : (
+                                        <div className="w-4 h-5 bg-green-600 relative">
+                                            <div className="absolute top-0 right-0 w-1 h-5 bg-white"></div>
+                                            <div className="absolute top-1 left-1 w-2 h-0.5 bg-white"></div>
+                                            <div className="absolute top-2 left-1 w-2 h-0.5 bg-white"></div>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="flex-1 text-sm">
                                     <p className="text-gray-800">
@@ -330,7 +372,12 @@ const StudentsTab: React.FC<TabProps> = ({ selectedClassId }) => {
                                         className="text-gray-400 hover:text-red-600 transition-colors"
                                         title={t('delete')}
                                     >
-                                        <i className="fa-solid fa-trash"></i>
+                                        <div className="w-4 h-5 relative">
+                                            <div className="w-3 h-4 bg-current mx-auto mt-1"></div>
+                                            <div className="absolute top-0 left-1 w-2 h-1 bg-current"></div>
+                                            <div className="absolute top-0.5 left-0.5 w-1 h-0.5 bg-current"></div>
+                                            <div className="absolute top-0.5 right-0.5 w-1 h-0.5 bg-current"></div>
+                                        </div>
                                     </button>
                                 </td>
                              </tr>
@@ -406,7 +453,12 @@ const TeachersTab: React.FC<TabProps> = ({ selectedClassId }) => {
                                         className="text-gray-400 hover:text-red-600 transition-colors"
                                         title={t('delete')}
                                     >
-                                        <span className="text-lg">🗑️</span>
+                                        <div className="w-4 h-5 relative">
+                                            <div className="w-3 h-4 bg-current mx-auto mt-1"></div>
+                                            <div className="absolute top-0 left-1 w-2 h-1 bg-current"></div>
+                                            <div className="absolute top-0.5 left-0.5 w-1 h-0.5 bg-current"></div>
+                                            <div className="absolute top-0.5 right-0.5 w-1 h-0.5 bg-current"></div>
+                                        </div>
                                     </button>
                                 </td>
                              </tr>
@@ -836,14 +888,23 @@ const ManagementTab: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({
                                                 className="text-gray-400 hover:text-blue-600 transition-colors"
                                                 title={t('copy')}
                                             >
-                                                <span className="text-lg">📋</span>
+                                                <div className="w-4 h-5 bg-current relative">
+                                                    <div className="absolute top-1 left-1 w-2 h-0.5 bg-white"></div>
+                                                    <div className="absolute top-2 left-1 w-2 h-0.5 bg-white"></div>
+                                                    <div className="absolute top-3 left-1 w-2 h-0.5 bg-white"></div>
+                                                </div>
                                             </button>
                                             <button
                                                 onClick={() => handleDeleteUser(user.id, user.name)}
                                                 className="text-gray-400 hover:text-red-600 transition-colors"
                                                 title={t('delete')}
                                             >
-                                                <span className="text-lg">🗑️</span>
+                                                <div className="w-4 h-5 relative">
+                                                    <div className="w-3 h-4 bg-current mx-auto mt-1"></div>
+                                                    <div className="absolute top-0 left-1 w-2 h-1 bg-current"></div>
+                                                    <div className="absolute top-0.5 left-0.5 w-1 h-0.5 bg-current"></div>
+                                                    <div className="absolute top-0.5 right-0.5 w-1 h-0.5 bg-current"></div>
+                                                </div>
                                             </button>
                                         </td>
                                     </tr>

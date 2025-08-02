@@ -461,7 +461,9 @@ const ParentMessaging: React.FC<{ student: Student }> = ({ student }) => {
                                     <p className="font-semibold text-gray-800">{teacherUser.name}</p>
                                     <p className="text-sm text-gray-500">{teacherDetails.subject}</p>
                                 </div>
-                                <span className="text-gray-400 ml-auto rtl:mr-auto">▶</span>
+                                <div className="text-gray-400 ml-auto rtl:mr-auto w-3 h-3 relative">
+                                    <div className="absolute top-1 left-0 w-0 h-0 border-t-2 border-b-2 border-l-3 border-transparent border-l-current"></div>
+                                </div>
                             </div>
                         )
                     })}
@@ -538,17 +540,43 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaRecorderRef.current = new MediaRecorder(stream);
             const audioChunks: Blob[] = [];
-            mediaRecorderRef.current.ondataavailable = event => audioChunks.push(event.data);
+            
+            mediaRecorderRef.current.ondataavailable = event => {
+                console.log('Audio data available:', event.data.size);
+                if (event.data.size > 0) {
+                    audioChunks.push(event.data);
+                }
+            };
+            
             mediaRecorderRef.current.onstop = () => {
+                console.log('Recording stopped, chunks:', audioChunks.length);
+                if (audioChunks.length === 0) {
+                    console.error('No audio data recorded');
+                    alert('No audio was recorded. Please try recording for at least 3 seconds.');
+                    return;
+                }
+                
                 const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                console.log('Audio blob size:', audioBlob.size);
+                
+                if (audioBlob.size === 0) {
+                    console.error('Empty audio blob');
+                    alert('Recording failed. Please try again.');
+                    return;
+                }
+                
                 const reader = new FileReader();
                 reader.onloadend = () => {
+                    console.log('Audio converted to data URL, length:', (reader.result as string).length);
                     setAudioUrl(reader.result as string);
                 };
                 reader.readAsDataURL(audioBlob);
             };
-            mediaRecorderRef.current.start();
+            
+            // Start recording with timeslice to ensure data is captured
+            mediaRecorderRef.current.start(1000);
             setIsRecording(true);
+            console.log('Started recording with 1s timeslice');
         } catch (err) {
             console.error("Error accessing microphone:", err);
             alert("Could not access microphone. Please ensure permission is granted.");
@@ -556,9 +584,12 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
     };
 
     const handleStopRecording = () => {
-        mediaRecorderRef.current?.stop();
-        mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
-        setIsRecording(false);
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+            console.log('Stopping recording...');
+            mediaRecorderRef.current.stop();
+            mediaRecorderRef.current.stream?.getTracks().forEach(track => track.stop());
+            setIsRecording(false);
+        }
     };
 
     return (
@@ -612,10 +643,21 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
                                 onClick={isRecording ? handleStopRecording : handleStartRecording}
                                 className={`text-white rounded-full w-12 h-12 flex items-center justify-center transition ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-500 hover:bg-gray-600'}`}
                             >
-                                <span className="text-lg">{isRecording ? '⏹️' : '🎤'}</span>
+                                {isRecording ? (
+                                    <div className="w-4 h-4 bg-white"></div>
+                                ) : (
+                                    <div className="w-4 h-6 bg-white relative">
+                                        <div className="absolute bottom-0 left-1 w-2 h-2 bg-current rounded-full"></div>
+                                        <div className="absolute bottom-2 left-1.5 w-1 h-3 bg-current"></div>
+                                    </div>
+                                )}
                             </button>
                             <button type="submit" className="bg-blue-600 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-blue-700 transition" disabled={!newMessage.trim()}>
-                                <span className="text-lg">📤</span>
+                                <div className="w-5 h-4 relative">
+                                    <div className="w-4 h-3 bg-white"></div>
+                                    <div className="absolute top-0 right-0 w-0 h-0 border-l-2 border-b-2 border-white transform rotate-45"></div>
+                                    <div className="absolute top-1 right-1 w-2 h-1 bg-current"></div>
+                                </div>
                             </button>
                         </form>
                     )}
