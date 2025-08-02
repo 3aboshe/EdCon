@@ -495,8 +495,8 @@ const AssignmentList: React.FC<AssignmentListProps> = ({ studentsInClass, onEdit
             );
             
             for (const grade of gradesToDelete) {
-                if (grade._id) {
-                    await apiService.deleteGrade(grade._id);
+                if (grade.id) {
+                    await apiService.deleteGrade(grade.id);
                 }
             }
             
@@ -561,9 +561,15 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
     useEffect(() => {
+        console.log('=== GRADE EDITOR USEFFECT DEBUG ===');
+        console.log('Assignment:', assignment);
+        console.log('All grades:', allGrades);
+        console.log('Grades with assignment property:', allGrades.filter(g => g.assignment));
+        
         if (assignment && assignment.title) {
             const gradeMap = allGrades.filter(g => g.assignment && g.assignment === assignment.title && g.subject === assignment.subject)
                 .reduce((acc, g) => ({...acc, [g.studentId]: g.marksObtained}), {} as Record<string, number>);
+            console.log('Grade map:', gradeMap);
             setStudentGrades(gradeMap);
         }
         inputRefs.current = inputRefs.current.slice(0, students.length);
@@ -589,8 +595,8 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
             // Delete existing grades for this assignment
             const existingGrades = allGrades.filter(g => g.assignment === details.title && g.subject === details.subject);
             for (const grade of existingGrades) {
-                if (grade._id) {
-                    await apiService.deleteGrade(grade._id);
+                if (grade.id) {
+                    await apiService.deleteGrade(grade.id);
                 }
             }
             
@@ -623,6 +629,9 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
             
             // Refresh grades from server to ensure consistency
             const refreshedGrades = await apiService.getAllGrades();
+            console.log('=== REFRESHED GRADES DEBUG ===');
+            console.log('Refreshed grades:', refreshedGrades);
+            console.log('First grade structure:', refreshedGrades[0]);
             setGrades(refreshedGrades);
             
             onSave(t('grades_saved_success'));

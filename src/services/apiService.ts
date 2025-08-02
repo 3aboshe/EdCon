@@ -40,7 +40,7 @@ export interface Subject {
 }
 
 export interface Grade {
-  _id?: string;
+  id?: string;
   studentId: string;
   subject: string;
   assignment: string;
