@@ -745,6 +745,18 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
             content: newMessage.trim() || undefined
         };
         
+        console.log('=== SENDING MESSAGE DEBUG ===');
+        console.log('Message type:', messageData.type);
+        console.log('Has audio:', !!messageData.audioSrc);
+        if (messageData.audioSrc) {
+            console.log('Audio URL length:', messageData.audioSrc.length);
+            console.log('Audio URL format:', messageData.audioSrc.substring(0, 50) + '...');
+        }
+        console.log('Message data:', {
+            ...messageData,
+            audioSrc: messageData.audioSrc ? '[AUDIO_DATA]' : undefined
+        });
+        
         try {
             // Send message to API
             const savedMessage = await apiService.sendMessage(messageData);
