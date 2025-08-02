@@ -463,16 +463,18 @@ const AssignmentList: React.FC<AssignmentListProps> = ({ studentsInClass, onEdit
     
     const assignments = useMemo(() => {
         const studentIds = new Set(studentsInClass.map(s => s.id));
-        const gradesForClass = allGrades.filter(g => studentIds.has(g.studentId));
+        const gradesForClass = allGrades.filter(g => studentIds.has(g.studentId) && g.assignment);
         const grouped: Record<string, AssignmentIdentifier> = {};
         gradesForClass.forEach(grade => {
-            const key = `${grade.assignment}|${grade.subject}`;
-            if (!grouped[key]) {
-                grouped[key] = { 
-                    title: grade.assignment, 
-                    subject: grade.subject, 
-                    date: grade.date 
-                };
+            if (grade.assignment) {
+                const key = `${grade.assignment}|${grade.subject}`;
+                if (!grouped[key]) {
+                    grouped[key] = { 
+                        title: grade.assignment, 
+                        subject: grade.subject, 
+                        date: grade.date 
+                    };
+                }
             }
         });
         return Object.values(grouped).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -552,15 +554,15 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
     const [details, setDetails] = useState({
         title: assignment?.title || '',
         subject: assignment?.subject || subjects[0]?.name || '',
-        maxMarks: allGrades.find(g => g.assignment === assignment?.title)?.maxMarks || 100,
+        maxMarks: allGrades.find(g => g.assignment && assignment?.title && g.assignment === assignment.title)?.maxMarks || 100,
         date: new Date().toISOString().slice(0,10)
     });
     const [studentGrades, setStudentGrades] = useState<Record<string, number | string>>({});
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
     useEffect(() => {
-        if (assignment) {
-            const gradeMap = allGrades.filter(g => g.assignment === assignment.title && g.subject === assignment.subject)
+        if (assignment && assignment.title) {
+            const gradeMap = allGrades.filter(g => g.assignment && g.assignment === assignment.title && g.subject === assignment.subject)
                 .reduce((acc, g) => ({...acc, [g.studentId]: g.marksObtained}), {} as Record<string, number>);
             setStudentGrades(gradeMap);
         }
