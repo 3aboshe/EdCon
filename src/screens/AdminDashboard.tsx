@@ -177,8 +177,8 @@ const OverviewTab: React.FC<TabProps> = ({ selectedClassId }) => {
         <div className="space-y-8">
             {/* Stats Header */}
             <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">{t('school_statistics')}</h2>
-                <p className="text-gray-600">{t('overview_description')}</p>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">School Overview</h2>
+                <p className="text-gray-600">Monitor key metrics and performance indicators</p>
             </div>
             
             <div className="relative">
