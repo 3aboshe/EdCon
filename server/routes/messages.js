@@ -83,6 +83,21 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'senderId and receiverId are required' });
     }
     
+    // Validate that sender and receiver users exist
+    const sender = await prisma.user.findUnique({ where: { id: senderId } });
+    if (!sender) {
+      console.error('Sender not found:', senderId);
+      return res.status(400).json({ message: 'Sender user not found' });
+    }
+    
+    const receiver = await prisma.user.findUnique({ where: { id: receiverId } });
+    if (!receiver) {
+      console.error('Receiver not found:', receiverId);
+      return res.status(400).json({ message: 'Receiver user not found' });
+    }
+    
+    console.log('Validated users - Sender:', sender.name, 'Receiver:', receiver.name);
+    
     // For voice messages, limit audioSrc size to prevent database issues
     if (type === 'voice' && audioSrc && audioSrc.length > 1000000) { // 1MB limit
       console.error('Audio file too large:', audioSrc.length, 'characters');
