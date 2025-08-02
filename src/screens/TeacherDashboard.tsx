@@ -764,15 +764,25 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
         };
         
         try {
+            console.log('Sending message to database:', {
+                senderId: messageData.senderId,
+                receiverId: messageData.receiverId,
+                type: messageData.type,
+                hasContent: !!messageData.content,
+                hasAudio: !!messageData.audioSrc,
+                audioLength: messageData.audioSrc?.length || 0
+            });
+            
             // Send message to database
             const savedMessage = await apiService.sendMessage(messageData);
+            console.log('Message sent successfully:', savedMessage);
             setMessages([...messages, savedMessage]);
             setNewMessage('');
             setAudioUrl(null);
             setRecordingError(null);
         } catch (error) {
             console.error('Failed to send message:', error);
-            setRecordingError('Failed to send message. Please try again.');
+            setRecordingError(`Failed to send message: ${error.message || 'Unknown error'}`);
         }
     };
 
@@ -837,6 +847,14 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
                 
                 if (audioBlob.size < 1000) { // Less than 1KB
                     setRecordingError('Recording too short. Please record for at least 1 second.');
+                    setIsRecording(false);
+                    setRecordingTime(0);
+                    return;
+                }
+                
+                // Check audio size limit (500KB for database)
+                if (audioBlob.size > 500000) {
+                    setRecordingError('Recording too long. Please keep it under 30 seconds.');
                     setIsRecording(false);
                     setRecordingTime(0);
                     return;
