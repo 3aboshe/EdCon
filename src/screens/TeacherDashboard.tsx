@@ -875,20 +875,13 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
                                 className={`text-white rounded-full w-12 h-12 flex items-center justify-center transition ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-500 hover:bg-gray-600'}`}
                             >
                                 {isRecording ? (
-                                    <div className="w-4 h-4 bg-white"></div>
+                                    <i className="fas fa-stop text-white text-lg"></i>
                                 ) : (
-                                    <div className="w-4 h-6 bg-white relative">
-                                        <div className="absolute bottom-0 left-1 w-2 h-2 bg-current rounded-full"></div>
-                                        <div className="absolute bottom-2 left-1.5 w-1 h-3 bg-current"></div>
-                                    </div>
+                                    <i className="fas fa-microphone text-white text-lg"></i>
                                 )}
                             </button>
                             <button type="submit" className="bg-blue-600 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-blue-700 transition" disabled={!newMessage.trim()}>
-                                <div className="w-5 h-4 relative">
-                                    <div className="w-4 h-3 bg-white"></div>
-                                    <div className="absolute top-0 right-0 w-0 h-0 border-l-2 border-b-2 border-white transform rotate-45"></div>
-                                    <div className="absolute top-1 right-1 w-2 h-1 bg-current"></div>
-                                </div>
+                                <i className="fas fa-paper-plane text-white text-lg"></i>
                             </button>
                         </form>
                     )}
