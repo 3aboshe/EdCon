@@ -68,4 +68,33 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Delete a subject
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log('Deleting subject:', id);
+    
+    // Check if subject exists
+    const existingSubject = await prisma.subject.findUnique({
+      where: { id: id }
+    });
+    
+    if (!existingSubject) {
+      console.log('Subject not found:', id);
+      return res.status(404).json({ message: 'Subject not found' });
+    }
+    
+    // Delete the subject
+    await prisma.subject.delete({
+      where: { id: id }
+    });
+    
+    console.log('Successfully deleted subject:', id);
+    res.json({ success: true, message: 'Subject deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting subject:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 export default router; 
