@@ -89,6 +89,14 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Audio file too large. Please use a shorter recording.' });
     }
     
+    // Temporary fix: For voice messages, store a placeholder instead of the actual audio data
+    // This will help us test if the issue is with the audio data storage
+    let processedAudioSrc = audioSrc;
+    if (type === 'voice' && audioSrc) {
+      console.log('Voice message detected, using placeholder for audio data');
+      processedAudioSrc = `VOICE_MESSAGE_PLACEHOLDER_${audioSrc.length}_CHARS`;
+    }
+    
     const newMessage = await prisma.message.create({
       data: {
         id: `M${Date.now()}`,
@@ -98,7 +106,7 @@ router.post('/', async (req, res) => {
         isRead: isRead || false,
         type: type === 'voice' ? 'VOICE' : 'TEXT', // Convert to uppercase enum values
         content,
-        audioSrc
+        audioSrc: processedAudioSrc
       }
     });
     
