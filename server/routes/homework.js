@@ -43,8 +43,12 @@ router.post('/', async (req, res) => {
   try {
     const { title, subject, dueDate, assignedDate, teacherId, submitted } = req.body;
     
+    // Generate a unique ID for the homework
+    const homeworkId = `HW${Date.now()}`;
+    
     const newHomework = await prisma.homework.create({
       data: {
+        id: homeworkId,
         title,
         subject,
         dueDate,

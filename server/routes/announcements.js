@@ -41,8 +41,12 @@ router.post('/', async (req, res) => {
   try {
     const { title, content, date, teacherId, priority } = req.body;
     
+    // Generate a unique ID for the announcement
+    const announcementId = `ANN${Date.now()}`;
+    
     const newAnnouncement = await prisma.announcement.create({
       data: {
+        id: announcementId,
         title,
         content,
         date,
