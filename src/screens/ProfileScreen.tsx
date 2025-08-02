@@ -110,7 +110,7 @@ const ProfileScreen: React.FC = () => {
                 />
             </Card>
 
-            {user.role === UserRole.Teacher && (
+            {user.role?.toLowerCase() === 'teacher' && (
                 <Card>
                     <h3 className="text-lg font-bold text-gray-800 mb-4">{t('availability')}</h3>
                     <form onSubmit={handleSaveAvailability} className="space-y-4">
