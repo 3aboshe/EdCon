@@ -246,6 +246,20 @@ class ApiService {
     }
   }
 
+  // Delete a class
+  async deleteClass(classId: string): Promise<void> {
+    await this.request(`/classes/${classId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Delete a subject
+  async deleteSubject(subjectId: string): Promise<void> {
+    await this.request(`/subjects/${subjectId}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Get all grades
   async getAllGrades(): Promise<Grade[]> {
     const response = await this.request<Grade[]>('/grades');

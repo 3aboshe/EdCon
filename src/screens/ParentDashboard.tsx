@@ -520,20 +520,26 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
         if ((!newMessage.trim() && !audioUrl) || !user) return;
         
         const messageData = {
-            id: `M${Date.now()}`,
             senderId: user.id,
             receiverId: otherParty.id,
             timestamp: new Date().toISOString(),
             isRead: false,
-            type: audioUrl ? 'voice' : 'text',
+            type: (audioUrl ? 'voice' : 'text') as 'voice' | 'text',
             audioSrc: audioUrl || undefined,
             content: newMessage.trim() || undefined
         };
         
-        setMessages([...messages, messageData]);
-        setNewMessage('');
-        setAudioUrl(null);
-        setRecordingError(null);
+        try {
+            // Send message to database
+            const savedMessage = await apiService.sendMessage(messageData);
+            setMessages([...messages, savedMessage]);
+            setNewMessage('');
+            setAudioUrl(null);
+            setRecordingError(null);
+        } catch (error) {
+            console.error('Failed to send message:', error);
+            setRecordingError('Failed to send message. Please try again.');
+        }
     };
 
     const formatRecordingTime = (seconds: number) => {

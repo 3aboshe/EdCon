@@ -7,6 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Teacher, UserRole, Subject, User, Student } from '../types';
 import ProfileImage from '../components/common/ProfileImage';
 import apiService from '../services/apiService';
+import { allAvatars } from '../data/avatars';
 
 type AdminTab = 'overview' | 'students' | 'teachers' | 'management';
 
@@ -20,6 +21,10 @@ const generateUniqueCode = (prefix: 'P' | 'T' | 'S', existingIds: string[]): str
         }
     } while (existingIds.includes(code));
     return code;
+};
+
+const getRandomAvatar = (): string => {
+    return allAvatars[Math.floor(Math.random() * allAvatars.length)];
 };
 
 const SuccessBanner: React.FC<{ message: string, onClear: () => void }> = ({ message, onClear }) => (
@@ -615,6 +620,17 @@ const ManagementTab: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({
         }
     };
 
+    const handleDeleteSubject = async (subjectId: string) => {
+        try {
+            await apiService.deleteSubject(subjectId);
+            setSubjects(subjects.filter(s => s.id !== subjectId));
+            setSuccessMessage('Subject deleted successfully');
+        } catch (error) {
+            console.error('Error deleting subject:', error);
+            setSuccessMessage('Error deleting subject. Please try again.');
+        }
+    };
+
     const handleAddClass = async (e: React.FormEvent) => {
         e.preventDefault();
         if(!newClassName.trim()) return;
@@ -630,6 +646,17 @@ const ManagementTab: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({
         } catch (error) {
             console.error('Error creating class:', error);
             setSuccessMessage('Error creating class. Please try again.');
+        }
+    };
+
+    const handleDeleteClass = async (classId: string) => {
+        try {
+            await apiService.deleteClass(classId);
+            setClasses(classes.filter(c => c.id !== classId));
+            setSuccessMessage('Class deleted successfully');
+        } catch (error) {
+            console.error('Error deleting class:', error);
+            setSuccessMessage('Error deleting class. Please try again.');
         }
     };
 
@@ -665,7 +692,7 @@ const ManagementTab: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({
                 role: 'student',
                 classId: selectedClassForStudent,
                 parentId: selectedParentForStudent,
-                avatar: ''
+                avatar: getRandomAvatar()
             });
 
             console.log('API response:', result);
@@ -760,6 +787,25 @@ const ManagementTab: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({
                     <input type="text" placeholder={t('subject_name')} value={newSubjectName} onChange={e => setNewSubjectName(e.target.value)} className="flex-grow p-2 border border-gray-300 rounded-lg" required />
                     <button type="submit" className="bg-orange-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-orange-700 transition">{t('add_subject')}</button>
                 </form>
+                
+                {/* Subjects List */}
+                <div className="mt-4">
+                    <h3 className="text-md font-semibold text-gray-700 mb-2">Current Subjects</h3>
+                    <div className="space-y-2">
+                        {subjects.map(subject => (
+                            <div key={subject.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                                <span className="text-gray-800">{subject.name}</span>
+                                <button
+                                    onClick={() => handleDeleteSubject(subject.id)}
+                                    className="text-red-500 hover:text-red-700 transition-colors"
+                                    title="Delete subject"
+                                >
+                                    <i className="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </Card>
 
             <Card>
@@ -768,6 +814,25 @@ const ManagementTab: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({
                     <input type="text" placeholder={t('class_name')} value={newClassName} onChange={e => setNewClassName(e.target.value)} className="flex-grow p-2 border border-gray-300 rounded-lg" required />
                     <button type="submit" className="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition">{t('add_class')}</button>
                 </form>
+                
+                {/* Classes List */}
+                <div className="mt-4">
+                    <h3 className="text-md font-semibold text-gray-700 mb-2">Current Classes</h3>
+                    <div className="space-y-2">
+                        {classes.map(classItem => (
+                            <div key={classItem.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                                <span className="text-gray-800">{classItem.name}</span>
+                                <button
+                                    onClick={() => handleDeleteClass(classItem.id)}
+                                    className="text-red-500 hover:text-red-700 transition-colors"
+                                    title="Delete class"
+                                >
+                                    <i className="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </Card>
 
             <Card>
