@@ -242,19 +242,62 @@ router.get('/codes', async (req, res) => {
 router.delete('/users/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const user = await prisma.user.delete({
-      where: {
-        id: id,
-      },
+    
+    console.log('Attempting to delete user:', id);
+    
+    // First check if user exists
+    const user = await prisma.user.findUnique({
+      where: { id: id }
     });
-
+    
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-
-    // Optional: Clean up related data (e.g., remove student from parent's childrenIds)
+    
+    console.log('Found user to delete:', user.name, user.role);
+    
+    // Delete related records first to avoid foreign key constraint errors
+    
+    // 1. Delete all messages where this user is sender or receiver
+    const deletedMessages = await prisma.message.deleteMany({
+      where: {
+        OR: [
+          { senderId: id },
+          { receiverId: id }
+        ]
+      }
+    });
+    console.log('Deleted', deletedMessages.count, 'messages for user', id);
+    
+    // 2. Delete grades if student
     if (user.role === 'STUDENT') {
-      // Find all parents that have this student in their childrenIds
+      const deletedGrades = await prisma.grade.deleteMany({
+        where: { studentId: id }
+      });
+      console.log('Deleted', deletedGrades.count, 'grades for student', id);
+      
+      // 3. Delete attendance records
+      const deletedAttendance = await prisma.attendance.deleteMany({
+        where: { studentId: id }
+      });
+      console.log('Deleted', deletedAttendance.count, 'attendance records for student', id);
+    }
+    
+    // 4. Delete homework/announcements if teacher
+    if (user.role === 'TEACHER') {
+      const deletedHomework = await prisma.homework.deleteMany({
+        where: { teacherId: id }
+      });
+      console.log('Deleted', deletedHomework.count, 'homework assignments for teacher', id);
+      
+      const deletedAnnouncements = await prisma.announcement.deleteMany({
+        where: { teacherId: id }
+      });
+      console.log('Deleted', deletedAnnouncements.count, 'announcements for teacher', id);
+    }
+    
+    // 5. Clean up parent-child relationships
+    if (user.role === 'STUDENT') {
       const parents = await prisma.user.findMany({
         where: {
           childrenIds: {
@@ -263,7 +306,6 @@ router.delete('/users/:id', async (req, res) => {
         },
       });
       
-      // Update each parent to remove this student from their childrenIds
       for (const parent of parents) {
         await prisma.user.update({
           where: { id: parent.id },
@@ -272,12 +314,28 @@ router.delete('/users/:id', async (req, res) => {
           },
         });
       }
+      console.log('Updated', parents.length, 'parents to remove child reference');
     }
-
+    
+    // 6. Finally delete the user
+    const deletedUser = await prisma.user.delete({
+      where: { id: id }
+    });
+    
+    console.log('Successfully deleted user:', deletedUser.name);
     res.json({ success: true, message: 'User deleted successfully' });
+    
   } catch (error) {
     console.error('Delete user error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      code: error.code
+    });
+    res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message 
+    });
   }
 });
 
