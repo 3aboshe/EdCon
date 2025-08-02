@@ -66,21 +66,24 @@ router.get('/user/:userId', async (req, res) => {
 // Add new message
 router.post('/', async (req, res) => {
   try {
-    const { senderId, receiverId, content, type, audioSrc } = req.body;
+    const { senderId, receiverId, timestamp, content, type, audioSrc, isRead } = req.body;
+    
+    console.log('Creating message with data:', req.body);
     
     const newMessage = await prisma.message.create({
       data: {
         id: `M${Date.now()}`,
         senderId,
         receiverId,
-        createdAt: new Date().toISOString(),
-        isRead: false,
-        type: type || 'text',
+        timestamp: timestamp || new Date().toISOString(),
+        isRead: isRead || false,
+        type: type === 'voice' ? 'VOICE' : 'TEXT', // Convert to uppercase enum values
         content,
         audioSrc
       }
     });
     
+    console.log('Created message:', newMessage);
     res.status(201).json(newMessage);
   } catch (error) {
     console.error('Add message error:', error);
