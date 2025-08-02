@@ -109,7 +109,8 @@ router.get('/user/:userId', async (req, res) => {
 // Add new message with file upload support
 router.post('/', upload.array('files', 5), async (req, res) => {
   try {
-    const { senderId, receiverId, timestamp, content, type, isRead } = req.body;
+    const { senderId, receiverId, timestamp, content, type } = req.body;
+    const isRead = req.body.isRead === 'true' || req.body.isRead === true;
     const files = req.files || [];
     
     console.log('=== FILE UPLOAD DEBUG ===');
@@ -166,6 +167,16 @@ router.post('/', upload.array('files', 5), async (req, res) => {
     }
     
     console.log('About to create message with type:', messageType);
+    console.log('Message data:', {
+      id: `M${Date.now()}`,
+      senderId,
+      receiverId,
+      timestamp: timestamp || new Date().toISOString(),
+      isRead: isRead || false,
+      type: messageType,
+      content,
+      attachments: attachments
+    });
     
     const newMessage = await prisma.message.create({
       data: {
