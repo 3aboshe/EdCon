@@ -109,6 +109,12 @@ router.post('/', async (req, res) => {
         return res.status(400).json({ message: 'Audio recording too long. Please use a shorter recording.' });
       }
       
+      // Validate audio data format (should start with data:audio/)
+      if (!audioSrc.startsWith('data:audio/')) {
+        console.error('Invalid audio data format');
+        return res.status(400).json({ message: 'Invalid audio recording format.' });
+      }
+      
       // Store the audio data as-is for now (base64)
       processedAudioSrc = audioSrc;
       console.log('Voice message audio will be stored, size:', audioSrc.length, 'chars');
