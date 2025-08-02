@@ -104,19 +104,31 @@ interface TabProps {
     selectedClassId: string;
 }
 
-const StatCard: React.FC<{ title: string; value: number | string; icon: string; color: string }> = ({ title, value, icon, color }) => (
-    <div className={`rounded-xl shadow-md p-4 flex items-center ${color} text-white`}>
-        <div className="p-3 rounded-full bg-white bg-opacity-25">
-             <i className={`fa-solid ${icon} text-xl`}></i>
-             {/* Fallback icon test */}
-             <span className="ml-2 text-xs opacity-75">📊</span>
+const StatCard: React.FC<{ title: string; value: number | string; icon: string; color: string }> = ({ title, value, icon, color }) => {
+    const getIconEmoji = (iconName: string) => {
+        switch (iconName) {
+            case 'fa-users': return '👥';
+            case 'fa-user-graduate': return '🎓';
+            case 'fa-chalkboard-teacher': return '👨‍🏫';
+            case 'fa-clipboard-check': return '✅';
+            case 'fa-book': return '📚';
+            case 'fa-chart-bar': return '📊';
+            default: return '📊';
+        }
+    };
+    
+    return (
+        <div className={`rounded-xl shadow-md p-4 flex items-center ${color} text-white`}>
+            <div className="p-3 rounded-full bg-white bg-opacity-25">
+                <span className="text-2xl">{getIconEmoji(icon)}</span>
+            </div>
+            <div className="ml-4 rtl:mr-4">
+                <p className="text-2xl font-bold">{value}</p>
+                <p className="text-sm opacity-90">{title}</p>
+            </div>
         </div>
-        <div className="ml-4 rtl:mr-4">
-            <p className="text-2xl font-bold">{value}</p>
-            <p className="text-sm opacity-90">{title}</p>
-        </div>
-    </div>
-);
+    );
+};
 
 const OverviewTab: React.FC<TabProps> = ({ selectedClassId }) => {
     const { t, users, students, grades, homework, announcements, teachers } = useContext(AppContext);
@@ -223,7 +235,7 @@ const OverviewTab: React.FC<TabProps> = ({ selectedClassId }) => {
                         return (
                             <li key={`${item.id}-${item.type}`} className="flex items-center space-x-3 rtl:space-x-reverse p-2 bg-gray-50 rounded-lg">
                                 <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${item.type === 'announcement' ? 'bg-yellow-100' : 'bg-green-100'}`}>
-                                    <i className={`fa-solid ${item.type === 'announcement' ? 'fa-bullhorn text-yellow-600' : 'fa-book text-green-600'}`}></i>
+                                    <span className="text-lg">{item.type === 'announcement' ? '📢' : '📚'}</span>
                                 </div>
                                 <div className="flex-1 text-sm">
                                     <p className="text-gray-800">
@@ -394,7 +406,7 @@ const TeachersTab: React.FC<TabProps> = ({ selectedClassId }) => {
                                         className="text-gray-400 hover:text-red-600 transition-colors"
                                         title={t('delete')}
                                     >
-                                        <i className="fa-solid fa-trash"></i>
+                                        <span className="text-lg">🗑️</span>
                                     </button>
                                 </td>
                              </tr>
@@ -824,14 +836,14 @@ const ManagementTab: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({
                                                 className="text-gray-400 hover:text-blue-600 transition-colors"
                                                 title={t('copy')}
                                             >
-                                                <i className="fa-solid fa-copy"></i>
+                                                <span className="text-lg">📋</span>
                                             </button>
                                             <button
                                                 onClick={() => handleDeleteUser(user.id, user.name)}
                                                 className="text-gray-400 hover:text-red-600 transition-colors"
                                                 title={t('delete')}
                                             >
-                                                <i className="fa-solid fa-trash"></i>
+                                                <span className="text-lg">🗑️</span>
                                             </button>
                                         </td>
                                     </tr>
