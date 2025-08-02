@@ -840,10 +840,11 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
                                 className="flex-grow p-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 disabled={isRecording}
                             />
+                            {/* Voice messaging temporarily disabled */}
                             <button
                                 type="button"
                                 onClick={isRecording ? handleStopRecording : handleStartRecording}
-                                className={`text-white rounded-full w-12 h-12 flex items-center justify-center transition ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-500 hover:bg-gray-600'}`}
+                                className={`text-white rounded-full w-12 h-12 flex items-center justify-center transition ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-500 hover:bg-gray-600'} hidden`}
                             >
                                 <i className={`fa-solid ${isRecording ? 'fa-stop' : 'fa-microphone'}`}></i>
                             </button>
