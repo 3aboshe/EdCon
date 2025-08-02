@@ -68,7 +68,26 @@ router.post('/', async (req, res) => {
   try {
     const { senderId, receiverId, timestamp, content, type, audioSrc, isRead } = req.body;
     
-    console.log('Creating message with data:', req.body);
+    console.log('Creating message with data:', {
+      senderId,
+      receiverId,
+      timestamp,
+      content: content ? `${content.substring(0, 50)}...` : 'none',
+      type,
+      audioSrc: audioSrc ? `${audioSrc.substring(0, 100)}... (${audioSrc.length} chars)` : 'none',
+      isRead
+    });
+    
+    // Validate message data
+    if (!senderId || !receiverId) {
+      return res.status(400).json({ message: 'senderId and receiverId are required' });
+    }
+    
+    // For voice messages, limit audioSrc size to prevent database issues
+    if (type === 'voice' && audioSrc && audioSrc.length > 1000000) { // 1MB limit
+      console.error('Audio file too large:', audioSrc.length, 'characters');
+      return res.status(400).json({ message: 'Audio file too large. Please use a shorter recording.' });
+    }
     
     const newMessage = await prisma.message.create({
       data: {
@@ -83,10 +102,20 @@ router.post('/', async (req, res) => {
       }
     });
     
-    console.log('Created message:', newMessage);
+    console.log('Created message successfully:', {
+      id: newMessage.id,
+      type: newMessage.type,
+      hasAudio: !!newMessage.audioSrc
+    });
     res.status(201).json(newMessage);
   } catch (error) {
     console.error('Add message error:', error);
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    });
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
