@@ -98,26 +98,10 @@ router.post('/', async (req, res) => {
     
     console.log('Validated users - Sender:', sender.name, 'Receiver:', receiver.name);
     
-    // For voice messages, compress and store audio data
-    let processedAudioSrc = audioSrc;
-    if (type === 'voice' && audioSrc) {
-      console.log('Voice message detected, audio data length:', audioSrc.length);
-      
-      // For now, limit audio size to prevent database issues
-      if (audioSrc.length > 500000) { // 500KB limit
-        console.error('Audio file too large:', audioSrc.length, 'characters');
-        return res.status(400).json({ message: 'Audio recording too long. Please use a shorter recording.' });
-      }
-      
-      // Validate audio data format (should start with data:audio/)
-      if (!audioSrc.startsWith('data:audio/')) {
-        console.error('Invalid audio data format');
-        return res.status(400).json({ message: 'Invalid audio recording format.' });
-      }
-      
-      // Store the audio data as-is for now (base64)
-      processedAudioSrc = audioSrc;
-      console.log('Voice message audio will be stored, size:', audioSrc.length, 'chars');
+    // Only text messages are supported now
+    if (type === 'voice') {
+      console.error('Voice messages are not supported');
+      return res.status(400).json({ message: 'Voice messages are not supported. Please send text messages only.' });
     }
     
     const newMessage = await prisma.message.create({
@@ -127,9 +111,9 @@ router.post('/', async (req, res) => {
         receiverId,
         timestamp: timestamp || new Date().toISOString(),
         isRead: isRead || false,
-        type: type === 'voice' ? 'VOICE' : 'TEXT', // Convert to uppercase enum values
+        type: 'TEXT', // Only text messages are supported
         content,
-        audioSrc: processedAudioSrc
+        audioSrc: null
       }
     });
     

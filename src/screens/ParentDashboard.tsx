@@ -480,14 +480,6 @@ const ParentMessaging: React.FC<{ student: Student }> = ({ student }) => {
 const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: User }> = ({ isOpen, onClose, otherParty }) => {
     const { t, user, messages, setMessages } = useContext(AppContext);
     const [newMessage, setNewMessage] = useState('');
-    const [isRecording, setIsRecording] = useState(false);
-    const [recordingTime, setRecordingTime] = useState(0);
-    const [audioUrl, setAudioUrl] = useState<string | null>(null);
-    const [recordingError, setRecordingError] = useState<string | null>(null);
-    const [isProcessing, setIsProcessing] = useState(false);
-    
-    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-    const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const chatContainerRef = React.useRef<HTMLDivElement>(null);
 
     const conversation = useMemo(() => {
@@ -501,32 +493,18 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
     }, [conversation]);
-
-    // Cleanup on unmount
-    useEffect(() => {
-        return () => {
-            if (recordingIntervalRef.current) {
-                clearInterval(recordingIntervalRef.current);
-            }
-            if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-                mediaRecorderRef.current.stop();
-                mediaRecorderRef.current.stream?.getTracks().forEach(track => track.stop());
-            }
-        };
-    }, []);
     
     const handleSendMessage = async (e?: React.FormEvent) => {
         e?.preventDefault();
-        if ((!newMessage.trim() && !audioUrl) || !user) return;
+        if (!newMessage.trim() || !user) return;
         
         const messageData = {
             senderId: user.id,
             receiverId: otherParty.id,
             timestamp: new Date().toISOString(),
             isRead: false,
-            type: (audioUrl ? 'voice' : 'text') as 'voice' | 'text',
-            audioSrc: audioUrl || undefined,
-            content: newMessage.trim() || undefined
+            type: 'text' as 'text',
+            content: newMessage.trim()
         };
         
         try {
@@ -534,9 +512,7 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
                 senderId: messageData.senderId,
                 receiverId: messageData.receiverId,
                 type: messageData.type,
-                hasContent: !!messageData.content,
-                hasAudio: !!messageData.audioSrc,
-                audioLength: messageData.audioSrc?.length || 0
+                content: messageData.content
             });
             
             // Send message to database
@@ -544,140 +520,8 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
             console.log('Message sent successfully:', savedMessage);
             setMessages([...messages, savedMessage]);
             setNewMessage('');
-            setAudioUrl(null);
-            setRecordingError(null);
         } catch (error) {
             console.error('Failed to send message:', error);
-            setRecordingError(`Failed to send message: ${error.message || 'Unknown error'}`);
-        }
-    };
-
-    const formatRecordingTime = (seconds: number) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-    };
-
-    const startRecording = async () => {
-        try {
-            setRecordingError(null);
-            setIsProcessing(true);
-            
-            // Request microphone permission
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true
-                } 
-            });
-            
-            // Create MediaRecorder with better options
-            const options = {
-                mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
-                    ? 'audio/webm;codecs=opus' 
-                    : 'audio/webm'
-            };
-            
-            mediaRecorderRef.current = new MediaRecorder(stream, options);
-            const audioChunks: Blob[] = [];
-            
-            mediaRecorderRef.current.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    audioChunks.push(event.data);
-                }
-            };
-            
-            mediaRecorderRef.current.onstart = () => {
-                setIsRecording(true);
-                setRecordingTime(0);
-                // Start timer
-                recordingIntervalRef.current = setInterval(() => {
-                    setRecordingTime(prev => prev + 1);
-                }, 1000);
-            };
-            
-            mediaRecorderRef.current.onstop = () => {
-                if (recordingIntervalRef.current) {
-                    clearInterval(recordingIntervalRef.current);
-                }
-                
-                if (audioChunks.length === 0) {
-                    setRecordingError('No audio was recorded. Please try again.');
-                    setIsRecording(false);
-                    setRecordingTime(0);
-                    return;
-                }
-                
-                const audioBlob = new Blob(audioChunks, { type: options.mimeType });
-                
-                if (audioBlob.size < 1000) { // Less than 1KB
-                    setRecordingError('Recording too short. Please record for at least 1 second.');
-                    setIsRecording(false);
-                    setRecordingTime(0);
-                    return;
-                }
-                
-                // Check audio size limit (500KB for database)
-                if (audioBlob.size > 500000) {
-                    setRecordingError('Recording too long. Please keep it under 30 seconds.');
-                    setIsRecording(false);
-                    setRecordingTime(0);
-                    return;
-                }
-                
-                // Convert to data URL
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    setAudioUrl(reader.result as string);
-                    setIsRecording(false);
-                    setRecordingTime(0);
-                    setIsProcessing(false);
-                };
-                reader.readAsDataURL(audioBlob);
-            };
-            
-            mediaRecorderRef.current.onerror = (event) => {
-                console.error('MediaRecorder error:', event);
-                setRecordingError('Recording failed. Please try again.');
-                setIsRecording(false);
-                setRecordingTime(0);
-                setIsProcessing(false);
-            };
-            
-            // Start recording
-            mediaRecorderRef.current.start(1000);
-            
-        } catch (err) {
-            console.error("Error accessing microphone:", err);
-            setRecordingError("Could not access microphone. Please ensure permission is granted.");
-            setIsProcessing(false);
-        }
-    };
-
-    const stopRecording = () => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-            mediaRecorderRef.current.stop();
-            mediaRecorderRef.current.stream?.getTracks().forEach(track => track.stop());
-        }
-    };
-
-    const cancelRecording = () => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-            mediaRecorderRef.current.stop();
-            mediaRecorderRef.current.stream?.getTracks().forEach(track => track.stop());
-        }
-        setIsRecording(false);
-        setRecordingTime(0);
-        setRecordingError(null);
-        setIsProcessing(false);
-    };
-
-    const handleVoiceButtonClick = () => {
-        if (isRecording) {
-            stopRecording();
-        } else {
-            startRecording();
         }
     };
 
@@ -706,14 +550,7 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
                                 <div className={`flex items-end gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>
                                      <ProfileImage name={isMe ? user.name : otherParty.name} avatarUrl={isMe ? user.avatar : otherParty.avatar} className="w-8 h-8"/>
                                     <div className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${isMe ? 'bg-blue-500 text-white' : 'bg-white text-gray-800 shadow-sm'}`}>
-                                        {msg.type === 'voice' && msg.audioSrc ? (
-                                            <div className="flex items-center gap-2">
-                                                <i className="fas fa-play-circle text-lg"></i>
-                                                <audio controls src={msg.audioSrc} className="flex-grow h-8"></audio>
-                                            </div>
-                                        ) : (
-                                            <p className="leading-relaxed">{msg.content}</p>
-                                        )}
+                                        <p className="leading-relaxed">{msg.content}</p>
                                         <p className={`text-xs mt-2 text-right ${isMe ? 'text-blue-200' : 'text-gray-400'}`}>
                                             {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </p>
@@ -726,65 +563,6 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
                 
                 {/* Message Input Area */}
                 <div className="p-4 border-t bg-white rounded-b-lg">
-                    {/* Recording Error */}
-                    {recordingError && (
-                        <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                            <div className="flex items-center gap-2 text-red-700">
-                                <i className="fas fa-exclamation-triangle"></i>
-                                <span className="text-sm">{recordingError}</span>
-                                <button 
-                                    onClick={() => setRecordingError(null)}
-                                    className="ml-auto text-red-500 hover:text-red-700"
-                                >
-                                    <i className="fas fa-times"></i>
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                    
-                    {/* Audio Preview */}
-                    {audioUrl && (
-                        <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                            <div className="flex items-center gap-3">
-                                <i className="fas fa-microphone text-blue-600"></i>
-                                <audio src={audioUrl} controls className="flex-grow h-8"></audio>
-                                <button 
-                                    onClick={() => setAudioUrl(null)}
-                                    className="text-blue-600 hover:text-blue-800"
-                                    title="Remove recording"
-                                >
-                                    <i className="fas fa-times"></i>
-                                </button>
-                                <button 
-                                    onClick={() => handleSendMessage()}
-                                    className="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition"
-                                    title="Send voice message"
-                                >
-                                    <i className="fas fa-paper-plane"></i>
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                    
-                    {/* Recording Indicator */}
-                    {isRecording && (
-                        <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                            <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                                    <span className="text-red-700 font-medium">Recording...</span>
-                                    <span className="text-red-600 font-mono">{formatRecordingTime(recordingTime)}</span>
-                                </div>
-                                <button 
-                                    onClick={cancelRecording}
-                                    className="ml-auto bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition"
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                    
                     {/* Message Input Form */}
                     <form onSubmit={handleSendMessage} className="flex items-center gap-3">
                         <input
@@ -793,37 +571,13 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
                             onChange={(e) => setNewMessage(e.target.value)}
                             placeholder={t('type_a_message')}
                             className="flex-grow p-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            disabled={isRecording || isProcessing}
                         />
-                        
-                        {/* Voice Recording Button */}
-                        <button
-                            type="button"
-                            onClick={handleVoiceButtonClick}
-                            disabled={isProcessing}
-                            className={`rounded-full w-12 h-12 flex items-center justify-center transition-all duration-200 ${
-                                isRecording 
-                                    ? 'bg-red-500 text-white animate-pulse shadow-lg' 
-                                    : isProcessing
-                                    ? 'bg-gray-400 text-white cursor-not-allowed'
-                                    : 'bg-gray-500 text-white hover:bg-gray-600 hover:shadow-md'
-                            }`}
-                            title={isRecording ? 'Stop recording' : 'Start voice recording'}
-                        >
-                            {isProcessing ? (
-                                <i className="fas fa-spinner fa-spin"></i>
-                            ) : isRecording ? (
-                                <i className="fas fa-stop"></i>
-                            ) : (
-                                <i className="fas fa-microphone"></i>
-                            )}
-                        </button>
                         
                         {/* Send Button */}
                         <button 
                             type="submit" 
                             className="bg-blue-600 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-blue-700 transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed" 
-                            disabled={(!newMessage.trim() && !audioUrl) || isRecording || isProcessing}
+                            disabled={!newMessage.trim()}
                             title="Send message"
                         >
                             <i className="fas fa-paper-plane"></i>
