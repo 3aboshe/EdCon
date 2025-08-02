@@ -424,7 +424,7 @@ const ParentMessaging: React.FC<{ student: Student }> = ({ student }) => {
     const [selectedTeacher, setSelectedTeacher] = useState<User | null>(null);
 
     const studentTeachers = useMemo(() => {
-        return users.filter(u => u.role === UserRole.Teacher && u.classIds?.includes(student.classId));
+        return users.filter(u => u.role?.toLowerCase() === 'teacher' && u.classIds?.includes(student.classId));
     }, [student.classId, users]);
 
     const getTeacherDetails = (teacherUser: User) => {
