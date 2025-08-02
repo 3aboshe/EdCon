@@ -590,7 +590,7 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
                                                             <p className="text-xs text-gray-500">{formatFileSize(attachment.size)}</p>
                                                         </div>
                                                         <a 
-                                                            href={`https://edcon-production.up.railway.app/api/messages${attachment.url}`}
+                                                            href={`https://edcon-production.up.railway.app${attachment.url}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             className="text-blue-600 hover:text-blue-800"
