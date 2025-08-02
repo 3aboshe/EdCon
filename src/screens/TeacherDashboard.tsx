@@ -714,7 +714,10 @@ const TeacherMessagingInbox: React.FC = () => {
 const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: User }> = ({ isOpen, onClose, otherParty }) => {
     const { t, user, messages, setMessages } = useContext(AppContext);
     const [newMessage, setNewMessage] = useState('');
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [isUploading, setIsUploading] = useState(false);
     const chatContainerRef = React.useRef<HTMLDivElement>(null);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const conversation = useMemo(() => {
         return messages
@@ -730,15 +733,18 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
     
     const handleSendMessage = async (e?: React.FormEvent) => {
         e?.preventDefault();
-        if (!newMessage.trim() || !user) return;
+        if ((!newMessage.trim() && selectedFiles.length === 0) || !user) return;
+        
+        setIsUploading(true);
         
         const messageData = {
             senderId: user.id,
             receiverId: otherParty.id,
             timestamp: new Date().toISOString(),
             isRead: false,
-            type: 'text' as 'text',
-            content: newMessage.trim()
+            type: (selectedFiles.length > 0 ? 'file' : 'text') as 'text' | 'file',
+            content: newMessage.trim() || undefined,
+            files: selectedFiles.length > 0 ? selectedFiles : undefined
         };
         
         try {
@@ -746,7 +752,8 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
                 senderId: messageData.senderId,
                 receiverId: messageData.receiverId,
                 type: messageData.type,
-                content: messageData.content
+                content: messageData.content,
+                fileCount: selectedFiles.length
             });
             
             // Send message to database
@@ -754,9 +761,29 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
             console.log('Message sent successfully:', savedMessage);
             setMessages([...messages, savedMessage]);
             setNewMessage('');
+            setSelectedFiles([]);
         } catch (error) {
             console.error('Failed to send message:', error);
+        } finally {
+            setIsUploading(false);
         }
+    };
+
+    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(event.target.files || []);
+        setSelectedFiles(prev => [...prev, ...files]);
+    };
+
+    const removeFile = (index: number) => {
+        setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const formatFileSize = (bytes: number) => {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
     return (
@@ -779,7 +806,31 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
                                     <ProfileImage name={sender.name} avatarUrl={sender.avatar} className="w-8 h-8"/>
                                 </div>
                                 <div className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${isMe ? 'bg-blue-500 text-white order-1' : 'bg-white text-gray-800 shadow-sm order-2'}`}>
-                                    <p className="leading-relaxed">{msg.content}</p>
+                                    {msg.content && <p className="leading-relaxed mb-2">{msg.content}</p>}
+                                    
+                                    {/* File Attachments */}
+                                    {msg.attachments && msg.attachments.length > 0 && (
+                                        <div className="space-y-2">
+                                            {msg.attachments.map((attachment, index) => (
+                                                <div key={index} className="flex items-center gap-2 p-2 bg-gray-100 rounded-lg">
+                                                    <i className="fas fa-paperclip text-gray-500"></i>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-medium truncate">{attachment.filename}</p>
+                                                        <p className="text-xs text-gray-500">{formatFileSize(attachment.size)}</p>
+                                                    </div>
+                                                    <a 
+                                                        href={`https://edcon-production.up.railway.app/api/messages${attachment.url}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-blue-600 hover:text-blue-800"
+                                                    >
+                                                        <i className="fas fa-download"></i>
+                                                    </a>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                    
                                     <p className={`text-xs mt-2 text-right ${isMe ? 'text-blue-200' : 'text-gray-400'}`}>
                                         {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </p>
@@ -791,6 +842,34 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
                 
                 {/* Message Input Area */}
                 <div className="p-4 border-t bg-white rounded-b-lg">
+                    {/* File Attachments Preview */}
+                    {selectedFiles.length > 0 && (
+                        <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                                <i className="fas fa-paperclip text-blue-600"></i>
+                                <span className="text-sm font-medium text-blue-700">Attachments ({selectedFiles.length})</span>
+                            </div>
+                            <div className="space-y-2">
+                                {selectedFiles.map((file, index) => (
+                                    <div key={index} className="flex items-center gap-2 p-2 bg-white rounded border">
+                                        <i className="fas fa-file text-gray-500"></i>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium truncate">{file.name}</p>
+                                            <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                                        </div>
+                                        <button 
+                                            onClick={() => removeFile(index)}
+                                            className="text-red-500 hover:text-red-700"
+                                            type="button"
+                                        >
+                                            <i className="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    
                     {/* Message Input Form */}
                     <form onSubmit={handleSendMessage} className="flex items-center gap-3">
                         <input
@@ -799,16 +878,40 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
                             onChange={(e) => setNewMessage(e.target.value)}
                             placeholder={t('type_a_message')}
                             className="flex-grow p-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            disabled={isUploading}
                         />
+                        
+                        {/* File Attachment Button */}
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            multiple
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.webp,.txt"
+                            onChange={handleFileSelect}
+                            className="hidden"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploading}
+                            className="bg-gray-500 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-gray-600 transition shadow-md disabled:opacity-50"
+                            title="Attach files"
+                        >
+                            <i className="fas fa-paperclip"></i>
+                        </button>
                         
                         {/* Send Button */}
                         <button 
                             type="submit" 
                             className="bg-blue-600 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-blue-700 transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed" 
-                            disabled={!newMessage.trim()}
+                            disabled={(!newMessage.trim() && selectedFiles.length === 0) || isUploading}
                             title="Send message"
                         >
-                            <i className="fas fa-paper-plane"></i>
+                            {isUploading ? (
+                                <i className="fas fa-spinner fa-spin"></i>
+                            ) : (
+                                <i className="fas fa-paper-plane"></i>
+                            )}
                         </button>
                     </form>
                 </div>
