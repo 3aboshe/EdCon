@@ -276,6 +276,15 @@ class ApiService {
     return Array.isArray(response) ? response : (response as any).data || [];
   }
 
+  // Send a message
+  async sendMessage(message: Omit<Message, 'id'>): Promise<Message> {
+    const response = await this.request<Message>('/messages', {
+      method: 'POST',
+      body: JSON.stringify(message),
+    });
+    return response.data || response as Message;
+  }
+
   // Get student grades
   async getStudentGrades(studentId: string): Promise<Grade[]> {
     const response = await this.request<Grade[]>(`/grades/student/${studentId}`);
