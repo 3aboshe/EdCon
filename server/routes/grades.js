@@ -41,6 +41,10 @@ router.post('/', async (req, res) => {
   try {
     const { studentId, subject, assignment, marksObtained, maxMarks, type } = req.body;
     
+    console.log('=== ADD GRADE DEBUG ===');
+    console.log('Request body:', req.body);
+    console.log('Parsed data:', { studentId, subject, assignment, marksObtained, maxMarks, type });
+    
     const newGrade = await prisma.grade.create({
       data: {
         studentId,
@@ -52,10 +56,16 @@ router.post('/', async (req, res) => {
       }
     });
     
+    console.log('Created grade:', newGrade);
     res.status(201).json(newGrade);
   } catch (error) {
     console.error('Add grade error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      meta: error.meta
+    });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 

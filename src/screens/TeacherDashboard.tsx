@@ -595,7 +595,7 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
             // Create new grades
             const newGrades = Object.entries(studentGrades).map(([studentId, marks]) => {
                 if (marks === '' || marks === undefined) return null;
-                return {
+                const gradeData = {
                     studentId, 
                     subject: details.subject, 
                     assignment: details.title,
@@ -604,6 +604,8 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
                     date: details.date, 
                     type: 'exam'
                 };
+                console.log('Creating grade data:', gradeData);
+                return gradeData;
             }).filter(Boolean) as Omit<Grade, '_id'>[];
 
             // Save each grade to database
