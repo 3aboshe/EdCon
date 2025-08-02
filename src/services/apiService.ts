@@ -81,9 +81,16 @@ export interface Message {
   receiverId: string;
   timestamp: string;
   isRead: boolean;
-  type: 'text' | 'voice';
+  type: 'text' | 'voice' | 'file';
   content?: string;
   audioSrc?: string;
+  attachments?: Array<{
+    filename: string;
+    path: string;
+    mimetype: string;
+    size: number;
+    url: string;
+  }>;
 }
 
 class ApiService {
@@ -291,10 +298,30 @@ class ApiService {
   }
 
   // Send a message
-  async sendMessage(message: Omit<Message, 'id'>): Promise<Message> {
+  async sendMessage(message: Omit<Message, 'id'> & { files?: File[] }): Promise<Message> {
+    const formData = new FormData();
+    
+    // Add message data
+    formData.append('senderId', message.senderId);
+    formData.append('receiverId', message.receiverId);
+    formData.append('timestamp', message.timestamp);
+    formData.append('isRead', message.isRead.toString());
+    formData.append('type', message.type);
+    if (message.content) {
+      formData.append('content', message.content);
+    }
+    
+    // Add files if any
+    if (message.files) {
+      message.files.forEach(file => {
+        formData.append('files', file);
+      });
+    }
+    
     const response = await this.request<Message>('/messages', {
       method: 'POST',
-      body: JSON.stringify(message),
+      body: formData,
+      headers: {}, // Let browser set Content-Type for FormData
     });
     return response.data || response as Message;
   }

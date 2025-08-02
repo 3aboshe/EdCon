@@ -135,6 +135,7 @@ model Message {
   type       MessageType @default(TEXT)
   content    String?
   audioSrc   String?
+  attachments Json?      // Store file metadata and URLs
   createdAt  DateTime    @default(now())
   
   // Relations
@@ -175,4 +176,5 @@ enum AttendanceStatus {
 enum MessageType {
   TEXT
   VOICE
+  FILE
 }

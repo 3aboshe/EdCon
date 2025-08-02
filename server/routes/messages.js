@@ -1,8 +1,51 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 const router = express.Router();
 const prisma = new PrismaClient();
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = './uploads';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    // Allow specific file types
+    const allowedTypes = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/plain'
+    ];
+    
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only images, PDFs, Word, Excel, and text files are allowed.'), false);
+    }
+  }
+});
 
 // Get all messages
 router.get('/', async (req, res) => {
@@ -63,10 +106,11 @@ router.get('/user/:userId', async (req, res) => {
   }
 });
 
-// Add new message
-router.post('/', async (req, res) => {
+// Add new message with file upload support
+router.post('/', upload.array('files', 5), async (req, res) => {
   try {
-    const { senderId, receiverId, timestamp, content, type, audioSrc, isRead } = req.body;
+    const { senderId, receiverId, timestamp, content, type, isRead } = req.body;
+    const files = req.files || [];
     
     console.log('Creating message with data:', {
       senderId,
@@ -74,7 +118,7 @@ router.post('/', async (req, res) => {
       timestamp,
       content: content ? `${content.substring(0, 50)}...` : 'none',
       type,
-      audioSrc: audioSrc ? `${audioSrc.substring(0, 100)}... (${audioSrc.length} chars)` : 'none',
+      fileCount: files.length,
       isRead
     });
     
@@ -98,10 +142,23 @@ router.post('/', async (req, res) => {
     
     console.log('Validated users - Sender:', sender.name, 'Receiver:', receiver.name);
     
-    // Only text messages are supported now
-    if (type === 'voice') {
-      console.error('Voice messages are not supported');
-      return res.status(400).json({ message: 'Voice messages are not supported. Please send text messages only.' });
+    // Process uploaded files
+    let attachments = null;
+    if (files.length > 0) {
+      attachments = files.map(file => ({
+        filename: file.originalname,
+        path: file.path,
+        mimetype: file.mimetype,
+        size: file.size,
+        url: `/uploads/${file.filename}`
+      }));
+      console.log('Processed attachments:', attachments.length, 'files');
+    }
+    
+    // Determine message type
+    let messageType = 'TEXT';
+    if (files.length > 0) {
+      messageType = 'FILE';
     }
     
     const newMessage = await prisma.message.create({
@@ -111,16 +168,18 @@ router.post('/', async (req, res) => {
         receiverId,
         timestamp: timestamp || new Date().toISOString(),
         isRead: isRead || false,
-        type: 'TEXT', // Only text messages are supported
+        type: messageType,
         content,
-        audioSrc: null
+        audioSrc: null,
+        attachments: attachments
       }
     });
     
     console.log('Created message successfully:', {
       id: newMessage.id,
       type: newMessage.type,
-      hasAudio: !!newMessage.audioSrc
+      hasAttachments: !!newMessage.attachments,
+      attachmentCount: attachments ? attachments.length : 0
     });
     res.status(201).json(newMessage);
   } catch (error) {
@@ -174,6 +233,21 @@ router.delete('/:id', async (req, res) => {
     console.error('Delete message error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
+});
+
+// Serve uploaded files
+router.get('/uploads/:filename', (req, res) => {
+  const { filename } = req.params;
+  const filePath = path.join(__dirname, '../uploads', filename);
+  
+  // Check if file exists
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ message: 'File not found' });
+  }
+  
+  // Set appropriate headers
+  res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+  res.sendFile(filePath);
 });
 
 export default router; 
