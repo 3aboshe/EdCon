@@ -27,6 +27,7 @@ model User {
   // Teacher-specific fields
   subject   String?
   classIds  String[]
+  messagingAvailability Json?
   
   createdAt DateTime @default(now())
   
