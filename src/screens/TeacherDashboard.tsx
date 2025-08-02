@@ -5,7 +5,8 @@ import { AppContext } from '../App';
 import Header from '../components/common/Header';
 import Card from '../components/common/Card';
 import Modal from '../components/common/Modal';
-import { Homework, Student, Attendance, Grade, Announcement, User, Message, UserRole } from '../types';
+import { Homework, Student, Attendance, Announcement, User, Message, UserRole } from '../types';
+import { Grade } from '../services/apiService';
 import ProfileImage from '../components/common/ProfileImage';
 import ProfileScreen from './ProfileScreen';
 import apiService from '../services/apiService';
@@ -233,40 +234,60 @@ const HomeworkManager: React.FC<{ studentsInClass: Student[], setSuccessMessage:
         setIsDeleteModalOpen(true);
     };
 
-    const handleSaveSubmissions = () => {
+    const handleSaveSubmissions = async () => {
         if (!homeworkToMark) return;
-        setAllHomework(allHomework.map(hw => hw.id === homeworkToMark.id ? { ...hw, submitted: submissions } : hw));
-        setSubmissionsModalOpen(false);
-        setHomeworkToMark(null);
-        setSuccessMessage(t('submissions_saved_success'));
+        
+        try {
+            await apiService.updateHomework(homeworkToMark.id, { submitted: submissions });
+            setAllHomework(allHomework.map(hw => hw.id === homeworkToMark.id ? { ...hw, submitted: submissions } : hw));
+            setSubmissionsModalOpen(false);
+            setHomeworkToMark(null);
+            setSuccessMessage(t('submissions_saved_success'));
+        } catch (error) {
+            console.error('Error saving submissions:', error);
+            setSuccessMessage(t('error_saving_submissions'));
+        }
     };
     
-    const handleAssignHomework = (e: React.FormEvent) => {
+    const handleAssignHomework = async (e: React.FormEvent) => {
         e.preventDefault();
         if(!newHwTitle || !newHwSubject || !newHwDueDate || !user) return;
-        const newHomework: Homework = {
-            id: `HW${Date.now()}`,
-            title: newHwTitle,
-            subject: newHwSubject,
-            dueDate: newHwDueDate,
-            assignedDate: new Date().toISOString().slice(0, 10),
-            teacherId: user.id,
-            submitted: []
-        };
-        setAllHomework([...allHomework, newHomework]);
-        setCreateModalOpen(false);
-        setNewHwTitle('');
-        setNewHwSubject(subjects[0]?.name || '');
-        setNewHwDueDate('');
-        setSuccessMessage(t('homework_assigned_success'));
+        
+        try {
+            const newHomework = await apiService.createHomework({
+                title: newHwTitle,
+                subject: newHwSubject,
+                dueDate: newHwDueDate,
+                assignedDate: new Date().toISOString().slice(0, 10),
+                teacherId: user.id,
+                submitted: []
+            });
+            
+            setAllHomework([...allHomework, newHomework]);
+            setCreateModalOpen(false);
+            setNewHwTitle('');
+            setNewHwSubject(subjects[0]?.name || '');
+            setNewHwDueDate('');
+            setSuccessMessage(t('homework_assigned_success'));
+        } catch (error) {
+            console.error('Error creating homework:', error);
+            setSuccessMessage(t('error_creating_homework'));
+        }
     };
 
-    const handleConfirmDelete = () => {
+    const handleConfirmDelete = async () => {
         if (!homeworkToDelete) return;
-        setAllHomework(allHomework.filter(hw => hw.id !== homeworkToDelete.id));
-        setIsDeleteModalOpen(false);
-        setHomeworkToDelete(null);
-        setSuccessMessage(t('homework_deleted_success'));
+        
+        try {
+            await apiService.deleteHomework(homeworkToDelete.id);
+            setAllHomework(allHomework.filter(hw => hw.id !== homeworkToDelete.id));
+            setIsDeleteModalOpen(false);
+            setHomeworkToDelete(null);
+            setSuccessMessage(t('homework_deleted_success'));
+        } catch (error) {
+            console.error('Error deleting homework:', error);
+            setSuccessMessage(t('error_deleting_homework'));
+        }
     };
 
     return (
@@ -453,14 +474,31 @@ const AssignmentList: React.FC<AssignmentListProps> = ({ studentsInClass, onEdit
         setIsDeleteModalOpen(true);
     };
 
-    const handleConfirmDelete = () => {
+    const handleConfirmDelete = async () => {
         if (!assignmentToDelete) return;
-        setGrades(allGrades.filter(g => 
-            !(g.assignment === assignmentToDelete.title && g.subject === assignmentToDelete.subject)
-        ));
-        setIsDeleteModalOpen(false);
-        setAssignmentToDelete(null);
-        setSuccessMessage(t('assignment_deleted_success'));
+        
+        try {
+            // Delete all grades for this assignment
+            const gradesToDelete = allGrades.filter(g => 
+                g.assignment === assignmentToDelete.title && g.subject === assignmentToDelete.subject
+            );
+            
+            for (const grade of gradesToDelete) {
+                if (grade._id) {
+                    await apiService.deleteGrade(grade._id);
+                }
+            }
+            
+            setGrades(allGrades.filter(g => 
+                !(g.assignment === assignmentToDelete.title && g.subject === assignmentToDelete.subject)
+            ));
+            setIsDeleteModalOpen(false);
+            setAssignmentToDelete(null);
+            setSuccessMessage(t('assignment_deleted_success'));
+        } catch (error) {
+            console.error('Error deleting assignment:', error);
+            setSuccessMessage(t('error_deleting_assignment'));
+        }
     };
 
     return (
@@ -535,19 +573,45 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
         }
     };
 
-    const handleSaveGrades = () => {
-        let updatedGrades = allGrades.filter(g => !(g.assignment === details.title && g.subject === details.subject));
-        
-        const newGrades = Object.entries(studentGrades).map(([studentId, marks]) => {
-             if (marks === '' || marks === undefined) return null;
-             return {
-                id: `G${Date.now()}${studentId}`, studentId, subject: details.subject, assignment: details.title,
-                marksObtained: marks as number, maxMarks: details.maxMarks, date: details.date, teacherId
-             }
-        }).filter(Boolean) as Grade[];
+    const handleSaveGrades = async () => {
+        try {
+            // Delete existing grades for this assignment
+            const existingGrades = allGrades.filter(g => g.assignment === details.title && g.subject === details.subject);
+            for (const grade of existingGrades) {
+                if (grade._id) {
+                    await apiService.deleteGrade(grade._id);
+                }
+            }
+            
+            // Create new grades
+            const newGrades = Object.entries(studentGrades).map(([studentId, marks]) => {
+                if (marks === '' || marks === undefined) return null;
+                return {
+                    studentId, 
+                    subject: details.subject, 
+                    assignment: details.title,
+                    marksObtained: marks as number, 
+                    maxMarks: details.maxMarks, 
+                    date: details.date, 
+                    type: 'exam'
+                };
+            }).filter(Boolean) as Omit<Grade, '_id'>[];
 
-        setGrades([...updatedGrades, ...newGrades]);
-        onSave(t('grades_saved_success'));
+            // Save each grade to database
+            const savedGrades = [];
+            for (const grade of newGrades) {
+                const savedGrade = await apiService.addGrade(grade);
+                savedGrades.push(savedGrade);
+            }
+
+            // Update local state
+            const updatedGrades = allGrades.filter(g => !(g.assignment === details.title && g.subject === details.subject));
+            setGrades([...updatedGrades, ...savedGrades]);
+            onSave(t('grades_saved_success'));
+        } catch (error) {
+            console.error('Error saving grades:', error);
+            onSave(t('error_saving_grades'));
+        }
     };
 
     return (

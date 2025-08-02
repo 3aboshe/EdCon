@@ -295,6 +295,31 @@ class ApiService {
     return Array.isArray(response) ? response : (response as any).data || [];
   }
 
+  // Create new homework
+  async createHomework(homework: Omit<Homework, 'id'>): Promise<Homework> {
+    const response = await this.request<Homework>('/homework', {
+      method: 'POST',
+      body: JSON.stringify(homework),
+    });
+    return response.data || response as Homework;
+  }
+
+  // Update homework
+  async updateHomework(id: string, homework: Partial<Homework>): Promise<Homework> {
+    const response = await this.request<Homework>(`/homework/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(homework),
+    });
+    return response.data || response as Homework;
+  }
+
+  // Delete homework
+  async deleteHomework(id: string): Promise<void> {
+    await this.request(`/homework/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Get all announcements
   async getAllAnnouncements(): Promise<Announcement[]> {
     const response = await this.request<Announcement[]>('/announcements');
