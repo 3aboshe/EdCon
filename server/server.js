@@ -67,7 +67,7 @@ app.use('/api/messages', messageRoutes);
 app.get('/uploads/:filename', (req, res) => {
   try {
     const { filename } = req.params;
-    const filePath = path.join(__dirname, 'uploads', filename);
+    const filePath = path.join(process.cwd(), 'uploads', filename);
     
     console.log('=== FILE DOWNLOAD DEBUG ===');
     console.log('Requested filename:', filename);

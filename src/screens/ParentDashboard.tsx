@@ -89,20 +89,25 @@ const ParentDashboard: React.FC = () => {
                 {activeTab === 'dashboard' && selectedStudent && (
                     <>
                         <Top5Briefing student={selectedStudent}/>
+                        <AIAttendanceAnalysis student={selectedStudent} />
                         <AttendanceSummary student={selectedStudent} />
                         <VideoTutorials />
                     </>
                 )}
 
-                {activeTab === 'performance' && selectedStudent && (
+                                {activeTab === 'performance' && selectedStudent && (
                      <>
                         <AISummary student={selectedStudent} />
+                        <AIInsights student={selectedStudent} />
                         <GradesList student={selectedStudent} />
-                     </>
+                    </>
                 )}
 
                 {activeTab === 'homework' && selectedStudent && (
-                    <HomeworkSummary student={selectedStudent} />
+                    <>
+                        <AIHomeworkAnalysis student={selectedStudent} />
+                        <HomeworkSummary student={selectedStudent} />
+                    </>
                 )}
 
                 {activeTab === 'announcements' && selectedStudent && (
@@ -206,6 +211,161 @@ const Top5Briefing: React.FC<{student: Student}> = ({student}) => {
             )}
         </Card>
     )
+}
+
+const AIInsights: React.FC<{ student: Student }> = ({ student }) => {
+    const { t, lang, grades } = useContext(AppContext);
+    const [insights, setInsights] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        setInsights('');
+        setIsLoading(true);
+        const fetchInsights = async () => {
+            try {
+                const studentGrades = grades.filter(g => g.studentId === student.id);
+                if (studentGrades.length === 0) {
+                    setInsights(t('no_marks'));
+                    return;
+                }
+
+                const languageMap: Record<string, string> = {
+                    'en': 'English',
+                    'ku-sorani': 'Sorani Kurdish',
+                    'ku-badini': 'Bahdini Kurdish',
+                    'ar': 'Arabic',
+                    'syr': 'Modern Assyrian'
+                };
+                const languageName = languageMap[lang] || 'English';
+                const insightsText = await generateAcademicInsights(studentGrades, languageName);
+                setInsights(insightsText);
+            } catch (error) {
+                setInsights(t('error_gemini'));
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        
+        const timer = setTimeout(fetchInsights, 100);
+        return () => clearTimeout(timer);
+    }, [student.id, t, lang, grades]);
+    
+    return (
+        <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white">
+            <h2 className="text-lg font-bold mb-2 flex items-center">
+                <i className="fas fa-chart-line mr-2"></i>
+                AI Academic Insights
+            </h2>
+            {isLoading ? <LoadingSpinner /> : (
+                <div className="prose prose-invert max-w-none">
+                    <div className="whitespace-pre-wrap">{insights}</div>
+                </div>
+            )}
+        </Card>
+    );
+}
+
+const AIAttendanceAnalysis: React.FC<{ student: Student }> = ({ student }) => {
+    const { t, lang, attendance } = useContext(AppContext);
+    const [analysis, setAnalysis] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        setAnalysis('');
+        setIsLoading(true);
+        const fetchAnalysis = async () => {
+            try {
+                const studentAttendance = attendance.filter(a => a.studentId === student.id);
+                if (studentAttendance.length === 0) {
+                    setAnalysis(t('no_attendance'));
+                    return;
+                }
+
+                const languageMap: Record<string, string> = {
+                    'en': 'English',
+                    'ku-sorani': 'Sorani Kurdish',
+                    'ku-badini': 'Bahdini Kurdish',
+                    'ar': 'Arabic',
+                    'syr': 'Modern Assyrian'
+                };
+                const languageName = languageMap[lang] || 'English';
+                const analysisText = await generateAttendanceAnalysis(studentAttendance, languageName);
+                setAnalysis(analysisText);
+            } catch (error) {
+                setAnalysis(t('error_gemini'));
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        
+        const timer = setTimeout(fetchAnalysis, 100);
+        return () => clearTimeout(timer);
+    }, [student.id, t, lang, attendance]);
+    
+    return (
+        <Card className="bg-gradient-to-br from-orange-500 to-red-600 text-white">
+            <h2 className="text-lg font-bold mb-2 flex items-center">
+                <i className="fas fa-calendar-check mr-2"></i>
+                AI Attendance Analysis
+            </h2>
+            {isLoading ? <LoadingSpinner /> : (
+                <div className="prose prose-invert max-w-none">
+                    <div className="whitespace-pre-wrap">{analysis}</div>
+                </div>
+            )}
+        </Card>
+    );
+}
+
+const AIHomeworkAnalysis: React.FC<{ student: Student }> = ({ student }) => {
+    const { t, lang, homework } = useContext(AppContext);
+    const [analysis, setAnalysis] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        setAnalysis('');
+        setIsLoading(true);
+        const fetchAnalysis = async () => {
+            try {
+                if (homework.length === 0) {
+                    setAnalysis(t('no_homework'));
+                    return;
+                }
+
+                const languageMap: Record<string, string> = {
+                    'en': 'English',
+                    'ku-sorani': 'Sorani Kurdish',
+                    'ku-badini': 'Bahdini Kurdish',
+                    'ar': 'Arabic',
+                    'syr': 'Modern Assyrian'
+                };
+                const languageName = languageMap[lang] || 'English';
+                const analysisText = await generateHomeworkSummary(homework, languageName);
+                setAnalysis(analysisText);
+            } catch (error) {
+                setAnalysis(t('error_gemini'));
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        
+        const timer = setTimeout(fetchAnalysis, 100);
+        return () => clearTimeout(timer);
+    }, [student.id, t, lang, homework]);
+    
+    return (
+        <Card className="bg-gradient-to-br from-purple-500 to-pink-600 text-white">
+            <h2 className="text-lg font-bold mb-2 flex items-center">
+                <i className="fas fa-book mr-2"></i>
+                AI Homework Analysis
+            </h2>
+            {isLoading ? <LoadingSpinner /> : (
+                <div className="prose prose-invert max-w-none">
+                    <div className="whitespace-pre-wrap">{analysis}</div>
+                </div>
+            )}
+        </Card>
+    );
 }
 
 const AISummary: React.FC<{ student: Student }> = ({ student }) => {
