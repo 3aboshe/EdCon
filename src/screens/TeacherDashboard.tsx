@@ -49,7 +49,16 @@ const TeacherDashboard: React.FC = () => {
         }
     }, [teacherClasses, selectedClassId]);
 
-    const studentsInClass = useMemo(() => allStudents.filter(s => s.classId === selectedClassId), [selectedClassId, allStudents]);
+    const studentsInClass = useMemo(() => {
+        console.log('=== STUDENTS IN CLASS DEBUG ===');
+        console.log('Selected class ID:', selectedClassId);
+        console.log('All students:', allStudents);
+        console.log('All students classIds:', allStudents.map(s => ({ id: s.id, name: s.name, classId: s.classId })));
+        
+        const filtered = allStudents.filter(s => s.classId === selectedClassId);
+        console.log('Filtered students for class:', filtered);
+        return filtered;
+    }, [selectedClassId, allStudents]);
 
     useEffect(() => {
         if (successMessage) {

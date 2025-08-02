@@ -145,6 +145,12 @@ const App: React.FC = () => {
                     classId: (u as any).classId || '',
                     parentId: (u as any).parentId || '',
                 })) as Student[];
+                
+                console.log('=== STUDENTS PROCESSING DEBUG ===');
+                console.log('All users:', allUsers.length);
+                console.log('Student users:', studentUsers.length);
+                console.log('Student details:', studentUsers.map(s => ({ id: s.id, name: s.name, classId: s.classId, role: s.role })));
+                
                 setStudents(studentUsers);
 
                 // Load teachers with their classIds
