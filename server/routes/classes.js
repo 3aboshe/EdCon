@@ -43,4 +43,45 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Delete a class
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log('Deleting class:', id);
+    
+    // Check if class exists
+    const existingClass = await prisma.class.findUnique({
+      where: { id: id }
+    });
+    
+    if (!existingClass) {
+      console.log('Class not found:', id);
+      return res.status(404).json({ message: 'Class not found' });
+    }
+    
+    // Check if class has students
+    const studentsInClass = await prisma.user.findMany({
+      where: { classId: id }
+    });
+    
+    if (studentsInClass.length > 0) {
+      console.log('Cannot delete class with students:', studentsInClass.length, 'students');
+      return res.status(400).json({ 
+        message: 'Cannot delete class with students. Please remove all students first.' 
+      });
+    }
+    
+    // Delete the class
+    await prisma.class.delete({
+      where: { id: id }
+    });
+    
+    console.log('Successfully deleted class:', id);
+    res.json({ success: true, message: 'Class deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting class:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 export default router; 
