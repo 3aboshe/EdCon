@@ -112,6 +112,9 @@ router.post('/', upload.array('files', 5), async (req, res) => {
     const { senderId, receiverId, timestamp, content, type, isRead } = req.body;
     const files = req.files || [];
     
+    console.log('=== FILE UPLOAD DEBUG ===');
+    console.log('Request body:', req.body);
+    console.log('Files:', files);
     console.log('Creating message with data:', {
       senderId,
       receiverId,
@@ -153,6 +156,7 @@ router.post('/', upload.array('files', 5), async (req, res) => {
         url: `/uploads/${file.filename}`
       }));
       console.log('Processed attachments:', attachments.length, 'files');
+      console.log('Attachment details:', attachments);
     }
     
     // Determine message type
@@ -160,6 +164,8 @@ router.post('/', upload.array('files', 5), async (req, res) => {
     if (files.length > 0) {
       messageType = 'FILE';
     }
+    
+    console.log('About to create message with type:', messageType);
     
     const newMessage = await prisma.message.create({
       data: {

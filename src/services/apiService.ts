@@ -99,19 +99,35 @@ class ApiService {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     try {
+      console.log('Making API request:', {
+        url: `${API_BASE_URL}${endpoint}`,
+        method: options.method || 'GET',
+        hasBody: !!options.body,
+        bodyType: options.body ? (options.body instanceof FormData ? 'FormData' : 'JSON') : 'none'
+      });
+
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         headers: {
-          'Content-Type': 'application/json',
+          ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
           ...options.headers,
         },
         ...options,
       });
 
-      const data = await response.json();
+      console.log('API response status:', response.status);
 
       if (!response.ok) {
-        throw new Error(data.message || 'API request failed');
+        const errorText = await response.text();
+        console.error('API request error:', {
+          status: response.status,
+          statusText: response.statusText,
+          url: `${API_BASE_URL}${endpoint}`,
+          errorText
+        });
+        throw new Error(`Server error: ${response.status} ${response.statusText}`);
       }
+
+      const data = await response.json();
 
       // For endpoints that return data directly (not wrapped in data property)
       if (endpoint === '/auth/create') {
