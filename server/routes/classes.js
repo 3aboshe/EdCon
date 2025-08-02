@@ -25,8 +25,12 @@ router.post('/', async (req, res) => {
     const { name } = req.body;
     console.log('Creating class:', name);
     
+    // Generate a unique ID for the class
+    const classId = `C${Date.now()}`;
+    
     const classData = await prisma.class.create({
       data: {
+        id: classId,
         name: name
       }
     });

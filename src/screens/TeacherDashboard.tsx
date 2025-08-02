@@ -8,6 +8,7 @@ import Modal from '../components/common/Modal';
 import { Homework, Student, Attendance, Grade, Announcement, User, Message, UserRole } from '../types';
 import ProfileImage from '../components/common/ProfileImage';
 import ProfileScreen from './ProfileScreen';
+import apiService from '../services/apiService';
 
 type Screen = 'dashboard' | 'attendance' | 'homework' | 'announcements' | 'marks' | 'leaderboard' | 'messages' | 'profile';
 
@@ -730,12 +731,11 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
         }
     }, [conversation]);
     
-    const handleSendMessage = (e?: React.FormEvent) => {
+    const handleSendMessage = async (e?: React.FormEvent) => {
         e?.preventDefault();
         if ((!newMessage.trim() && !audioUrl) || !user) return;
         
-        const message: Message = {
-            id: `M${Date.now()}`,
+        const messageData = {
             senderId: user.id,
             receiverId: otherParty.id,
             timestamp: new Date().toISOString(),
@@ -744,9 +744,17 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
             audioSrc: audioUrl || undefined,
             content: newMessage.trim() || undefined
         };
-        setMessages([...messages, message]);
-        setNewMessage('');
-        setAudioUrl(null);
+        
+        try {
+            // Send message to API
+            const savedMessage = await apiService.sendMessage(messageData);
+            setMessages([...messages, savedMessage]);
+            setNewMessage('');
+            setAudioUrl(null);
+        } catch (error) {
+            console.error('Failed to send message:', error);
+            // Optionally show error to user
+        }
     };
 
     const handleStartRecording = async () => {
