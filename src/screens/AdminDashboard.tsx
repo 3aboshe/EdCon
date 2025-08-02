@@ -104,15 +104,30 @@ interface TabProps {
     selectedClassId: string;
 }
 
-const StatCard: React.FC<{ title: string; value: number | string; icon: string; color: string }> = ({ title, value, icon, color }) => {
+const StatCard: React.FC<{ title: string; value: number | string; icon: string; color: string; gradient: string }> = ({ title, value, icon, color, gradient }) => {
     return (
-        <div className={`rounded-xl shadow-md p-4 flex items-center ${color} text-white`}>
-            <div className="p-3 rounded-full bg-white bg-opacity-25 flex items-center justify-center">
-                <i className={`fas ${icon} text-2xl`}></i>
+        <div className={`relative overflow-hidden rounded-2xl shadow-lg p-6 ${gradient} text-white transform transition-all duration-300 hover:scale-105 hover:shadow-xl`}>
+            {/* Background Pattern */}
+            <div className="absolute top-0 right-0 w-32 h-32 opacity-10">
+                <div className="w-full h-full bg-white rounded-full transform translate-x-8 -translate-y-8"></div>
             </div>
-            <div className="ml-4 rtl:mr-4">
-                <p className="text-2xl font-bold">{value}</p>
-                <p className="text-sm opacity-90">{title}</p>
+            
+            {/* Icon Container */}
+            <div className="relative z-10 mb-4">
+                <div className={`w-16 h-16 rounded-2xl ${color} bg-opacity-20 backdrop-blur-sm flex items-center justify-center border border-white border-opacity-30`}>
+                    <i className={`fas ${icon} text-2xl text-white`}></i>
+                </div>
+            </div>
+            
+            {/* Content */}
+            <div className="relative z-10">
+                <p className="text-4xl font-bold mb-1 tracking-tight">{value}</p>
+                <p className="text-sm font-medium opacity-90 uppercase tracking-wide">{title}</p>
+            </div>
+            
+            {/* Decorative Elements */}
+            <div className="absolute bottom-2 right-2 w-8 h-8 opacity-20">
+                <div className="w-full h-full border-2 border-white rounded-full"></div>
             </div>
         </div>
     );
@@ -159,12 +174,48 @@ const OverviewTab: React.FC<TabProps> = ({ selectedClassId }) => {
     }, [grades]);
 
     return (
-        <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <StatCard title={t('total_students')} value={filteredStudents.length} icon="fa-user-graduate" color="bg-blue-500"/>
-                <StatCard title={t('total_teachers')} value={totalTeachers} icon="fa-chalkboard-teacher" color="bg-teal-500"/>
-                <StatCard title={t('graded_assignments')} value={grades.length} icon="fa-clipboard-check" color="bg-indigo-500"/>
-                <StatCard title={t('total_submissions')} value={homework.reduce((sum, hw) => sum + hw.submitted.filter(sid => filteredStudents.some(s => s.id === sid)).length, 0)} icon="fa-file-lines" color="bg-rose-500"/>
+        <div className="space-y-8">
+            {/* Stats Header */}
+            <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">{t('school_statistics')}</h2>
+                <p className="text-gray-600">{t('overview_description')}</p>
+            </div>
+            
+            <div className="relative">
+                {/* Background Pattern */}
+                <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl opacity-50"></div>
+                <div className="relative p-6 rounded-3xl">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <StatCard 
+                            title={t('total_students')} 
+                            value={filteredStudents.length} 
+                            icon="fa-user-graduate" 
+                            color="bg-blue-500" 
+                            gradient="bg-gradient-to-br from-blue-500 to-blue-600"
+                        />
+                        <StatCard 
+                            title={t('total_teachers')} 
+                            value={totalTeachers} 
+                            icon="fa-chalkboard-teacher" 
+                            color="bg-teal-500" 
+                            gradient="bg-gradient-to-br from-teal-500 to-teal-600"
+                        />
+                        <StatCard 
+                            title={t('graded_assignments')} 
+                            value={grades.length} 
+                            icon="fa-clipboard-check" 
+                            color="bg-indigo-500" 
+                            gradient="bg-gradient-to-br from-indigo-500 to-indigo-600"
+                        />
+                        <StatCard 
+                            title={t('total_submissions')} 
+                            value={homework.reduce((sum, hw) => sum + hw.submitted.filter(sid => filteredStudents.some(s => s.id === sid)).length, 0)} 
+                            icon="fa-file-lines" 
+                            color="bg-rose-500" 
+                            gradient="bg-gradient-to-br from-rose-500 to-rose-600"
+                        />
+                    </div>
+                </div>
             </div>
             
             <Card>
