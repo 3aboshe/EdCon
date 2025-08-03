@@ -175,20 +175,27 @@ const AttendanceManager: React.FC<{ students: Student[], setSuccessMessage: (msg
 
     const handleSave = async () => {
         try {
+            console.log('=== ATTENDANCE SAVE DEBUG ===');
+            console.log('All attendance:', allAttendance);
+            console.log('Attendance updates:', attendanceUpdates);
+            console.log('Selected date:', selectedDate);
+            
             const updatedAttendance = [...allAttendance];
             const newAttendanceRecords: Attendance[] = [];
             
             for (const [studentId, status] of Object.entries(attendanceUpdates) as [string, 'present' | 'absent' | 'late'][]) {
-                const recordIndex = updatedAttendance.findIndex(a => a.studentId === studentId && a.date === selectedDate);
+                const recordIndex = updatedAttendance.findIndex(a => a && a.studentId && a.studentId === studentId && a.date === selectedDate);
     
-                if (recordIndex !== -1) {
+                if (recordIndex !== -1 && updatedAttendance[recordIndex]) {
                     if(updatedAttendance[recordIndex].status !== status) {
                         // Update existing record
                         const existingRecord = updatedAttendance[recordIndex];
-                        const updatedRecord = await apiService.updateAttendance((existingRecord as any).id, { 
-                            status: status.toUpperCase() as 'PRESENT' | 'ABSENT' | 'LATE' 
-                        });
-                        updatedAttendance[recordIndex] = updatedRecord;
+                        if (existingRecord && (existingRecord as any).id) {
+                            const updatedRecord = await apiService.updateAttendance((existingRecord as any).id, { 
+                                status: status.toUpperCase() as 'PRESENT' | 'ABSENT' | 'LATE' 
+                            });
+                            updatedAttendance[recordIndex] = updatedRecord;
+                        }
                     }
                 } else {
                     // Create new record
