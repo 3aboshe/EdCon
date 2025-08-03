@@ -1,6 +1,6 @@
 
 
-import React, { useState, useContext, useMemo, useEffect } from 'react';
+import React, { useState, useContext, useMemo, useEffect, useRef } from 'react';
 import { AppContext } from '../App';
 import { Student, Grade, Homework, Announcement, User, Message, UserRole } from '../types';
 import Header from '../components/common/Header';
@@ -497,44 +497,27 @@ const ParentMessaging: React.FC<{ student: Student }> = ({ student }) => {
     return (
         <>
             <Card>
-                <h2 className="text-lg font-bold mb-4">{t('messages')}</h2>
-                {conversations.length > 0 ? (
-                    <div className="space-y-3">
-                        {conversations.map(({ teacher, lastMessage, unreadCount }) => (
-                            <div 
-                                key={teacher!.id} 
-                                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100"
-                                onClick={() => handleOpenChat(teacher!)}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <img src={teacher!.avatar} alt={teacher!.name} className="w-10 h-10 rounded-full object-cover bg-gray-200" />
-                                    <div>
-                                        <div className="font-medium">{teacher!.name}</div>
-                                        <div className="text-sm text-gray-600">
-                                            {lastMessage?.content?.substring(0, 50) || t('no_messages_yet')}
-                                        </div>
-                                    </div>
-                                </div>
-                                {unreadCount > 0 && (
-                                    <span className="bg-blue-600 text-white text-xs rounded-full px-2 py-1">
-                                        {unreadCount}
-                                    </span>
-                                )}
+                <h2 className="text-xl font-bold text-gray-800 mb-4">{t('messages')}</h2>
+                <div className="space-y-3">
+                    {conversations.map(({ teacher, lastMessage, unreadCount }) => (
+                        teacher && <div key={teacher.id} onClick={() => handleOpenChat(teacher)} className="flex items-center p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                             <div className="relative">
+                                <ProfileImage name={teacher.name} avatarUrl={teacher.avatar} />
+                                {unreadCount > 0 && <span className="absolute top-0 right-0 block h-3 w-3 rounded-full bg-blue-500 border-2 border-white"></span>}
                             </div>
-                        ))}
-                    </div>
-                ) : (
-                    <p className="text-gray-600">{t('no_messages_yet')}</p>
-                )}
+                            <div className="ml-4 rtl:mr-4 flex-grow">
+                                <p className="font-semibold text-gray-800">{teacher.name}</p>
+                                <p className={`text-sm ${unreadCount > 0 ? 'font-bold text-gray-700' : 'text-gray-500'} truncate`}>
+                                    {lastMessage?.type === 'voice' ? 'Voice Message' : lastMessage?.content || ''}
+                                </p>
+                            </div>
+                            <span className="text-xs text-gray-400">{lastMessage ? new Date(lastMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                        </div>
+                    ))}
+                    {conversations.length === 0 && <p className="text-center text-gray-500">{t('no_messages_yet')}</p>}
+                </div>
             </Card>
-            
-            {selectedTeacher && (
-                <ChatModal 
-                    isOpen={isChatOpen} 
-                    onClose={handleCloseChat} 
-                    otherParty={selectedTeacher} 
-                />
-            )}
+            {selectedTeacher && <ChatModal isOpen={isChatOpen} onClose={handleCloseChat} otherParty={selectedTeacher} />}
         </>
     );
 };
@@ -542,41 +525,58 @@ const ParentMessaging: React.FC<{ student: Student }> = ({ student }) => {
 const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: User }> = ({ isOpen, onClose, otherParty }) => {
     const { t, user, messages, setMessages } = useContext(AppContext);
     const [newMessage, setNewMessage] = useState('');
-    const [isSending, setIsSending] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [isUploading, setIsUploading] = useState(false);
+    const chatContainerRef = React.useRef<HTMLDivElement>(null);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-    const chatMessages = useMemo(() => {
-        if (!user) return [];
-        return messages.filter(m => 
-            (m.senderId === user.id && m.receiverId === otherParty.id) ||
-            (m.senderId === otherParty.id && m.receiverId === user.id)
-        ).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    const conversation = useMemo(() => {
+        return messages
+            .filter(m => (m.senderId === user?.id && m.receiverId === otherParty.id) || (m.senderId === otherParty.id && m.receiverId === user?.id))
+            .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
     }, [messages, user, otherParty]);
 
+    useEffect(() => {
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+    }, [conversation]);
+    
     const handleSendMessage = async (e?: React.FormEvent) => {
-        if (e) e.preventDefault();
-        if (!newMessage.trim() && selectedFiles.length === 0) return;
-
-        setIsSending(true);
+        e?.preventDefault();
+        if ((!newMessage.trim() && selectedFiles.length === 0) || !user) return;
+        
+        setIsUploading(true);
+        
+        const messageData = {
+            senderId: user.id,
+            receiverId: otherParty.id,
+            timestamp: new Date().toISOString(),
+            isRead: false,
+            type: (selectedFiles.length > 0 ? 'file' : 'text') as 'text' | 'file',
+            content: newMessage.trim() || undefined,
+            files: selectedFiles.length > 0 ? selectedFiles : undefined
+        };
+        
         try {
-            const messageData = {
-                senderId: user!.id,
-                receiverId: otherParty.id,
-                timestamp: new Date().toISOString(),
-                isRead: false,
-                type: selectedFiles.length > 0 ? 'file' as const : 'text' as const,
-                content: newMessage.trim() || undefined,
-                files: selectedFiles
-            };
-
+            console.log('Sending message to database:', {
+                senderId: messageData.senderId,
+                receiverId: messageData.receiverId,
+                type: messageData.type,
+                content: messageData.content,
+                fileCount: selectedFiles.length
+            });
+            
+            // Send message to database
             const savedMessage = await apiService.sendMessage(messageData);
-            setMessages(prev => [...prev, savedMessage]);
+            console.log('Message sent successfully:', savedMessage);
+            setMessages([...messages, savedMessage]);
             setNewMessage('');
             setSelectedFiles([]);
         } catch (error) {
-            console.error('Error sending message:', error);
+            console.error('Failed to send message:', error);
         } finally {
-            setIsSending(false);
+            setIsUploading(false);
         }
     };
 
@@ -597,95 +597,135 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
-    if (!isOpen) return null;
-
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={t('conversation_with', { name: otherParty.name })}>
-            <div className="flex flex-col h-96">
-                <div className="flex-grow overflow-y-auto space-y-3 mb-4">
-                    {chatMessages.map((message, index) => (
-                        <div key={index} className={`flex ${message.senderId === user?.id ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-xs p-3 rounded-lg ${
-                                message.senderId === user?.id 
-                                    ? 'bg-blue-600 text-white' 
-                                    : 'bg-gray-200 text-gray-800'
-                            }`}>
-                                {message.type === 'text' && message.content && (
-                                    <div>{message.content}</div>
-                                )}
-                                {message.type === 'file' && message.attachments && (
-                                    <div>
-                                        {message.attachments.map((attachment, idx) => (
-                                            <div key={idx} className="mb-2">
-                                                <a 
-                                                    href={attachment.url} 
-                                                    target="_blank" 
-                                                    rel="noopener noreferrer"
-                                                    className="underline"
-                                                >
-                                                    {attachment.filename}
-                                                </a>
-                                                <div className="text-xs opacity-75">
-                                                    {formatFileSize(attachment.size)}
+        <Modal isOpen={isOpen} onClose={onClose} title={t('conversation_with').replace('{name}', otherParty.name)}>
+            <div className="flex flex-col h-[70vh]">
+                {/* Chat Messages */}
+                <div ref={chatContainerRef} className="flex-grow space-y-4 p-4 overflow-y-auto bg-gray-50 rounded-t-lg">
+                    {conversation.length === 0 && (
+                        <div className="text-center text-gray-500 py-8">
+                            <i className="fas fa-comments text-4xl mb-2 opacity-50"></i>
+                            <p>{t('no_messages_yet')}</p>
+                        </div>
+                    )}
+                    {conversation.map(msg => {
+                        const isMe = msg.senderId === user?.id;
+                        const sender = isMe ? user : otherParty;
+                        return (
+                            <div key={msg.id} className={`flex items-end gap-3 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                <div className={isMe ? 'order-2' : 'order-1'}>
+                                    <ProfileImage name={sender.name} avatarUrl={sender.avatar} className="w-8 h-8"/>
+                                </div>
+                                <div className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${isMe ? 'bg-blue-500 text-white order-1' : 'bg-white text-gray-800 shadow-sm order-2'}`}>
+                                    {msg.content && <p className="leading-relaxed mb-2">{msg.content}</p>}
+                                    
+                                    {/* File Attachments */}
+                                    {msg.attachments && msg.attachments.length > 0 && (
+                                        <div className="space-y-2">
+                                            {msg.attachments.map((attachment, index) => (
+                                                <div key={index} className="flex items-center gap-2 p-2 bg-gray-100 rounded-lg">
+                                                    <i className="fas fa-paperclip text-gray-500"></i>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-medium truncate">{attachment.filename}</p>
+                                                        <p className="text-xs text-gray-500">{formatFileSize(attachment.size)}</p>
+                                                    </div>
+                                                    <a 
+                                                        href={`https://edcon-production.up.railway.app${attachment.url}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-blue-600 hover:text-blue-800"
+                                                    >
+                                                        <i className="fas fa-download"></i>
+                                                    </a>
                                                 </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                                <div className="text-xs opacity-75 mt-1">
-                                    {new Date(message.timestamp).toLocaleTimeString()}
+                                            ))}
+                                        </div>
+                                    )}
+                                    
+                                    <p className={`text-xs mt-2 text-right ${isMe ? 'text-blue-200' : 'text-gray-400'}`}>
+                                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </p>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
                 
-                <form onSubmit={handleSendMessage} className="space-y-3">
+                {/* Message Input Area */}
+                <div className="p-4 border-t bg-white rounded-b-lg">
+                    {/* File Attachments Preview */}
                     {selectedFiles.length > 0 && (
-                        <div className="space-y-2">
-                            <div className="text-sm font-medium">{t('selected_files')}:</div>
-                            {selectedFiles.map((file, index) => (
-                                <div key={index} className="flex items-center justify-between p-2 bg-gray-100 rounded">
-                                    <span className="text-sm">{file.name}</span>
-                                    <button
-                                        type="button"
-                                        onClick={() => removeFile(index)}
-                                        className="text-red-600 hover:text-red-800"
-                                    >
-                                        ×
-                                    </button>
-                                </div>
-                            ))}
+                        <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                                <i className="fas fa-paperclip text-blue-600"></i>
+                                <span className="text-sm font-medium text-blue-700">Attachments ({selectedFiles.length})</span>
+                            </div>
+                            <div className="space-y-2">
+                                {selectedFiles.map((file, index) => (
+                                    <div key={index} className="flex items-center gap-2 p-2 bg-white rounded border">
+                                        <i className="fas fa-file text-gray-500"></i>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium truncate">{file.name}</p>
+                                            <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                                        </div>
+                                        <button 
+                                            onClick={() => removeFile(index)}
+                                            className="text-red-500 hover:text-red-700"
+                                            type="button"
+                                        >
+                                            <i className="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
                     
-                    <div className="flex gap-2">
-                        <input
-                            type="file"
-                            onChange={handleFileSelect}
-                            className="hidden"
-                            id="file-input"
-                            multiple
-                        />
-                        <label htmlFor="file-input" className="px-3 py-2 bg-gray-200 text-gray-700 rounded cursor-pointer hover:bg-gray-300">
-                            📎
-                        </label>
+                    {/* Message Input Form */}
+                    <form onSubmit={handleSendMessage} className="flex items-center gap-3">
                         <input
                             type="text"
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
                             placeholder={t('type_a_message')}
-                            className="flex-grow p-2 border rounded"
+                            className="flex-grow p-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            disabled={isUploading}
+                        />
+                        
+                        {/* File Attachment Button */}
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            multiple
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.webp,.txt"
+                            onChange={handleFileSelect}
+                            className="hidden"
                         />
                         <button
-                            type="submit"
-                            disabled={isSending}
-                            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploading}
+                            className="bg-gray-500 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-gray-600 transition shadow-md disabled:opacity-50"
+                            title="Attach files"
                         >
-                            {isSending ? t('sending') : t('send_message')}
+                            <i className="fas fa-paperclip"></i>
                         </button>
-                    </div>
-                </form>
+                        
+                        {/* Send Button */}
+                        <button 
+                            type="submit" 
+                            className="bg-blue-600 text-white rounded-full w-12 h-12 flex items-center justify-center hover:bg-blue-700 transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed" 
+                            disabled={(!newMessage.trim() && selectedFiles.length === 0) || isUploading}
+                            title="Send message"
+                        >
+                            {isUploading ? (
+                                <i className="fas fa-spinner fa-spin"></i>
+                            ) : (
+                                <i className="fas fa-paper-plane"></i>
+                            )}
+                        </button>
+                    </form>
+                </div>
             </div>
         </Modal>
     );
