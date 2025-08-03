@@ -207,7 +207,7 @@ const OverviewTab: React.FC<TabProps> = ({ selectedClassId }) => {
                         />
                         <StatCard 
                             title={t('graded_assignments')} 
-                            value={grades.length} 
+                            value={new Set(grades.map(g => `${g.assignment}|${g.subject}`)).size} 
                             icon="fa-clipboard-check" 
                             color="bg-indigo-500" 
                             gradient="bg-gradient-to-br from-indigo-500 to-indigo-600"

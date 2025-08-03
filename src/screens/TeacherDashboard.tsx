@@ -173,19 +173,35 @@ const AttendanceManager: React.FC<{ students: Student[], setSuccessMessage: (msg
         setAttendanceUpdates(allPresentUpdates);
     };
 
-    const handleSave = () => {
-        const updatedAttendance = [...allAttendance];
-        Object.entries(attendanceUpdates).forEach(([studentId, status]) => {
-            const recordIndex = updatedAttendance.findIndex(a => a.studentId === studentId && a.date === selectedDate);
+    const handleSave = async () => {
+        try {
+            const updatedAttendance = [...allAttendance];
+            const newAttendanceRecords: Attendance[] = [];
+            
+            for (const [studentId, status] of Object.entries(attendanceUpdates) as [string, 'present' | 'absent' | 'late'][]) {
+                const recordIndex = updatedAttendance.findIndex(a => a.studentId === studentId && a.date === selectedDate);
     
-            if (recordIndex !== -1) {
-                if(updatedAttendance[recordIndex].status !== status) updatedAttendance[recordIndex] = { ...updatedAttendance[recordIndex], status: status };
-            } else {
-                updatedAttendance.push({ date: selectedDate, studentId, status });
+                if (recordIndex !== -1) {
+                    if(updatedAttendance[recordIndex].status !== status) {
+                        // Update existing record
+                        const existingRecord = updatedAttendance[recordIndex];
+                        const updatedRecord = await apiService.updateAttendance((existingRecord as any).id, { status });
+                        updatedAttendance[recordIndex] = updatedRecord;
+                    }
+                } else {
+                    // Create new record
+                    const newRecord = await apiService.addAttendance({ date: selectedDate, studentId, status: status as 'present' | 'absent' | 'late' });
+                    updatedAttendance.push(newRecord);
+                    newAttendanceRecords.push(newRecord);
+                }
             }
-        });
-        setAllAttendance(updatedAttendance);
-        setSuccessMessage(t('attendance_saved_success'));
+            
+            setAllAttendance(updatedAttendance);
+            setSuccessMessage(t('attendance_saved_success'));
+        } catch (error) {
+            console.error('Error saving attendance:', error);
+            setSuccessMessage(t('error_saving_attendance'));
+        }
     };
 
     return (

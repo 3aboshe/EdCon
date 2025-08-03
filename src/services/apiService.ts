@@ -332,6 +332,24 @@ class ApiService {
     return Array.isArray(response) ? response : (response as any).data || [];
   }
 
+  // Add attendance record
+  async addAttendance(attendance: Omit<Attendance, 'id'>): Promise<Attendance> {
+    const response = await this.request<Attendance>('/attendance', {
+      method: 'POST',
+      body: JSON.stringify(attendance),
+    });
+    return response.data!;
+  }
+
+  // Update attendance record
+  async updateAttendance(id: string, attendance: Partial<Attendance>): Promise<Attendance> {
+    const response = await this.request<Attendance>(`/attendance/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(attendance),
+    });
+    return response.data!;
+  }
+
   // Get all messages
   async getAllMessages(): Promise<Message[]> {
     const response = await this.request<Message[]>('/messages');
