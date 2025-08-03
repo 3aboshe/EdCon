@@ -164,7 +164,7 @@ const QuickOverview: React.FC<{student: Student}> = ({student}) => {
     const recentHomework = homework.slice(0, 3); // Show last 3 homework assignments
     
     const attendanceRate = studentAttendance.length > 0 
-        ? (studentAttendance.filter(a => a.status === 'present').length / studentAttendance.length * 100).toFixed(1)
+        ? (studentAttendance.filter(a => a.status === 'present' || a.status === 'PRESENT').length / studentAttendance.length * 100).toFixed(1)
         : 0;
     
     const averageGrade = studentGrades.length > 0
@@ -324,9 +324,9 @@ const AttendanceSummary: React.FC<{ student: Student }> = ({ student }) => {
         .slice(0, 7);
 
     const statusCounts = {
-        present: studentAttendance.filter(a => a.status === 'present').length,
-        absent: studentAttendance.filter(a => a.status === 'absent').length,
-        late: studentAttendance.filter(a => a.status === 'late').length
+        present: studentAttendance.filter(a => a.status === 'present' || a.status === 'PRESENT').length,
+        absent: studentAttendance.filter(a => a.status === 'absent' || a.status === 'ABSENT').length,
+        late: studentAttendance.filter(a => a.status === 'late' || a.status === 'LATE').length
     };
 
     const totalDays = studentAttendance.length;
@@ -359,11 +359,11 @@ const AttendanceSummary: React.FC<{ student: Student }> = ({ student }) => {
                     <div key={index} className="flex justify-between items-center text-sm">
                         <span>{new Date(record.date).toLocaleDateString()}</span>
                         <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            record.status === 'present' ? 'bg-green-100 text-green-800' :
-                            record.status === 'absent' ? 'bg-red-100 text-red-800' :
+                            record.status === 'present' || record.status === 'PRESENT' ? 'bg-green-100 text-green-800' :
+                            record.status === 'absent' || record.status === 'ABSENT' ? 'bg-red-100 text-red-800' :
                             'bg-yellow-100 text-yellow-800'
                         }`}>
-                            {t(record.status)}
+                            {t(record.status.toLowerCase())}
                         </span>
                     </div>
                 ))}
