@@ -155,7 +155,7 @@ const AttendanceManager: React.FC<{ students: Student[], setSuccessMessage: (msg
     useEffect(() => {
         const newAttendanceState: Record<string, 'present' | 'absent' | 'late'> = {};
         students.forEach(s => {
-            const record = allAttendance.find(a => a.studentId === s.id && a.date === selectedDate);
+            const record = allAttendance.find(a => a && a.studentId && a.studentId === s.id && a.date === selectedDate);
             newAttendanceState[s.id] = record?.status || 'present';
         });
         setAttendanceUpdates(newAttendanceState);

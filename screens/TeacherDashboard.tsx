@@ -8,6 +8,7 @@ import Modal from '../components/common/Modal';
 import { Homework, Student, Attendance, Grade, Announcement, User, Message, UserRole } from '../types';
 import ProfileImage from '../components/common/ProfileImage';
 import ProfileScreen from './ProfileScreen';
+import apiService from '../services/apiService';
 
 type Screen = 'dashboard' | 'attendance' | 'homework' | 'announcements' | 'marks' | 'leaderboard' | 'messages' | 'profile';
 
@@ -137,7 +138,7 @@ const AttendanceManager: React.FC<{ students: Student[], setSuccessMessage: (msg
     useEffect(() => {
         const newAttendanceState: Record<string, 'present' | 'absent' | 'late'> = {};
         students.forEach(s => {
-            const record = allAttendance.find(a => a.studentId === s.id && a.date === selectedDate);
+            const record = allAttendance.find(a => a && a.studentId && a.studentId === s.id && a.date === selectedDate);
             newAttendanceState[s.id] = record?.status || 'present';
         });
         setAttendanceUpdates(newAttendanceState);
@@ -155,19 +156,48 @@ const AttendanceManager: React.FC<{ students: Student[], setSuccessMessage: (msg
         setAttendanceUpdates(allPresentUpdates);
     };
 
-    const handleSave = () => {
-        const updatedAttendance = [...allAttendance];
-        Object.entries(attendanceUpdates).forEach(([studentId, status]) => {
-            const recordIndex = updatedAttendance.findIndex(a => a.studentId === studentId && a.date === selectedDate);
+    const handleSave = async () => {
+        try {
+            console.log('=== ATTENDANCE SAVE DEBUG ===');
+            console.log('All attendance:', allAttendance);
+            console.log('Attendance updates:', attendanceUpdates);
+            console.log('Selected date:', selectedDate);
+            
+            const updatedAttendance = [...allAttendance];
+            const newAttendanceRecords: Attendance[] = [];
+            
+            for (const [studentId, status] of Object.entries(attendanceUpdates) as [string, 'present' | 'absent' | 'late'][]) {
+                const recordIndex = updatedAttendance.findIndex(a => a && a.studentId && a.studentId === studentId && a.date === selectedDate);
     
-            if (recordIndex !== -1) {
-                if(updatedAttendance[recordIndex].status !== status) updatedAttendance[recordIndex] = { ...updatedAttendance[recordIndex], status: status };
-            } else {
-                updatedAttendance.push({ date: selectedDate, studentId, status });
+                if (recordIndex !== -1 && updatedAttendance[recordIndex]) {
+                    if(updatedAttendance[recordIndex].status !== status) {
+                        // Update existing record
+                        const existingRecord = updatedAttendance[recordIndex];
+                        if (existingRecord && (existingRecord as any).id) {
+                            const updatedRecord = await apiService.updateAttendance((existingRecord as any).id, { 
+                                status: status.toUpperCase() as 'PRESENT' | 'ABSENT' | 'LATE' 
+                            });
+                            updatedAttendance[recordIndex] = updatedRecord;
+                        }
+                    }
+                } else {
+                    // Create new record
+                    const newRecord = await apiService.addAttendance({ 
+                        date: selectedDate, 
+                        studentId, 
+                        status: status.toUpperCase() as 'PRESENT' | 'ABSENT' | 'LATE' 
+                    });
+                    updatedAttendance.push(newRecord);
+                    newAttendanceRecords.push(newRecord);
+                }
             }
-        });
-        setAllAttendance(updatedAttendance);
-        setSuccessMessage(t('attendance_saved_success'));
+            
+            setAllAttendance(updatedAttendance);
+            setSuccessMessage(t('attendance_saved_success'));
+        } catch (error) {
+            console.error('Error saving attendance:', error);
+            setSuccessMessage(t('error_saving_attendance'));
+        }
     };
 
     return (
