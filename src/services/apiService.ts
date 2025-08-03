@@ -72,7 +72,7 @@ export interface Announcement {
 export interface Attendance {
   date: string;
   studentId: string;
-  status: 'present' | 'absent' | 'late';
+  status: 'present' | 'absent' | 'late' | 'PRESENT' | 'ABSENT' | 'LATE';
 }
 
 export interface Message {
