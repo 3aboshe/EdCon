@@ -69,7 +69,7 @@ export interface Homework {
 export interface Attendance {
   date: string; // YYYY-MM-DD
   studentId: string;
-  status: 'present' | 'absent' | 'late';
+  status: 'present' | 'absent' | 'late' | 'PRESENT' | 'ABSENT' | 'LATE';
 }
 
 export interface Class {

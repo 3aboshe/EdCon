@@ -185,12 +185,18 @@ const AttendanceManager: React.FC<{ students: Student[], setSuccessMessage: (msg
                     if(updatedAttendance[recordIndex].status !== status) {
                         // Update existing record
                         const existingRecord = updatedAttendance[recordIndex];
-                        const updatedRecord = await apiService.updateAttendance((existingRecord as any).id, { status });
+                        const updatedRecord = await apiService.updateAttendance((existingRecord as any).id, { 
+                            status: status.toUpperCase() as 'PRESENT' | 'ABSENT' | 'LATE' 
+                        });
                         updatedAttendance[recordIndex] = updatedRecord;
                     }
                 } else {
                     // Create new record
-                    const newRecord = await apiService.addAttendance({ date: selectedDate, studentId, status: status as 'present' | 'absent' | 'late' });
+                    const newRecord = await apiService.addAttendance({ 
+                        date: selectedDate, 
+                        studentId, 
+                        status: status.toUpperCase() as 'PRESENT' | 'ABSENT' | 'LATE' 
+                    });
                     updatedAttendance.push(newRecord);
                     newAttendanceRecords.push(newRecord);
                 }
