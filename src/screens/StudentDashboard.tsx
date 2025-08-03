@@ -105,7 +105,7 @@ const GradesView: React.FC<{ student: Student }> = ({ student }) => {
                         return (
                             <li key={grade.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                                 <div>
-                                    <p className="font-semibold text-gray-900">{grade.subject}: {grade.assignment}</p>
+                                    <p className="font-semibold text-gray-900">{grade.subject}: {grade.assignment || 'No Assignment'}</p>
                                     <p className="text-sm text-gray-500">{new Date(grade.date).toLocaleDateString()}</p>
                                 </div>
                                 <div className={`px-3 py-1 text-sm font-bold rounded-full ${colorClass}`}>{grade.marksObtained}/{grade.maxMarks}</div>

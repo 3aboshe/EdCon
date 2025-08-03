@@ -252,7 +252,7 @@ const GradesList: React.FC<{ student: Student }> = ({ student }) => {
                 {sortedGrades.slice(0, 10).map((grade, index) => (
                     <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                         <div>
-                            <div className="font-medium">{grade.assignment}</div>
+                            <div className="font-medium">{grade.assignment || 'No Assignment'}</div>
                             <div className="text-sm text-gray-600">{grade.subject} • {new Date(grade.date).toLocaleDateString()}</div>
                         </div>
                         <div className="text-right">
