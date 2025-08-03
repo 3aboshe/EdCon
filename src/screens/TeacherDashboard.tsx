@@ -5,6 +5,7 @@ import { AppContext } from '../App';
 import Header from '../components/common/Header';
 import Card from '../components/common/Card';
 import Modal from '../components/common/Modal';
+import LoadingSpinner from '../components/common/LoadingSpinner';
 import { Homework, Student, Attendance, Announcement, User, Message, UserRole } from '../types';
 import { Grade } from '../services/apiService';
 import ProfileImage from '../components/common/ProfileImage';
@@ -551,34 +552,58 @@ const AssignmentList: React.FC<AssignmentListProps> = ({ studentsInClass, onEdit
 
 const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentifier | null, onSave: (message: string) => void, teacherId: string }> = ({ students, assignment, onSave, teacherId }) => {
     const { t, grades: allGrades, setGrades, subjects } = useContext(AppContext);
-    const [details, setDetails] = useState({
-        title: assignment?.title || '',
-        subject: assignment?.subject || subjects[0]?.name || '',
-        maxMarks: allGrades.find(g => g.assignment && g.assignment.trim() !== '' && assignment?.title && g.assignment === assignment.title)?.maxMarks || 100,
-        date: new Date().toISOString().slice(0,10)
-    });
+    
+    // Safe initialization of details state
+    const getInitialDetails = () => {
+        const safeGrades = allGrades.filter(g => g && g.assignment && g.assignment.trim() !== '');
+        const maxMarks = assignment?.title 
+            ? safeGrades.find(g => g.assignment === assignment.title)?.maxMarks || 100
+            : 100;
+            
+        return {
+            title: assignment?.title || '',
+            subject: assignment?.subject || subjects[0]?.name || '',
+            maxMarks,
+            date: new Date().toISOString().slice(0,10)
+        };
+    };
+    
+    const [details, setDetails] = useState(getInitialDetails);
     const [studentGrades, setStudentGrades] = useState<Record<string, number | string>>({});
     const [isSaving, setIsSaving] = useState(false);
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+    // Update details when assignment changes
+    useEffect(() => {
+        setDetails(getInitialDetails());
+    }, [assignment, subjects, allGrades]);
 
     useEffect(() => {
         console.log('=== GRADE EDITOR USEFFECT DEBUG ===');
         console.log('Assignment:', assignment);
         console.log('All grades:', allGrades);
-        console.log('Grades with assignment property:', allGrades.filter(g => g && g.assignment && g.assignment.trim() !== ''));
+        
+        // Safe filtering of grades
+        const safeGrades = allGrades.filter(g => g && g.assignment && g.assignment.trim() !== '');
+        console.log('Safe grades with assignment property:', safeGrades);
         
         if (assignment && assignment.title) {
-            const gradeMap = allGrades.filter(g => g.assignment && g.assignment.trim() !== '' && g.assignment === assignment.title && g.subject === assignment.subject)
+            const gradeMap = safeGrades
+                .filter(g => g.assignment === assignment.title && g.subject === assignment.subject)
                 .reduce((acc, g) => ({...acc, [g.studentId]: g.marksObtained}), {} as Record<string, number>);
             console.log('Grade map:', gradeMap);
             setStudentGrades(gradeMap);
+        } else {
+            setStudentGrades({});
         }
         inputRefs.current = inputRefs.current.slice(0, students.length);
     }, [assignment, students, allGrades]);
 
     const handleGradeChange = (studentId: string, value: string) => {
         const marks = value === '' ? '' : parseInt(value, 10);
-        if (marks === '' || (!isNaN(marks) && marks >= 0 && marks <= details.maxMarks)) setStudentGrades(prev => ({ ...prev, [studentId]: marks }));
+        if (marks === '' || (!isNaN(marks) && marks >= 0 && marks <= details.maxMarks)) {
+            setStudentGrades(prev => ({ ...prev, [studentId]: marks }));
+        }
     };
 
     const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>, index: number) => {
@@ -611,10 +636,14 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
             console.log('Assignment details:', details);
             console.log('Student grades:', studentGrades);
             
-            // Delete existing grades for this assignment
-            const existingGrades = allGrades.filter(g => g.assignment && g.assignment.trim() !== '' && g.assignment === details.title && g.subject === details.subject);
+            // Safe filtering for existing grades
+            const safeGrades = allGrades.filter(g => g && g.assignment && g.assignment.trim() !== '');
+            const existingGrades = safeGrades.filter(g => 
+                g.assignment === details.title && g.subject === details.subject
+            );
             console.log('Existing grades to delete:', existingGrades.length);
             
+            // Delete existing grades for this assignment
             for (const grade of existingGrades) {
                 if (grade.id) {
                     await apiService.deleteGrade(grade.id);
@@ -622,20 +651,22 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
             }
             
             // Create new grades
-            const newGrades = Object.entries(studentGrades).map(([studentId, marks]) => {
-                if (marks === '' || marks === undefined) return null;
-                const gradeData = {
-                    studentId, 
-                    subject: details.subject, 
-                    assignment: details.title,
-                    marksObtained: marks as number, 
-                    maxMarks: details.maxMarks, 
-                    date: details.date, 
-                    type: 'EXAM'
-                };
-                console.log('Creating grade data:', gradeData);
-                return gradeData;
-            }).filter(Boolean) as Omit<Grade, '_id'>[];
+            const newGrades = Object.entries(studentGrades)
+                .map(([studentId, marks]) => {
+                    if (marks === '' || marks === undefined) return null;
+                    const gradeData = {
+                        studentId, 
+                        subject: details.subject, 
+                        assignment: details.title,
+                        marksObtained: marks as number, 
+                        maxMarks: details.maxMarks, 
+                        date: details.date, 
+                        type: 'EXAM'
+                    };
+                    console.log('Creating grade data:', gradeData);
+                    return gradeData;
+                })
+                .filter(Boolean) as Omit<Grade, '_id'>[];
 
             console.log('New grades to create:', newGrades.length);
 
@@ -647,12 +678,8 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
             }
 
             console.log('Successfully saved grades:', savedGrades.length);
-
-            // Update local state
-            const updatedGrades = allGrades.filter(g => !(g.assignment && g.assignment.trim() !== '' && g.assignment === details.title && g.subject === details.subject));
-            setGrades([...updatedGrades, ...savedGrades]);
             
-            // Refresh grades from server to ensure consistency
+            // Refresh grades from server
             const refreshedGrades = await apiService.getAllGrades();
             console.log('=== REFRESHED GRADES DEBUG ===');
             console.log('Refreshed grades:', refreshedGrades.length);
@@ -662,18 +689,7 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
             onSave(t('grades_saved_success'));
         } catch (error) {
             console.error('Error saving grades:', error);
-            console.error('Error details:', {
-                message: error.message,
-                stack: error.stack
-            });
-            
-            // Don't call onSave on error - let the user stay in the edit view
-            // so they can retry or fix the issue
-            // Use a more user-friendly error display
-            const errorMessage = t('error_saving_grades') + ': ' + (error.message || 'Unknown error');
-            console.error('Grade submission error:', errorMessage);
-            // We'll let the user see the error in console and stay in edit mode
-            // They can retry the submission
+            alert(t('error_saving_grades'));
         } finally {
             setIsSaving(false);
         }
@@ -681,75 +697,105 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
 
     return (
         <Card>
-            <h2 className="text-xl font-bold text-gray-800 mb-4">{assignment ? t('edit_grades') : t('create_new_assignment')}</h2>
-            <div className="space-y-4 p-4 border rounded-lg bg-gray-50 mb-6">
-                <h3 className="font-semibold text-lg text-gray-700">{t('assignment_details')}</h3>
+            <div className="mb-6">
+                <h2 className="text-xl font-bold text-gray-800 mb-4">
+                    {assignment ? t('edit_grades') : t('create_new_assignment')}
+                </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="text-sm font-medium text-gray-700">{t('assignment_title')}</label>
-                        <input type="text" value={details.title} onChange={e => setDetails({...details, title: e.target.value})} disabled={!!assignment} className="w-full mt-1 p-2 border rounded-md disabled:bg-gray-200" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('assignment_title')}</label>
+                        <input
+                            type="text"
+                            value={details.title}
+                            onChange={(e) => setDetails(prev => ({ ...prev, title: e.target.value }))}
+                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder={t('enter_assignment_title')}
+                        />
                     </div>
                     <div>
-                        <label className="text-sm font-medium text-gray-700">{t('subject')}</label>
-                        <select value={details.subject} onChange={e => setDetails({...details, subject: e.target.value})} disabled={!!assignment} className="w-full mt-1 p-2 border rounded-md disabled:bg-gray-200">
-                             {subjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('subject')}</label>
+                        <select
+                            value={details.subject}
+                            onChange={(e) => setDetails(prev => ({ ...prev, subject: e.target.value }))}
+                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            {subjects.map(subject => (
+                                <option key={subject.id} value={subject.name}>{subject.name}</option>
+                            ))}
                         </select>
                     </div>
                     <div>
-                        <label className="text-sm font-medium text-gray-700">{t('max_marks')}</label>
-                        <input type="number" value={details.maxMarks} onChange={e => setDetails({...details, maxMarks: parseInt(e.target.value, 10)})} className="w-full mt-1 p-2 border rounded-md" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('max_marks')}</label>
+                        <input
+                            type="number"
+                            value={details.maxMarks}
+                            onChange={(e) => setDetails(prev => ({ ...prev, maxMarks: parseInt(e.target.value) || 100 }))}
+                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            min="1"
+                        />
                     </div>
                     <div>
-                        <label className="text-sm font-medium text-gray-700">{t('due_date_label')}</label>
-                        <input type="date" value={details.date} onChange={e => setDetails({...details, date: e.target.value})} className="w-full mt-1 p-2 border rounded-md" />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('date')}</label>
+                        <input
+                            type="date"
+                            value={details.date}
+                            onChange={(e) => setDetails(prev => ({ ...prev, date: e.target.value }))}
+                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
                     </div>
                 </div>
             </div>
 
-            <div className="space-y-3">
-                {students.map((student, index) => (
-                    <div key={student.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-100">
-                        <div className="flex items-center gap-3">
-                            <img src={student.avatar} alt={student.name} className="w-10 h-10 rounded-full object-cover bg-gray-200" />
-                            <p className="font-medium text-slate-800">{student.name}</p>
+            <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">{t('student_grades')}</h3>
+                <div className="space-y-3">
+                    {students.map((student, index) => (
+                        <div key={student.id} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
+                            <div className="flex-1">
+                                <p className="font-medium text-gray-900">{student.name}</p>
+                                <p className="text-sm text-gray-500">ID: {student.id}</p>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <input
+                                    ref={el => inputRefs.current[index] = el}
+                                    type="number"
+                                    value={studentGrades[student.id] || ''}
+                                    onChange={(e) => handleGradeChange(student.id, e.target.value)}
+                                    onKeyDown={(e) => handleKeyDown(e, index)}
+                                    className="w-20 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center"
+                                    placeholder="0"
+                                    min="0"
+                                    max={details.maxMarks}
+                                />
+                                <span className="text-gray-500">/ {details.maxMarks}</span>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                           <input 
-                                type="number" 
-                                value={studentGrades[student.id] ?? ''} 
-                                onChange={e => handleGradeChange(student.id, e.target.value)} 
-                                onKeyDown={e => handleKeyDown(e, index)}
-                                ref={el => { inputRefs.current[index] = el; }}
-                                className="w-20 p-1 border rounded-md text-center" 
-                                placeholder="N/A" 
-                           />
-                           <span className="text-gray-500">/ {details.maxMarks}</span>
-                        </div>
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
-            
-            <button 
-                onClick={handleSaveGrades} 
-                disabled={isSaving}
-                className={`mt-6 w-full font-bold py-3 rounded-lg transition ${
-                    isSaving 
-                        ? 'bg-gray-400 cursor-not-allowed' 
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
-                }`}
-            >
-                {isSaving ? (
-                    <span className="flex items-center justify-center">
-                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        {t('saving_grades')}
-                    </span>
-                ) : (
-                    t('save_grades')
-                )}
-            </button>
+
+            <div className="flex justify-end space-x-4">
+                <button
+                    onClick={() => onSave('')}
+                    className="px-4 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
+                >
+                    {t('cancel')}
+                </button>
+                <button
+                    onClick={handleSaveGrades}
+                    disabled={isSaving}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                >
+                    {isSaving ? (
+                        <>
+                            <LoadingSpinner size="sm" />
+                            <span>{t('saving_grades')}</span>
+                        </>
+                    ) : (
+                        <span>{t('save_grades')}</span>
+                    )}
+                </button>
+            </div>
         </Card>
     );
 };
