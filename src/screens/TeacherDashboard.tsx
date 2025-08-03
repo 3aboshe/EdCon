@@ -463,10 +463,10 @@ const AssignmentList: React.FC<AssignmentListProps> = ({ studentsInClass, onEdit
     
     const assignments = useMemo(() => {
         const studentIds = new Set(studentsInClass.map(s => s.id));
-        const gradesForClass = allGrades.filter(g => studentIds.has(g.studentId) && g.assignment);
+        const gradesForClass = allGrades.filter(g => studentIds.has(g.studentId) && g.assignment && g.assignment.trim() !== '');
         const grouped: Record<string, AssignmentIdentifier> = {};
         gradesForClass.forEach(grade => {
-            if (grade.assignment) {
+            if (grade.assignment && grade.assignment.trim() !== '') {
                 const key = `${grade.assignment}|${grade.subject}`;
                 if (!grouped[key]) {
                     grouped[key] = { 
@@ -491,7 +491,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({ studentsInClass, onEdit
         try {
             // Delete all grades for this assignment
             const gradesToDelete = allGrades.filter(g => 
-                g.assignment === assignmentToDelete.title && g.subject === assignmentToDelete.subject
+                g.assignment && g.assignment.trim() !== '' && g.assignment === assignmentToDelete.title && g.subject === assignmentToDelete.subject
             );
             
             for (const grade of gradesToDelete) {
@@ -501,7 +501,7 @@ const AssignmentList: React.FC<AssignmentListProps> = ({ studentsInClass, onEdit
             }
             
             setGrades(allGrades.filter(g => 
-                !(g.assignment === assignmentToDelete.title && g.subject === assignmentToDelete.subject)
+                !(g.assignment && g.assignment.trim() !== '' && g.assignment === assignmentToDelete.title && g.subject === assignmentToDelete.subject)
             ));
             setIsDeleteModalOpen(false);
             setAssignmentToDelete(null);
@@ -554,7 +554,7 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
     const [details, setDetails] = useState({
         title: assignment?.title || '',
         subject: assignment?.subject || subjects[0]?.name || '',
-        maxMarks: allGrades.find(g => g.assignment && assignment?.title && g.assignment === assignment.title)?.maxMarks || 100,
+        maxMarks: allGrades.find(g => g.assignment && g.assignment.trim() !== '' && assignment?.title && g.assignment === assignment.title)?.maxMarks || 100,
         date: new Date().toISOString().slice(0,10)
     });
     const [studentGrades, setStudentGrades] = useState<Record<string, number | string>>({});
@@ -568,7 +568,7 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
         console.log('Grades with assignment property:', allGrades.filter(g => g.assignment));
         
         if (assignment && assignment.title) {
-            const gradeMap = allGrades.filter(g => g.assignment && g.assignment === assignment.title && g.subject === assignment.subject)
+            const gradeMap = allGrades.filter(g => g.assignment && g.assignment.trim() !== '' && g.assignment === assignment.title && g.subject === assignment.subject)
                 .reduce((acc, g) => ({...acc, [g.studentId]: g.marksObtained}), {} as Record<string, number>);
             console.log('Grade map:', gradeMap);
             setStudentGrades(gradeMap);
@@ -612,7 +612,7 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
             console.log('Student grades:', studentGrades);
             
             // Delete existing grades for this assignment
-            const existingGrades = allGrades.filter(g => g.assignment === details.title && g.subject === details.subject);
+            const existingGrades = allGrades.filter(g => g.assignment && g.assignment.trim() !== '' && g.assignment === details.title && g.subject === details.subject);
             console.log('Existing grades to delete:', existingGrades.length);
             
             for (const grade of existingGrades) {
@@ -649,7 +649,7 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
             console.log('Successfully saved grades:', savedGrades.length);
 
             // Update local state
-            const updatedGrades = allGrades.filter(g => !(g.assignment === details.title && g.subject === details.subject));
+            const updatedGrades = allGrades.filter(g => !(g.assignment && g.assignment.trim() !== '' && g.assignment === details.title && g.subject === details.subject));
             setGrades([...updatedGrades, ...savedGrades]);
             
             // Refresh grades from server to ensure consistency
