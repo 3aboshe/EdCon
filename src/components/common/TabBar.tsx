@@ -15,6 +15,7 @@ const TabBar: React.FC<TabBarProps> = ({ activeTab, onTabChange }) => {
     const tabs: { id: ParentTab; labelKey: string; icon: string }[] = [
         { id: 'dashboard', labelKey: 'dashboard', icon: 'fa-home' },
         { id: 'performance', labelKey: 'performance', icon: 'fa-chart-line' },
+        { id: 'homework', labelKey: 'homework', icon: 'fa-book-open' },
         { id: 'messages', labelKey: 'messages', icon: 'fa-comments' },
         { id: 'announcements', labelKey: 'announcements', icon: 'fa-bullhorn' },
         { id: 'profile', labelKey: 'profile', icon: 'fa-user-circle' },
