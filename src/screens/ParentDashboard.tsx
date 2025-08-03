@@ -159,8 +159,8 @@ const SelectedStudentCard: React.FC<{ student: Student, otherStudents: Student[]
 const QuickOverview: React.FC<{student: Student}> = ({student}) => {
     const { t, grades, homework, attendance } = useContext(AppContext);
     
-    const studentGrades = grades.filter(g => g.studentId === student.id);
-    const studentAttendance = attendance.filter(a => a.studentId === student.id);
+    const studentGrades = grades.filter(g => g && g.studentId && g.studentId === student.id);
+    const studentAttendance = attendance.filter(a => a && a.studentId && a.studentId === student.id);
     const recentHomework = homework.slice(0, 3); // Show last 3 homework assignments
     
     const attendanceRate = studentAttendance.length > 0 
@@ -197,7 +197,7 @@ const QuickOverview: React.FC<{student: Student}> = ({student}) => {
 
 const PerformanceSummary: React.FC<{ student: Student }> = ({ student }) => {
     const { t, grades } = useContext(AppContext);
-    const studentGrades = grades.filter(g => g.studentId === student.id);
+    const studentGrades = grades.filter(g => g && g.studentId && g.studentId === student.id);
     
     if (studentGrades.length === 0) {
         return (
@@ -232,7 +232,7 @@ const PerformanceSummary: React.FC<{ student: Student }> = ({ student }) => {
 
 const GradesList: React.FC<{ student: Student }> = ({ student }) => {
     const { t, grades } = useContext(AppContext);
-    const studentGrades = grades.filter(g => g.studentId === student.id);
+    const studentGrades = grades.filter(g => g && g.studentId && g.studentId === student.id);
 
     if (studentGrades.length === 0) {
         return (
@@ -308,7 +308,7 @@ const HomeworkSummary: React.FC<{ student: Student }> = ({ student }) => {
 
 const AttendanceSummary: React.FC<{ student: Student }> = ({ student }) => {
     const { t, attendance } = useContext(AppContext);
-    const studentAttendance = attendance.filter(a => a.studentId === student.id);
+    const studentAttendance = attendance.filter(a => a && a.studentId && a.studentId === student.id);
 
     if (studentAttendance.length === 0) {
         return (
