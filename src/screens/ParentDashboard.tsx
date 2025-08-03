@@ -463,20 +463,25 @@ const ParentMessaging: React.FC<{ student: Student }> = ({ student }) => {
 
     const conversations = useMemo(() => {
         if (!user) return [];
-        const teacherIds = new Set(messages.flatMap(m => 
-            m.senderId === user.id ? [m.receiverId] : m.receiverId === user.id ? [m.senderId] : []
-        ));
         
-        return Array.from(teacherIds).map(teacherId => {
-            const teacher = users.find(u => u.id === teacherId);
+        // Get all teachers
+        const allTeachers = users.filter(u => u.role === 'TEACHER');
+        
+        // Create conversation list with all teachers
+        return allTeachers.map(teacher => {
             const convMessages = messages.filter(m => 
-                (m.senderId === teacherId && m.receiverId === user.id) || 
-                (m.senderId === user.id && m.receiverId === teacherId)
+                (m.senderId === teacher.id && m.receiverId === user.id) || 
+                (m.senderId === user.id && m.receiverId === teacher.id)
             );
-            const lastMessage = convMessages.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
-            const unreadCount = convMessages.filter(m => m.receiverId === user.id && !m.isRead).length;
+            const lastMessage = convMessages.sort((a, b) => 
+                new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+            )[0];
+            const unreadCount = convMessages.filter(m => 
+                m.receiverId === user.id && !m.isRead
+            ).length;
+            
             return { teacher, lastMessage, unreadCount };
-        }).filter(c => c.teacher);
+        });
     }, [user, messages, users]);
 
     const handleOpenChat = (teacher: User) => {
