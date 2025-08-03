@@ -2,7 +2,7 @@
 import React, { useContext } from 'react';
 import { AppContext } from '../../App';
 
-type ParentTab = 'dashboard' | 'performance' | 'homework' | 'announcements' | 'messages' | 'profile';
+type ParentTab = 'dashboard' | 'performance' | 'homework' | 'messages' | 'profile';
 
 interface TabBarProps {
     activeTab: ParentTab;
@@ -17,7 +17,6 @@ const TabBar: React.FC<TabBarProps> = ({ activeTab, onTabChange }) => {
         { id: 'performance', labelKey: 'performance', icon: 'fa-chart-line' },
         { id: 'homework', labelKey: 'homework', icon: 'fa-book-open' },
         { id: 'messages', labelKey: 'messages', icon: 'fa-comments' },
-        { id: 'announcements', labelKey: 'announcements', icon: 'fa-bullhorn' },
         { id: 'profile', labelKey: 'profile', icon: 'fa-user-circle' },
     ];
 
