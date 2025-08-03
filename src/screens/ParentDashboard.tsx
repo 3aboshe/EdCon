@@ -279,30 +279,102 @@ const HomeworkSummary: React.FC<{ student: Student }> = ({ student }) => {
     }
 
     const sortedHomework = homework.sort((a, b) => new Date(b.assignedDate).getTime() - new Date(a.assignedDate).getTime());
+    
+    // Calculate homework statistics
+    const totalHomework = sortedHomework.length;
+    const submittedHomework = sortedHomework.filter(hw => hw.submitted.includes(student.id)).length;
+    const pendingHomework = totalHomework - submittedHomework;
+    const overdueHomework = sortedHomework.filter(hw => 
+        !hw.submitted.includes(student.id) && new Date(hw.dueDate) < new Date()
+    ).length;
 
     return (
-        <Card>
-            <h2 className="text-lg font-bold mb-4">{t('homework_status')}</h2>
-            <div className="space-y-3">
-                {sortedHomework.slice(0, 10).map((hw, index) => (
-                    <div key={index} className="p-3 bg-gray-50 rounded-lg">
-                        <div className="flex justify-between items-start mb-2">
-                            <div className="font-medium">{hw.title}</div>
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                hw.submitted.includes(student.id) 
-                                    ? 'bg-green-100 text-green-800' 
-                                    : 'bg-red-100 text-red-800'
-                            }`}>
-                                {hw.submitted.includes(student.id) ? t('submitted') : t('not_submitted')}
-                            </span>
-                        </div>
-                        <div className="text-sm text-gray-600">
-                            {hw.subject} • {t('due_date')}: {new Date(hw.dueDate).toLocaleDateString()}
-                        </div>
+        <div className="space-y-6">
+            {/* Homework Statistics */}
+            <Card>
+                <h2 className="text-lg font-bold mb-4">{t('homework_overview')}</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-600">{totalHomework}</div>
+                        <div className="text-sm text-gray-600">{t('total_homework')}</div>
                     </div>
-                ))}
-            </div>
-        </Card>
+                    <div className="text-center">
+                        <div className="text-2xl font-bold text-green-600">{submittedHomework}</div>
+                        <div className="text-sm text-gray-600">{t('submitted')}</div>
+                    </div>
+                    <div className="text-center">
+                        <div className="text-2xl font-bold text-yellow-600">{pendingHomework}</div>
+                        <div className="text-sm text-gray-600">{t('pending')}</div>
+                    </div>
+                    <div className="text-center">
+                        <div className="text-2xl font-bold text-red-600">{overdueHomework}</div>
+                        <div className="text-sm text-gray-600">{t('overdue')}</div>
+                    </div>
+                </div>
+            </Card>
+
+            {/* Homework List */}
+            <Card>
+                <h2 className="text-lg font-bold mb-4">{t('homework_details')}</h2>
+                <div className="space-y-3">
+                    {sortedHomework.map((hw, index) => {
+                        const isSubmitted = hw.submitted.includes(student.id);
+                        const isOverdue = !isSubmitted && new Date(hw.dueDate) < new Date();
+                        const dueDate = new Date(hw.dueDate);
+                        const assignedDate = new Date(hw.assignedDate);
+                        
+                        return (
+                            <div key={index} className="p-4 bg-gray-50 rounded-lg border-l-4 ${
+                                isSubmitted ? 'border-green-500' : 
+                                isOverdue ? 'border-red-500' : 'border-yellow-500'
+                            }">
+                                <div className="flex justify-between items-start mb-3">
+                                    <div className="flex-1">
+                                        <div className="font-semibold text-gray-800 mb-1">{hw.title}</div>
+                                        <div className="text-sm text-gray-600 mb-2">
+                                            {hw.subject} • {t('assigned')}: {assignedDate.toLocaleDateString()}
+                                        </div>
+                                        <div className="text-sm text-gray-600">
+                                            {t('due_date')}: {dueDate.toLocaleDateString()}
+                                            {isOverdue && (
+                                                <span className="ml-2 text-red-600 font-medium">
+                                                    ({t('overdue')})
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="ml-4">
+                                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                            isSubmitted 
+                                                ? 'bg-green-100 text-green-800' 
+                                                : isOverdue
+                                                ? 'bg-red-100 text-red-800'
+                                                : 'bg-yellow-100 text-yellow-800'
+                                        }`}>
+                                            {isSubmitted ? t('submitted') : 
+                                             isOverdue ? t('overdue') : t('pending')}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                {/* Progress indicator */}
+                                <div className="mt-3">
+                                    <div className="flex justify-between text-xs text-gray-500 mb-1">
+                                        <span>{t('progress')}</span>
+                                        <span>{isSubmitted ? '100%' : '0%'}</span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-2">
+                                        <div className={`h-2 rounded-full ${
+                                            isSubmitted ? 'bg-green-500' : 'bg-gray-300'
+                                        }`} style={{ width: isSubmitted ? '100%' : '0%' }}></div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </Card>
+        </div>
     );
 };
 
