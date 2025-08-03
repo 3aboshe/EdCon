@@ -463,10 +463,10 @@ const AssignmentList: React.FC<AssignmentListProps> = ({ studentsInClass, onEdit
     
     const assignments = useMemo(() => {
         const studentIds = new Set(studentsInClass.map(s => s.id));
-        const gradesForClass = allGrades.filter(g => studentIds.has(g.studentId) && g.assignment && g.assignment.trim() !== '');
+        const gradesForClass = allGrades.filter(g => g && studentIds.has(g.studentId) && g.assignment && g.assignment.trim() !== '');
         const grouped: Record<string, AssignmentIdentifier> = {};
         gradesForClass.forEach(grade => {
-            if (grade.assignment && grade.assignment.trim() !== '') {
+            if (grade && grade.assignment && grade.assignment.trim() !== '' && grade.subject) {
                 const key = `${grade.assignment}|${grade.subject}`;
                 if (!grouped[key]) {
                     grouped[key] = { 
@@ -565,7 +565,7 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
         console.log('=== GRADE EDITOR USEFFECT DEBUG ===');
         console.log('Assignment:', assignment);
         console.log('All grades:', allGrades);
-        console.log('Grades with assignment property:', allGrades.filter(g => g.assignment));
+        console.log('Grades with assignment property:', allGrades.filter(g => g && g.assignment && g.assignment.trim() !== ''));
         
         if (assignment && assignment.title) {
             const gradeMap = allGrades.filter(g => g.assignment && g.assignment.trim() !== '' && g.assignment === assignment.title && g.subject === assignment.subject)
