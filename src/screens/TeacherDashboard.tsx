@@ -558,6 +558,7 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
         date: new Date().toISOString().slice(0,10)
     });
     const [studentGrades, setStudentGrades] = useState<Record<string, number | string>>({});
+    const [isSaving, setIsSaving] = useState(false);
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
     useEffect(() => {
@@ -591,9 +592,29 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
     };
 
     const handleSaveGrades = async () => {
+        if (isSaving) return; // Prevent multiple submissions
+        
+        // Validate required fields
+        if (!details.title.trim()) {
+            alert(t('assignment_title_required'));
+            return;
+        }
+        
+        if (!details.subject.trim()) {
+            alert(t('subject_required'));
+            return;
+        }
+        
+        setIsSaving(true);
         try {
+            console.log('=== SAVING GRADES DEBUG ===');
+            console.log('Assignment details:', details);
+            console.log('Student grades:', studentGrades);
+            
             // Delete existing grades for this assignment
             const existingGrades = allGrades.filter(g => g.assignment === details.title && g.subject === details.subject);
+            console.log('Existing grades to delete:', existingGrades.length);
+            
             for (const grade of existingGrades) {
                 if (grade.id) {
                     await apiService.deleteGrade(grade.id);
@@ -616,12 +637,16 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
                 return gradeData;
             }).filter(Boolean) as Omit<Grade, '_id'>[];
 
+            console.log('New grades to create:', newGrades.length);
+
             // Save each grade to database
             const savedGrades = [];
             for (const grade of newGrades) {
                 const savedGrade = await apiService.addGrade(grade);
                 savedGrades.push(savedGrade);
             }
+
+            console.log('Successfully saved grades:', savedGrades.length);
 
             // Update local state
             const updatedGrades = allGrades.filter(g => !(g.assignment === details.title && g.subject === details.subject));
@@ -630,14 +655,27 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
             // Refresh grades from server to ensure consistency
             const refreshedGrades = await apiService.getAllGrades();
             console.log('=== REFRESHED GRADES DEBUG ===');
-            console.log('Refreshed grades:', refreshedGrades);
+            console.log('Refreshed grades:', refreshedGrades.length);
             console.log('First grade structure:', refreshedGrades[0]);
             setGrades(refreshedGrades);
             
             onSave(t('grades_saved_success'));
         } catch (error) {
             console.error('Error saving grades:', error);
-            onSave(t('error_saving_grades'));
+            console.error('Error details:', {
+                message: error.message,
+                stack: error.stack
+            });
+            
+            // Don't call onSave on error - let the user stay in the edit view
+            // so they can retry or fix the issue
+            // Use a more user-friendly error display
+            const errorMessage = t('error_saving_grades') + ': ' + (error.message || 'Unknown error');
+            console.error('Grade submission error:', errorMessage);
+            // We'll let the user see the error in console and stay in edit mode
+            // They can retry the submission
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -691,7 +729,27 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
                 ))}
             </div>
             
-            <button onClick={handleSaveGrades} className="mt-6 w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition">{t('save_grades')}</button>
+            <button 
+                onClick={handleSaveGrades} 
+                disabled={isSaving}
+                className={`mt-6 w-full font-bold py-3 rounded-lg transition ${
+                    isSaving 
+                        ? 'bg-gray-400 cursor-not-allowed' 
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+            >
+                {isSaving ? (
+                    <span className="flex items-center justify-center">
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        {t('saving_grades')}
+                    </span>
+                ) : (
+                    t('save_grades')
+                )}
+            </button>
         </Card>
     );
 };

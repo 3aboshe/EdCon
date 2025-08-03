@@ -39,11 +39,11 @@ router.get('/student/:studentId', async (req, res) => {
 // Add a new grade
 router.post('/', async (req, res) => {
   try {
-    const { studentId, subject, assignment, marksObtained, maxMarks, type } = req.body;
+    const { studentId, subject, assignment, marksObtained, maxMarks, type, date } = req.body;
     
     console.log('=== ADD GRADE DEBUG ===');
     console.log('Request body:', req.body);
-    console.log('Parsed data:', { studentId, subject, assignment, marksObtained, maxMarks, type });
+    console.log('Parsed data:', { studentId, subject, assignment, marksObtained, maxMarks, type, date });
     
     const newGrade = await prisma.grade.create({
       data: {
@@ -52,7 +52,8 @@ router.post('/', async (req, res) => {
         assignment,
         marksObtained,
         maxMarks,
-        type
+        type,
+        date: date ? new Date(date) : undefined
       }
     });
     
