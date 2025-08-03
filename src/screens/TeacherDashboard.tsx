@@ -709,7 +709,7 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
                             value={details.title}
                             onChange={(e) => setDetails(prev => ({ ...prev, title: e.target.value }))}
                             className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder={t('enter_assignment_title')}
+                            placeholder={t('assignment_title')}
                         />
                     </div>
                     <div>
@@ -753,7 +753,6 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
                         <div key={student.id} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
                             <div className="flex-1">
                                 <p className="font-medium text-gray-900">{student.name}</p>
-                                <p className="text-sm text-gray-500">ID: {student.id}</p>
                             </div>
                             <div className="flex items-center space-x-2">
                                 <input
@@ -852,15 +851,30 @@ const TeacherMessagingInbox: React.FC = () => {
 
     const conversations = useMemo(() => {
         if (!user) return [];
-        const parentIds = new Set(messages.flatMap(m => m.senderId === user.id ? [m.receiverId] : m.receiverId === user.id ? [m.senderId] : []));
         
-        return Array.from(parentIds).map(parentId => {
-            const parent = users.find(u => u.id === parentId);
-            const convMessages = messages.filter(m => (m.senderId === parentId && m.receiverId === user.id) || (m.senderId === user.id && m.receiverId === parentId));
-            const lastMessage = convMessages.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
-            const unreadCount = convMessages.filter(m => m.receiverId === user.id && !m.isRead).length;
+        // Get all parents
+        const allParents = users.filter(u => u.role === 'PARENT');
+        
+        // Get parents with existing conversations
+        const parentIdsWithMessages = new Set(messages.flatMap(m => 
+            m.senderId === user.id ? [m.receiverId] : m.receiverId === user.id ? [m.senderId] : []
+        ));
+        
+        // Create conversation list with all parents
+        return allParents.map(parent => {
+            const convMessages = messages.filter(m => 
+                (m.senderId === parent.id && m.receiverId === user.id) || 
+                (m.senderId === user.id && m.receiverId === parent.id)
+            );
+            const lastMessage = convMessages.sort((a, b) => 
+                new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+            )[0];
+            const unreadCount = convMessages.filter(m => 
+                m.receiverId === user.id && !m.isRead
+            ).length;
+            
             return { parent, lastMessage, unreadCount };
-        }).filter(c => c.parent); // Ensure parent exists
+        });
     }, [user, messages, users]);
 
     const handleOpenChat = (parent: User) => {
