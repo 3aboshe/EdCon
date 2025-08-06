@@ -32,7 +32,7 @@ const LoginScreen: React.FC = () => {
             <main className="flex-grow flex items-center justify-center p-4">
                 <div className="w-full max-w-sm">
                     <div className="text-center mb-8">
-                         <img src={EdConLogo} alt="EdCon Logo" className="w-48 h-48 mx-auto mb-4 object-contain" />
+                         <img src={EdConLogo} alt="EdCona Logo" className="w-48 h-48 mx-auto mb-4 object-contain" />
                         <h1 className="text-3xl font-bold text-slate-800">{t('login_welcome')}</h1>
                         <p className="text-slate-500">{t('login_subtitle')}</p>
                     </div>
