@@ -1,9 +1,9 @@
-export const APP_NAME = "EdCon";
+export const APP_NAME = "EdCona";
 
 export const translations: Record<string, Record<string, string>> = {
   en: {
-    'app_name': 'EdCon',
-    'login_welcome': 'Welcome to EdCon',
+    'app_name': 'EdCona',
+    'login_welcome': 'Welcome to EdCona',
     'login_subtitle': 'Connecting parents and teachers seamlessly.',
     'user_code': 'Your Code',
     'user_code_placeholder': 'Enter your login code',
