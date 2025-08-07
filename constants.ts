@@ -187,8 +187,8 @@ export const translations: Record<string, Record<string, string>> = {
     'no_parents_available': 'No parents available. Please add a parent first.',
   },
   'ku-sorani': {
-    'app_name': 'ئیدکۆن',
-    'login_welcome': 'بەخێربێن بۆ ئیدکۆن',
+    'app_name': 'ئیدکۆنا',
+    'login_welcome': 'بەخێربێن بۆ ئیدکۆنا',
     'login_subtitle': 'پەیوەندی بێ کێشەی نێوان دایبابان و مامۆستایان.',
     'user_code': 'کۆدی ئێوە',
     'user_code_placeholder': 'کۆدی چوونەژوورەوەت بنووسە',
@@ -372,8 +372,8 @@ export const translations: Record<string, Record<string, string>> = {
     'no_parents_available': 'هیچ دایبابەکان نەبوو. لەوەی بەردەست بنووسە بە دایبابەکان.',
   },
   'ku-badini': {
-    'app_name': 'ئیدکۆن',
-    'login_welcome': 'بخێرھاتن بۆ ئیدکۆن',
+    'app_name': 'ئیدکۆنا',
+    'login_welcome': 'بخێرھاتن بۆ ئیدکۆنا',
     'login_subtitle': 'گرێدانا دەیباب و مامۆستایان ب سانەھی.',
     'user_code': 'کودێ تە',
     'user_code_placeholder': 'کودێ خوە یێ چوونا ژوور بنڤیسە',
@@ -557,8 +557,8 @@ export const translations: Record<string, Record<string, string>> = {
     'no_parents_available': 'هیچ دایبابەکان نەبوو. لەوەی بەردەست بنووسە بە دایبابەکان.',
   },
   'ar': {
-    'app_name': 'إدكون',
-    'login_welcome': 'مرحباً في إدكون',
+    'app_name': 'إدكونا',
+    'login_welcome': 'مرحباً في إدكونا',
     'login_subtitle': 'ربط أولياء الأمور والمعلمين بسلاسة.',
     'user_code': 'الكود الخاص بك',
     'user_code_placeholder': 'أدخل رمز الدخول الخاص بك',
@@ -742,8 +742,8 @@ export const translations: Record<string, Record<string, string>> = {
     'no_parents_available': 'لا توجد أولياء أمور. يرجى إضافة ولي الأمر أولاً.',
   },
   'syr': {
-    'app_name': 'ܐܕܩܘܢ',
-    'login_welcome': 'ܒܫܝܢܐ ܘܒܤܒܪܐ ܛܒܐ ܠܐܕܩܘܢ',
+    'app_name': 'ܐܕܩܘܢܐ',
+    'login_welcome': 'ܒܫܝܢܐ ܘܒܤܒܪܐ ܛܒܐ ܠܐܕܩܘܢܐ',
     'login_subtitle': 'ܩܫܪܐ ܕܐܒ̈ܗܐ ܘܡܠܦܢ̈ܐ ܒܠܚܘܕ.',
     'user_code': 'ܩܘܕܐ ܕܐܢܬ',
     'user_code_placeholder': 'ܥܒܪ ܩܘܕܐ ܕܥܠܠܬܐ ܕܐܢܬ',
