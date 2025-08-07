@@ -812,8 +812,8 @@ export const translations: Record<string, Record<string, string>> = {
     'no_parents_available': 'لا توجد أولياء أمور. يرجى إضافة ولي الأمر أولاً.',
   },
   'syr': {
-    'app_name': 'ܐܕܩܘܢܐ',
-    'login_welcome': 'ܒܫܝܢܐ ܘܒܤܒܪܐ ܛܒܐ ܠܐܕܩܘܢܐ',
+    'app_name': 'ܐܕܟܘܢܐ',
+    'login_welcome': 'ܒܫܝܢܐ ܘܒܤܒܪܐ ܛܒܐ ܐܕܟܘܢܐ',
     'login_subtitle': 'ܩܫܪܐ ܕܐܒ̈ܗܐ ܘܡܠܦܢ̈ܐ ܒܠܚܘܕ.',
     'user_code': 'ܩܘܕܐ ܕܐܢܬ',
     'user_code_placeholder': 'ܥܒܪ ܩܘܕܐ ܕܥܠܠܬܐ ܕܐܢܬ',
