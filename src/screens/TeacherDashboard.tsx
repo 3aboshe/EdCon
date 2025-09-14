@@ -98,7 +98,7 @@ const TeacherDashboard: React.FC = () => {
         <div className="min-h-screen bg-gray-50 flex flex-col">
             <Header title={t(screen)} showBackButton={screen !== 'dashboard'} onBack={handleBack} />
             {successMessage && <SuccessBanner message={successMessage} />}
-            <main className="p-4 space-y-4 flex-grow">
+            <main className="p-2 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 flex-grow">
                  {teacherClasses.length > 1 && screen !== 'dashboard' && screen !== 'messages' && screen !== 'profile' && (
                      <Card>
                         <label htmlFor="class-select" className="block text-sm font-medium text-gray-700 mb-2">{t('select_class')}</label>
@@ -135,7 +135,7 @@ const DashboardMenu: React.FC<{ setScreen: (s: Screen) => void, teacherName: str
     return (
         <>
             <h1 className="text-2xl font-bold text-gray-800 px-2">{t('teacher_of')} {teacherName}</h1>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {menuItems.map(item => (
                     <Card key={item.screen} className="text-center hover:shadow-lg hover:scale-105 transition-transform cursor-pointer" onClick={() => setScreen(item.screen)}>
                         <i className={`fas ${item.icon} text-4xl text-blue-500 mb-4`}></i>
@@ -882,7 +882,7 @@ const TeacherMessagingInbox: React.FC = () => {
         if (!user) return [];
         
         // Get all parents
-        const allParents = users.filter(u => u.role === 'PARENT');
+        const allParents = users.filter(u => u.role?.toLowerCase() === 'parent');
         
         // Get parents with existing conversations
         const parentIdsWithMessages = new Set(messages.flatMap(m => 

@@ -61,7 +61,7 @@ const StudentDashboard: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
             <Header title={tabTitles[activeTab]} />
-            <main className="p-4 space-y-6 flex-grow mb-20">
+            <main className="p-2 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 flex-grow mb-16 sm:mb-20">
                 {renderContent()}
             </main>
             <StudentTabBar activeTab={activeTab} onTabChange={setActiveTab} />
@@ -232,7 +232,7 @@ const ProfileView: React.FC<{ student: Student }> = ({ student }) => {
         <>
             <Card>
                 <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">{t('choose_your_character')}</h2>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                     {allAvatars.map((avatar, index) => (
                         <div key={index} className="relative" onClick={() => handleSelectAvatar(avatar)}>
                             <img
@@ -271,7 +271,7 @@ const StudentTabBar: React.FC<{ activeTab: StudentTab, onTabChange: (tab: Studen
     ];
 
     return (
-        <footer className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.05)] border-t border-gray-200">
+        <footer className="fixed bottom-0 left-0 right-0 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.05)] border-t border-gray-200 sm:max-w-md sm:mx-auto">
             <div className="flex justify-around">
                 {tabs.map(tab => {
                     const isActive = activeTab === tab.id;
@@ -283,7 +283,7 @@ const StudentTabBar: React.FC<{ activeTab: StudentTab, onTabChange: (tab: Studen
                                 isActive ? 'text-blue-600' : 'text-gray-500 hover:text-blue-500'
                             }`}
                         >
-                            <i className={`fas ${tab.icon} text-xl ${isActive ? 'scale-110' : ''} transition-transform`}></i>
+                            <i className={`fas ${tab.icon} text-lg sm:text-xl ${isActive ? 'scale-110' : ''} transition-transform`}></i>
                             <span className="text-xs mt-1 font-medium">{t(tab.labelKey)}</span>
                         </button>
                     );
