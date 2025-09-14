@@ -332,7 +332,7 @@ const App: React.FC = () => {
     return (
         <AppContext.Provider value={appContextValue}>
            <div dir={dir} className="font-sans">
-                <div className="max-w-md mx-auto min-h-screen bg-white shadow-lg">
+                <div className="w-full min-h-screen bg-white">
                     {renderContent()}
                 </div>
            </div>

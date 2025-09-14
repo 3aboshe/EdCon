@@ -86,7 +86,7 @@ const ParentDashboard: React.FC = () => {
     return (
         <div className="flex min-h-screen bg-gray-50">
             {/* Mobile Header - only visible on mobile */}
-            <div className="lg:hidden w-full">
+            <div className="lg:hidden">
                 <Header title={tabTitles[activeTab]} />
             </div>
 
