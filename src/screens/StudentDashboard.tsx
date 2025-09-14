@@ -10,6 +10,18 @@ import ProfileImage from '../components/common/ProfileImage';
 
 type StudentTab = 'dashboard' | 'grades' | 'homework' | 'announcements' | 'timetable' | 'profile';
 
+const getStudentTabIcon = (tab: StudentTab): string => {
+    const icons: Record<StudentTab, string> = {
+        dashboard: 'fa-home',
+        grades: 'fa-graduation-cap',
+        homework: 'fa-book-open',
+        announcements: 'fa-bullhorn',
+        timetable: 'fa-calendar-alt',
+        profile: 'fa-user-astronaut'
+    };
+    return icons[tab];
+};
+
 const StudentDashboard: React.FC = () => {
     const { user, t, students } = useContext(AppContext);
     const [activeTab, setActiveTab] = useState<StudentTab>('dashboard');
@@ -59,12 +71,64 @@ const StudentDashboard: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
-            <Header title={tabTitles[activeTab]} />
-            <main className="p-2 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 flex-grow mb-16 sm:mb-20">
-                {renderContent()}
-            </main>
-            <StudentTabBar activeTab={activeTab} onTabChange={setActiveTab} />
+        <div className="flex min-h-screen bg-gray-50">
+            {/* Mobile Header - only visible on mobile */}
+            <div className="lg:hidden w-full">
+                <Header title={tabTitles[activeTab]} />
+            </div>
+
+            {/* Desktop Sidebar - only visible on desktop */}
+            <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
+                <div className="flex flex-col flex-grow pt-5 pb-4 overflow-y-auto bg-white shadow-lg">
+                    <div className="flex items-center flex-shrink-0 px-4">
+                        <h1 className="text-xl font-bold text-gray-800">Student Portal</h1>
+                    </div>
+                    <div className="mt-5 flex-1 flex flex-col">
+                        <nav className="flex-1 px-2 space-y-1">
+                            {Object.entries(tabTitles).map(([tab, title]) => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab as StudentTab)}
+                                    className={`w-full flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
+                                        activeTab === tab
+                                            ? 'bg-blue-100 text-blue-700'
+                                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                    }`}
+                                >
+                                    <i className={`mr-3 flex-shrink-0 h-6 w-6 fas ${getStudentTabIcon(tab as StudentTab)}`}></i>
+                                    {title}
+                                </button>
+                            ))}
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+            {/* Main Content */}
+            <div className="flex flex-col flex-1 lg:pl-64">
+                {/* Desktop Header */}
+                <div className="hidden lg:block sticky top-0 z-10 flex-shrink-0 flex h-16 bg-white shadow">
+                    <div className="flex-1 px-4 flex justify-between items-center">
+                        <h1 className="text-lg font-medium text-gray-900">{tabTitles[activeTab]}</h1>
+                        {currentStudent && (
+                            <div className="flex items-center space-x-4">
+                                <span className="text-sm text-gray-700">Welcome, {currentStudent.name}</span>
+                                <img src={currentStudent.avatar} alt={currentStudent.name} className="h-8 w-8 rounded-full" />
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Content Area */}
+                <main className="flex-grow p-2 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 mb-16 lg:mb-0">
+                    {renderContent()}
+                </main>
+            </div>
+
+            {/* Mobile Bottom Navigation - only visible on mobile */}
+            <div className="lg:hidden">
+                <StudentTabBar activeTab={activeTab} onTabChange={setActiveTab} />
+            </div>
         </div>
     );
 };
