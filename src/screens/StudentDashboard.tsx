@@ -71,9 +71,9 @@ const StudentDashboard: React.FC = () => {
     }
 
     return (
-        <div className="flex min-h-screen bg-gray-50">
+        <div className="flex flex-col lg:flex-row min-h-screen bg-gray-50">
             {/* Mobile Header - only visible on mobile */}
-            <div className="lg:hidden">
+            <div className="lg:hidden w-full">
                 <Header title={tabTitles[activeTab]} />
             </div>
 
@@ -336,6 +336,7 @@ const StudentTabBar: React.FC<{ activeTab: StudentTab, onTabChange: (tab: Studen
 
     return (
         <footer className="fixed bottom-0 left-0 right-0 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.05)] border-t border-gray-200">
+            <div className="max-w-md mx-auto lg:max-w-none">
             <div className="flex justify-around">
                 {tabs.map(tab => {
                     const isActive = activeTab === tab.id;
@@ -352,6 +353,7 @@ const StudentTabBar: React.FC<{ activeTab: StudentTab, onTabChange: (tab: Studen
                         </button>
                     );
                 })}
+            </div>
             </div>
         </footer>
     );
