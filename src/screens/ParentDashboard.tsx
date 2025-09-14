@@ -73,7 +73,7 @@ const ParentDashboard: React.FC = () => {
     return (
         <div className="flex flex-col min-h-screen bg-gray-50">
             <Header title={tabTitles[activeTab]} />
-            <main className="flex-grow p-4 space-y-6 mb-20">
+            <main className="flex-grow p-2 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 mb-16 sm:mb-20">
                 {selectedStudent ? (
                     <SelectedStudentCard 
                         student={selectedStudent} 
@@ -177,18 +177,18 @@ const QuickOverview: React.FC<{student: Student}> = ({student}) => {
                 <i className="fa-solid fa-chart-line mr-2"></i>
                 {t('quick_overview')}
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="text-center">
-                    <div className="text-2xl font-bold">{averageGrade}%</div>
-                    <div className="text-sm opacity-90">{t('average_grade')}</div>
+                    <div className="text-xl sm:text-2xl font-bold">{averageGrade}%</div>
+                    <div className="text-xs sm:text-sm opacity-90">{t('average_grade')}</div>
                 </div>
                 <div className="text-center">
-                    <div className="text-2xl font-bold">{attendanceRate}%</div>
-                    <div className="text-sm opacity-90">{t('attendance_rate')}</div>
+                    <div className="text-xl sm:text-2xl font-bold">{attendanceRate}%</div>
+                    <div className="text-xs sm:text-sm opacity-90">{t('attendance_rate')}</div>
                 </div>
                 <div className="text-center">
-                    <div className="text-2xl font-bold">{recentHomework.length}</div>
-                    <div className="text-sm opacity-90">{t('recent_homework')}</div>
+                    <div className="text-xl sm:text-2xl font-bold">{recentHomework.length}</div>
+                    <div className="text-xs sm:text-sm opacity-90">{t('recent_homework')}</div>
                 </div>
             </div>
         </Card>
@@ -293,22 +293,22 @@ const HomeworkSummary: React.FC<{ student: Student }> = ({ student }) => {
             {/* Homework Statistics */}
             <Card>
                 <h2 className="text-lg font-bold mb-4">{t('homework_overview')}</h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                     <div className="text-center">
-                        <div className="text-2xl font-bold text-blue-600">{totalHomework}</div>
-                        <div className="text-sm text-gray-600">{t('total_homework')}</div>
+                        <div className="text-xl sm:text-2xl font-bold text-blue-600">{totalHomework}</div>
+                        <div className="text-xs sm:text-sm text-gray-600">{t('total_homework')}</div>
                     </div>
                     <div className="text-center">
-                        <div className="text-2xl font-bold text-green-600">{submittedHomework}</div>
-                        <div className="text-sm text-gray-600">{t('submitted')}</div>
+                        <div className="text-xl sm:text-2xl font-bold text-green-600">{submittedHomework}</div>
+                        <div className="text-xs sm:text-sm text-gray-600">{t('submitted')}</div>
                     </div>
                     <div className="text-center">
-                        <div className="text-2xl font-bold text-yellow-600">{pendingHomework}</div>
-                        <div className="text-sm text-gray-600">{t('pending')}</div>
+                        <div className="text-xl sm:text-2xl font-bold text-yellow-600">{pendingHomework}</div>
+                        <div className="text-xs sm:text-sm text-gray-600">{t('pending')}</div>
                     </div>
                     <div className="text-center">
-                        <div className="text-2xl font-bold text-red-600">{overdueHomework}</div>
-                        <div className="text-sm text-gray-600">{t('overdue')}</div>
+                        <div className="text-xl sm:text-2xl font-bold text-red-600">{overdueHomework}</div>
+                        <div className="text-xs sm:text-sm text-gray-600">{t('overdue')}</div>
                     </div>
                 </div>
             </Card>
@@ -530,14 +530,14 @@ const ParentMessaging: React.FC<{ student: Student }> = ({ student }) => {
     const [selectedTeacher, setSelectedTeacher] = useState<User | null>(null);
 
     const teachers = useMemo(() => {
-        return users.filter(u => u.role === 'teacher');
+        return users.filter(u => u.role?.toLowerCase() === 'teacher');
     }, [users]);
 
     const conversations = useMemo(() => {
         if (!user) return [];
         
         // Get all teachers
-        const allTeachers = users.filter(u => u.role === 'TEACHER');
+        const allTeachers = users.filter(u => u.role?.toLowerCase() === 'teacher');
         
         // Create conversation list with all teachers
         return allTeachers.map(teacher => {

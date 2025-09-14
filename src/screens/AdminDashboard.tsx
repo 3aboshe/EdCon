@@ -515,14 +515,6 @@ const ManagementTab: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({
         console.log('User roles:', users.map(u => ({ id: u.id, name: u.name, role: u.role })));
         
         // Try different role matching approaches
-        const parents1 = users.filter(u => u.role === 'parent');
-        const parents2 = users.filter(u => u.role === 'PARENT');
-        const parents3 = users.filter(u => u.role?.toLowerCase() === 'parent');
-        
-        console.log('Parents (exact "parent"):', parents1);
-        console.log('Parents (exact "PARENT"):', parents2);
-        console.log('Parents (case-insensitive):', parents3);
-        
         // Use case-insensitive matching
         const parents = users.filter(u => u.role?.toLowerCase() === 'parent');
         

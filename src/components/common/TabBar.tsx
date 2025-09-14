@@ -21,7 +21,7 @@ const TabBar: React.FC<TabBarProps> = ({ activeTab, onTabChange }) => {
     ];
 
     return (
-        <footer className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.05)] border-t border-gray-200">
+        <footer className="fixed bottom-0 left-0 right-0 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.05)] border-t border-gray-200 sm:max-w-md sm:mx-auto lg:max-w-lg">
             <div className="flex justify-around">
                 {tabs.map(tab => {
                     const isActive = activeTab === tab.id;
@@ -33,7 +33,7 @@ const TabBar: React.FC<TabBarProps> = ({ activeTab, onTabChange }) => {
                                 isActive ? 'text-blue-600' : 'text-gray-500 hover:text-blue-500'
                             }`}
                         >
-                            <i className={`fas ${tab.icon} text-xl ${isActive ? 'scale-110' : ''} transition-transform`}></i>
+                            <i className={`fas ${tab.icon} text-base sm:text-lg lg:text-xl ${isActive ? 'scale-110' : ''} transition-transform`}></i>
                             <span className="text-xs mt-1 font-medium">{t(tab.labelKey)}</span>
                         </button>
                     );

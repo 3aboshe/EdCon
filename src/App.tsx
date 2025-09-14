@@ -4,7 +4,7 @@ import { User, UserRole, Grade, Homework, Announcement, Attendance, Class, Stude
 import LoginScreen from './screens/LoginScreen';
 import ParentDashboard from './screens/ParentDashboard';
 import TeacherDashboard from './screens/TeacherDashboard';
-import AdminDashboard from './screens/AdminDashboard';
+import AdminDashboard from './screens/NewAdminDashboard';
 import StudentDashboard from './screens/StudentDashboard';
 import { translations } from './constants';
 import apiService from './services/apiService';
