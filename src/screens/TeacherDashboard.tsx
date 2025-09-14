@@ -14,6 +14,17 @@ import apiService from '../services/apiService';
 
 type Screen = 'dashboard' | 'attendance' | 'homework' | 'announcements' | 'marks' | 'leaderboard' | 'messages' | 'profile';
 
+const teacherMenuItems = [
+    { screen: 'dashboard', icon: 'fa-tachometer-alt', label: 'dashboard' },
+    { screen: 'attendance', icon: 'fa-user-check', label: 'take_attendance' },
+    { screen: 'homework', icon: 'fa-book-medical', label: 'manage_homework' },
+    { screen: 'announcements', icon: 'fa-bullhorn', label: 'post_announcement' },
+    { screen: 'marks', icon: 'fa-marker', label: 'manage_grades' },
+    { screen: 'leaderboard', icon: 'fa-trophy', label: 'leaderboard' },
+    { screen: 'messages', icon: 'fa-comments', label: 'messages' },
+    { screen: 'profile', icon: 'fa-user-circle', label: 'profile' },
+] as const;
+
 const SuccessBanner: React.FC<{ message: string }> = ({ message }) => (
     <div className="bg-green-100 border-t-4 border-green-500 text-green-700 px-4 py-3 rounded-b-lg shadow-md mb-4" role="alert">
       <div className="flex">
@@ -95,27 +106,80 @@ const TeacherDashboard: React.FC = () => {
     };
     
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
-            <Header title={t(screen)} showBackButton={screen !== 'dashboard'} onBack={handleBack} />
-            {successMessage && <SuccessBanner message={successMessage} />}
-            <main className="p-2 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 flex-grow">
-                 {teacherClasses.length > 1 && screen !== 'dashboard' && screen !== 'messages' && screen !== 'profile' && (
-                     <Card>
-                        <label htmlFor="class-select" className="block text-sm font-medium text-gray-700 mb-2">{t('select_class')}</label>
-                        <select
-                            id="class-select"
-                            value={selectedClassId || ''}
-                            onChange={(e) => setSelectedClassId(e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                        >
-                            {teacherClasses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                        </select>
-                    </Card>
-                 )}
-                 <div className={successMessage ? 'mt-0' : ''}>
-                    {renderScreen()}
-                 </div>
-            </main>
+        <div className="flex min-h-screen bg-gray-50">
+            {/* Mobile Header - only visible on mobile */}
+            <div className="lg:hidden w-full">
+                <Header title={t(screen)} showBackButton={screen !== 'dashboard'} onBack={handleBack} />
+                {successMessage && <SuccessBanner message={successMessage} />}
+            </div>
+
+            {/* Desktop Sidebar - only visible on desktop */}
+            <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
+                <div className="flex flex-col flex-grow pt-5 pb-4 overflow-y-auto bg-white shadow-lg">
+                    <div className="flex items-center flex-shrink-0 px-4">
+                        <h1 className="text-xl font-bold text-gray-800">Teacher Portal</h1>
+                    </div>
+                    <div className="mt-5 flex-1 flex flex-col">
+                        <nav className="flex-1 px-2 space-y-1">
+                            {teacherMenuItems.map(item => (
+                                <button
+                                    key={item.screen}
+                                    onClick={() => setScreen(item.screen)}
+                                    className={`w-full flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
+                                        screen === item.screen
+                                            ? 'bg-blue-100 text-blue-700'
+                                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                    }`}
+                                >
+                                    <i className={`mr-3 flex-shrink-0 h-6 w-6 fas ${item.icon}`}></i>
+                                    {t(item.label)}
+                                </button>
+                            ))}
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+            {/* Main Content */}
+            <div className="flex flex-col flex-1 lg:pl-64">
+                {/* Desktop Header */}
+                <div className="hidden lg:block sticky top-0 z-10 flex-shrink-0 flex h-16 bg-white shadow">
+                    <div className="flex-1 px-4 flex justify-between items-center">
+                        <h1 className="text-lg font-medium text-gray-900">{t(screen)}</h1>
+                        {user && (
+                            <div className="flex items-center space-x-4">
+                                <span className="text-sm text-gray-700">Welcome, {user.name}</span>
+                                <ProfileImage name={user.name} avatarUrl={user.avatar} className="h-8 w-8" />
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Success Banner for Desktop */}
+                <div className="hidden lg:block">
+                    {successMessage && <SuccessBanner message={successMessage} />}
+                </div>
+
+                {/* Content Area */}
+                <main className="flex-grow p-2 sm:p-4 lg:p-6 space-y-3 sm:space-y-4">
+                     {teacherClasses.length > 1 && screen !== 'dashboard' && screen !== 'messages' && screen !== 'profile' && (
+                         <Card>
+                            <label htmlFor="class-select" className="block text-sm font-medium text-gray-700 mb-2">{t('select_class')}</label>
+                            <select
+                                id="class-select"
+                                value={selectedClassId || ''}
+                                onChange={(e) => setSelectedClassId(e.target.value)}
+                                className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                            >
+                                {teacherClasses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </select>
+                        </Card>
+                     )}
+                     <div className={successMessage ? 'mt-0' : ''}>
+                        {renderScreen()}
+                     </div>
+                </main>
+            </div>
         </div>
     );
 };
@@ -135,7 +199,7 @@ const DashboardMenu: React.FC<{ setScreen: (s: Screen) => void, teacherName: str
     return (
         <>
             <h1 className="text-2xl font-bold text-gray-800 px-2">{t('teacher_of')} {teacherName}</h1>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                 {menuItems.map(item => (
                     <Card key={item.screen} className="text-center hover:shadow-lg hover:scale-105 transition-transform cursor-pointer" onClick={() => setScreen(item.screen)}>
                         <i className={`fas ${item.icon} text-4xl text-blue-500 mb-4`}></i>

@@ -14,6 +14,19 @@ import apiService from '../services/apiService';
 
 type ParentTab = 'dashboard' | 'performance' | 'homework' | 'announcements' | 'messages' | 'profile' | 'codes';
 
+const getTabIcon = (tab: ParentTab): string => {
+    const icons: Record<ParentTab, string> = {
+        dashboard: 'fa-home',
+        performance: 'fa-chart-line',
+        homework: 'fa-book-open',
+        announcements: 'fa-bullhorn',
+        messages: 'fa-comments',
+        profile: 'fa-user-circle',
+        codes: 'fa-key'
+    };
+    return icons[tab];
+};
+
 const ParentDashboard: React.FC = () => {
     const { user, t, students } = useContext(AppContext);
     const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
@@ -71,58 +84,111 @@ const ParentDashboard: React.FC = () => {
     }
     
     return (
-        <div className="flex flex-col min-h-screen bg-gray-50">
-            <Header title={tabTitles[activeTab]} />
-            <main className="flex-grow p-2 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 mb-16 sm:mb-20">
-                {selectedStudent ? (
-                    <SelectedStudentCard 
-                        student={selectedStudent} 
-                        otherStudents={parentStudents}
-                        onSelect={handleStudentChange} 
-                    />
-                ) : (
-                    activeTab !== 'profile' && <Card><p>{t('select_student')}</p></Card>
-                )}
-                
-                {activeTab === 'dashboard' && selectedStudent && (
-                    <>
-                        <QuickOverview student={selectedStudent}/>
-                        <AttendanceSummary student={selectedStudent} />
-                        <RecentAnnouncements />
-                    </>
-                )}
+        <div className="flex min-h-screen bg-gray-50">
+            {/* Mobile Header - only visible on mobile */}
+            <div className="lg:hidden w-full">
+                <Header title={tabTitles[activeTab]} />
+            </div>
 
-                {activeTab === 'performance' && selectedStudent && (
-                    <>
-                        <GradesList student={selectedStudent} />
-                        <PerformanceSummary student={selectedStudent} />
-                    </>
-                )}
+            {/* Desktop Sidebar - only visible on desktop */}
+            <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
+                <div className="flex flex-col flex-grow pt-5 pb-4 overflow-y-auto bg-white shadow-lg">
+                    <div className="flex items-center flex-shrink-0 px-4">
+                        <h1 className="text-xl font-bold text-gray-800">Parent Portal</h1>
+                    </div>
+                    <div className="mt-5 flex-1 flex flex-col">
+                        <nav className="flex-1 px-2 space-y-1">
+                            {Object.entries(tabTitles).map(([tab, title]) => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab as ParentTab)}
+                                    className={`w-full flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
+                                        activeTab === tab
+                                            ? 'bg-blue-100 text-blue-700'
+                                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                    }`}
+                                >
+                                    <i className={`mr-3 flex-shrink-0 h-6 w-6 fas ${getTabIcon(tab as ParentTab)}`}></i>
+                                    {title}
+                                </button>
+                            ))}
+                        </nav>
+                    </div>
+                </div>
+            </div>
 
-                {activeTab === 'homework' && selectedStudent && (
-                    <>
+            {/* Main Content */}
+            <div className="flex flex-col flex-1 lg:pl-64">
+                {/* Desktop Header */}
+                <div className="hidden lg:block sticky top-0 z-10 flex-shrink-0 flex h-16 bg-white shadow">
+                    <div className="flex-1 px-4 flex justify-between items-center">
+                        <h1 className="text-lg font-medium text-gray-900">{tabTitles[activeTab]}</h1>
+                        {user && (
+                            <div className="flex items-center space-x-4">
+                                <span className="text-sm text-gray-700">Welcome, {user.name}</span>
+                                <ProfileImage name={user.name} avatarUrl={user.avatar} className="h-8 w-8" />
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Content Area */}
+                <main className="flex-grow p-2 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 mb-16 lg:mb-0">
+                    {selectedStudent ? (
+                        <SelectedStudentCard 
+                            student={selectedStudent} 
+                            otherStudents={parentStudents}
+                            onSelect={handleStudentChange} 
+                        />
+                    ) : (
+                        activeTab !== 'profile' && <Card><p>{t('select_student')}</p></Card>
+                    )}
+                    
+                    {activeTab === 'dashboard' && selectedStudent && (
+                        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                            <div className="xl:col-span-2 space-y-6">
+                                <QuickOverview student={selectedStudent}/>
+                                <AttendanceSummary student={selectedStudent} />
+                            </div>
+                            <div className="xl:col-span-1">
+                                <RecentAnnouncements />
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'performance' && selectedStudent && (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <GradesList student={selectedStudent} />
+                            <PerformanceSummary student={selectedStudent} />
+                        </div>
+                    )}
+
+                    {activeTab === 'homework' && selectedStudent && (
                         <HomeworkSummary student={selectedStudent} />
-                    </>
-                )}
+                    )}
 
-                {activeTab === 'announcements' && selectedStudent && (
-                    <AnnouncementsList />
-                )}
+                    {activeTab === 'announcements' && selectedStudent && (
+                        <AnnouncementsList />
+                    )}
 
-                {activeTab === 'messages' && selectedStudent && (
-                    <ParentMessaging student={selectedStudent} />
-                )}
+                    {activeTab === 'messages' && selectedStudent && (
+                        <ParentMessaging student={selectedStudent} />
+                    )}
 
-                {activeTab === 'codes' && (
-                    <StudentCodesTab students={parentStudents} />
-                )}
+                    {activeTab === 'codes' && (
+                        <StudentCodesTab students={parentStudents} />
+                    )}
 
-                {activeTab === 'profile' && (
-                    <ProfileScreen />
-                )}
+                    {activeTab === 'profile' && (
+                        <ProfileScreen />
+                    )}
+                </main>
+            </div>
 
-            </main>
-            <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
+            {/* Mobile Bottom Navigation - only visible on mobile */}
+            <div className="lg:hidden">
+                <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
+            </div>
         </div>
     );
 };
