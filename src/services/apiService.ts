@@ -441,7 +441,7 @@ class ApiService {
 
   // Backup functionality
   async createBackup(): Promise<Blob> {
-    const response = await fetch(`${this.baseURL}/backup/create`, {
+    const response = await fetch(`${API_BASE_URL}/backup/create`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
