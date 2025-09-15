@@ -591,22 +591,31 @@ const AnnouncementsList: React.FC = () => {
 };
 
 const ParentMessaging: React.FC<{ student: Student }> = ({ student }) => {
-    const { t, user, users, messages, setMessages } = useContext(AppContext);
+    const { t, user, users, messages, setMessages, classes, subjects } = useContext(AppContext);
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [selectedTeacher, setSelectedTeacher] = useState<User | null>(null);
 
     const teachers = useMemo(() => {
-        return users.filter(u => u.role?.toLowerCase() === 'teacher');
-    }, [users]);
+        // Get the student's class
+        const studentClass = classes.find(c => c.id === student.classId);
+        if (!studentClass || !(studentClass as any).subjectIds) {
+            return [];
+        }
+
+        // Get all teachers and filter by those who teach subjects in this class
+        const allTeachers = users.filter(u => u.role?.toLowerCase() === 'teacher');
+        return allTeachers.filter(teacher => {
+            // Teacher should have a subject that's taught in this class
+            const teacherSubject = subjects.find(s => s.name === teacher.subject);
+            return teacherSubject && (studentClass as any).subjectIds.includes(teacherSubject.id);
+        });
+    }, [users, student.classId, classes, subjects]);
 
     const conversations = useMemo(() => {
         if (!user) return [];
         
-        // Get all teachers
-        const allTeachers = users.filter(u => u.role?.toLowerCase() === 'teacher');
-        
-        // Create conversation list with all teachers
-        return allTeachers.map(teacher => {
+        // Create conversation list with filtered teachers for this student's class
+        return teachers.map(teacher => {
             const convMessages = messages.filter(m => 
                 (m.senderId === teacher.id && m.receiverId === user.id) || 
                 (m.senderId === user.id && m.receiverId === teacher.id)
@@ -620,7 +629,7 @@ const ParentMessaging: React.FC<{ student: Student }> = ({ student }) => {
             
             return { teacher, lastMessage, unreadCount };
         });
-    }, [user, messages, users]);
+    }, [user, messages, teachers]);
 
     const handleOpenChat = (teacher: User) => {
         setSelectedTeacher(teacher);
@@ -649,15 +658,28 @@ const ParentMessaging: React.FC<{ student: Student }> = ({ student }) => {
                                 {unreadCount > 0 && <span className="absolute top-0 right-0 block h-3 w-3 rounded-full bg-blue-500 border-2 border-white"></span>}
                             </div>
                             <div className="ml-4 rtl:mr-4 flex-grow">
-                                <p className="font-semibold text-gray-800">{teacher.name}</p>
+                                <div className="flex items-center space-x-2">
+                                    <p className="font-semibold text-gray-800">{teacher.name}</p>
+                                    {teacher.subject && (
+                                        <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                            {teacher.subject}
+                                        </span>
+                                    )}
+                                </div>
                                 <p className={`text-sm ${unreadCount > 0 ? 'font-bold text-gray-700' : 'text-gray-500'} truncate`}>
-                                    {lastMessage?.type === 'voice' ? 'Voice Message' : lastMessage?.content || ''}
+                                    {lastMessage?.type === 'voice' ? 'Voice Message' : lastMessage?.content || 'Start a conversation...'}
                                 </p>
                             </div>
                             <span className="text-xs text-gray-400">{lastMessage ? new Date(lastMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
                         </div>
                     ))}
-                    {conversations.length === 0 && <p className="text-center text-gray-500">{t('no_messages_yet')}</p>}
+                    {conversations.length === 0 && (
+                        <div className="text-center text-gray-500 py-8">
+                            <i className="fas fa-chalkboard-teacher text-4xl mb-4"></i>
+                            <p className="font-medium">No Teachers Available</p>
+                            <p className="text-sm">No teachers found for {student.name}'s class subjects.</p>
+                        </div>
+                    )}
                 </div>
             </Card>
             {selectedTeacher && <ChatModal isOpen={isChatOpen} onClose={handleCloseChat} otherParty={selectedTeacher} />}
@@ -741,7 +763,16 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={t('conversation_with').replace('{name}', otherParty.name)}>
+        <Modal isOpen={isOpen} onClose={onClose} title={
+            <div className="flex items-center space-x-2">
+                <span>{t('conversation_with').replace('{name}', otherParty.name)}</span>
+                {otherParty.subject && (
+                    <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                        {otherParty.subject}
+                    </span>
+                )}
+            </div>
+        }>
             <div className="flex flex-col h-[70vh]">
                 {/* Chat Messages */}
                 <div ref={chatContainerRef} className="flex-grow space-y-4 p-4 overflow-y-auto bg-gray-50 rounded-t-lg">

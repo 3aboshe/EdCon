@@ -7,6 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Teacher, UserRole, Subject, User, Student } from '../types';
 import ProfileImage from '../components/common/ProfileImage';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 import apiService from '../services/apiService';
 import { allAvatars } from '../data/avatars';
 
@@ -1487,8 +1488,12 @@ const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = 
 const SubjectManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({ setSuccessMessage }) => {
     const { subjects, setSubjects } = useContext(AppContext);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
     const [newSubjectName, setNewSubjectName] = useState('');
+    const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [deleteConfirm, setDeleteConfirm] = useState<{isOpen: boolean, subject: Subject | null}>({isOpen: false, subject: null});
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const handleAddSubject = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -1509,18 +1514,52 @@ const SubjectManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> 
         }
     };
 
-    const handleDeleteSubject = async (subjectId: string, subjectName: string) => {
-        if (!confirm(`Are you sure you want to delete "${subjectName}"? This action cannot be undone.`)) {
-            return;
-        }
+    const handleEditSubject = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newSubjectName.trim() || !editingSubject) return;
 
+        setIsLoading(true);
         try {
-            await apiService.deleteSubject(subjectId);
-            setSubjects(subjects.filter(s => s.id !== subjectId));
-            setSuccessMessage(`Subject "${subjectName}" deleted successfully!`);
+            const updatedSubject = await apiService.updateSubject(editingSubject.id, {
+                name: newSubjectName.trim()
+            });
+            setSubjects(subjects.map(s => s.id === editingSubject.id ? updatedSubject : s));
+            setSuccessMessage(`Subject "${newSubjectName}" updated successfully!`);
+            setNewSubjectName('');
+            setEditingSubject(null);
+            setShowEditModal(false);
+        } catch (error) {
+            console.error('Error updating subject:', error);
+            setSuccessMessage('Failed to update subject. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const startEdit = (subject: Subject) => {
+        setEditingSubject(subject);
+        setNewSubjectName(subject.name);
+        setShowEditModal(true);
+    };
+
+    const confirmDelete = (subject: Subject) => {
+        setDeleteConfirm({ isOpen: true, subject });
+    };
+
+    const handleDeleteSubject = async () => {
+        if (!deleteConfirm.subject) return;
+
+        setIsDeleting(true);
+        try {
+            await apiService.deleteSubject(deleteConfirm.subject.id);
+            setSubjects(subjects.filter(s => s.id !== deleteConfirm.subject!.id));
+            setSuccessMessage(`Subject "${deleteConfirm.subject.name}" deleted successfully!`);
+            setDeleteConfirm({ isOpen: false, subject: null });
         } catch (error) {
             console.error('Error deleting subject:', error);
             setSuccessMessage('Failed to delete subject. Please try again.');
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -1536,18 +1575,28 @@ const SubjectManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> 
                         <i className="fas fa-plus mr-2"></i>Add Subject
                     </button>
                 </div>
-                <div className="space-y-2">
-                    {subjects.map(subject => (
-                        <div key={subject.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                            <span className="font-medium">{subject.name}</span>
-                            <button 
-                                onClick={() => handleDeleteSubject(subject.id, subject.name)}
-                                className="text-red-600 hover:text-red-800 transition"
-                            >
-                                <i className="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    ))}
+                            <div className="space-y-2">
+                                {subjects.map(subject => (
+                                    <div key={subject.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                        <span className="font-medium">{subject.name}</span>
+                                        <div className="flex space-x-2">
+                                            <button 
+                                                onClick={() => startEdit(subject)}
+                                                className="text-blue-600 hover:text-blue-800 transition"
+                                                title="Edit subject"
+                                            >
+                                                <i className="fas fa-edit"></i>
+                                            </button>
+                                            <button 
+                                                onClick={() => confirmDelete(subject)}
+                                                className="text-red-600 hover:text-red-800 transition"
+                                                title="Delete subject"
+                                            >
+                                                <i className="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
                     {subjects.length === 0 && (
                         <div className="text-center text-gray-500 py-8">
                             <i className="fas fa-book text-4xl mb-4"></i>
@@ -1591,6 +1640,53 @@ const SubjectManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> 
                     </div>
                 </form>
             </Modal>
+
+            {/* Edit Subject Modal */}
+            <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Subject">
+                <form onSubmit={handleEditSubject} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Subject Name
+                        </label>
+                        <input
+                            type="text"
+                            value={newSubjectName}
+                            onChange={(e) => setNewSubjectName(e.target.value)}
+                            placeholder="e.g., Mathematics, English, History"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            required
+                        />
+                    </div>
+                    <div className="flex space-x-3 pt-4">
+                        <button
+                            type="button"
+                            onClick={() => setShowEditModal(false)}
+                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isLoading || !newSubjectName.trim()}
+                            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
+                        >
+                            {isLoading ? <LoadingSpinner size="sm" /> : 'Update Subject'}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* Delete Confirmation Dialog */}
+            <ConfirmDialog
+                isOpen={deleteConfirm.isOpen}
+                onClose={() => setDeleteConfirm({ isOpen: false, subject: null })}
+                onConfirm={handleDeleteSubject}
+                title="Delete Subject"
+                message={`Are you sure you want to delete "${deleteConfirm.subject?.name}"? This action cannot be undone and may affect classes and teachers.`}
+                confirmText="Delete Subject"
+                type="danger"
+                isLoading={isDeleting}
+            />
         </>
     );
 };
