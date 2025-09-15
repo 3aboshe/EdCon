@@ -208,26 +208,22 @@ class ApiService {
   }
 
   // Create a new class
-  async createClass(name: string): Promise<Class> {
+  async createClass(name: string, subjectIds: string[] = []): Promise<Class> {
     console.log('=== CREATE CLASS API DEBUG ===');
     console.log('Class name:', name);
+    console.log('Subject IDs:', subjectIds);
     
     const response = await this.request<{success: boolean, class: Class}>('/classes', {
       method: 'POST',
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, subjectIds }),
     });
     
     console.log('Raw API response:', response);
-    console.log('Response type:', typeof response);
-    console.log('Response keys:', Object.keys(response));
     
     // The server returns {success: true, class: {...}}
-    // But response.data might be undefined, so check the response directly
     if (response && response.class) {
-      console.log('Extracted class from response:', response.class);
       return response.class;
     } else if (response.data && response.data.class) {
-      console.log('Extracted class from response.data:', response.data.class);
       return response.data.class;
     } else {
       console.error('Invalid response format:', response);
