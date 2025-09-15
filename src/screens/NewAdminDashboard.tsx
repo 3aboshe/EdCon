@@ -389,10 +389,7 @@ const AcademicManagement: React.FC<{ selectedClassId: string, setSuccessMessage:
 
 // System Settings
 const SystemSettings: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({ setSuccessMessage }) => {
-    const { users, classes, subjects, setUsers, setTeachers, setSubjects } = useContext(AppContext);
     const [isBackupLoading, setIsBackupLoading] = useState(false);
-    const [isFixingData, setIsFixingData] = useState(false);
-    const [showFixConfirm, setShowFixConfirm] = useState(false);
 
     const handleBackup = async () => {
         setIsBackupLoading(true);
@@ -419,85 +416,6 @@ const SystemSettings: React.FC<{ setSuccessMessage: (msg: string) => void }> = (
         }
     };
 
-    const confirmFixData = () => {
-        setShowFixConfirm(true);
-    };
-
-    const handleFixData = async () => {
-        setShowFixConfirm(false);
-        setIsFixingData(true);
-        try {
-            
-            // 1. Remove duplicate subjects
-            const uniqueSubjects = new Map();
-            const subjectsToKeep = [];
-            const subjectsToDelete = [];
-
-            for (const subject of subjects) {
-                const baseName = subject.name.replace(/\s*2\s*$/, ''); // Remove " 2" suffix
-                if (!uniqueSubjects.has(baseName)) {
-                    uniqueSubjects.set(baseName, subject);
-                    subjectsToKeep.push(subject);
-                } else {
-                    subjectsToDelete.push(subject);
-                }
-            }
-
-            // Delete duplicate subjects from backend
-            for (const subject of subjectsToDelete) {
-                try {
-                    await apiService.deleteSubject(subject.id);
-                    console.log(`Deleted duplicate subject: ${subject.name}`);
-                } catch (error) {
-                    console.error(`Failed to delete subject ${subject.name}:`, error);
-                }
-            }
-
-            // Update subjects list
-            setSubjects(subjectsToKeep);
-
-            // 2. Fix teacher class assignments
-            const teachers = users.filter(u => u.role?.toLowerCase() === 'teacher');
-            const updatedUsers = [...users];
-
-            for (const teacher of teachers) {
-                if (teacher.subject) {
-                    // Find classes that should have this subject (for now, assign to all classes)
-                    const classIds = classes.map(c => c.id);
-                    
-                    try {
-                        await apiService.updateUser(teacher.id, { classIds });
-                        
-                        // Update local state
-                        const userIndex = updatedUsers.findIndex(u => u.id === teacher.id);
-                        if (userIndex !== -1) {
-                            updatedUsers[userIndex] = { ...updatedUsers[userIndex], classIds };
-                        }
-                        
-                        console.log(`Fixed teacher ${teacher.name} class assignments: ${classIds.join(', ')}`);
-                    } catch (error) {
-                        console.error(`Failed to update teacher ${teacher.name}:`, error);
-                    }
-                }
-            }
-
-            setUsers(updatedUsers);
-
-            // Update teachers list
-            const updatedTeachers = teachers.map(teacher => {
-                const classIds = classes.map(c => c.id);
-                return { ...teacher, classIds };
-            });
-            setTeachers(updatedTeachers);
-
-            setSuccessMessage('Data fixed successfully! Teacher class assignments updated and duplicate subjects removed.');
-        } catch (error) {
-            console.error('Error fixing data:', error);
-            setSuccessMessage('Failed to fix data. Please try again.');
-        } finally {
-            setIsFixingData(false);
-        }
-    };
 
     return (
         <div className="space-y-6">
@@ -529,27 +447,6 @@ const SystemSettings: React.FC<{ setSuccessMessage: (msg: string) => void }> = (
                             </button>
                         </div>
                         
-                        <div className="border-t pt-4">
-                            <h4 className="font-medium text-gray-800 mb-2">Fix Data Issues</h4>
-                            <p className="text-gray-600 mb-3 text-sm">Fix teacher class assignments, remove duplicate subjects, and clean up data relationships.</p>
-                            <button
-                                onClick={confirmFixData}
-                                disabled={isFixingData}
-                                className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition disabled:opacity-50 flex items-center space-x-2"
-                            >
-                                {isFixingData ? (
-                                    <>
-                                        <LoadingSpinner size="sm" />
-                                        <span>Fixing Data...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <i className="fas fa-wrench"></i>
-                                        <span>Fix Data Issues</span>
-                                    </>
-                                )}
-                            </button>
-                        </div>
                     </div>
                 </Card>
 
@@ -572,17 +469,6 @@ const SystemSettings: React.FC<{ setSuccessMessage: (msg: string) => void }> = (
                 </Card>
             </div>
 
-            {/* Fix Data Confirmation Dialog */}
-            <ConfirmDialog
-                isOpen={showFixConfirm}
-                onClose={() => setShowFixConfirm(false)}
-                onConfirm={handleFixData}
-                title="Fix Data Issues"
-                message="This will fix teacher class assignments, remove duplicate subjects, and clean up data relationships. This action cannot be undone."
-                confirmText="Fix Data"
-                type="warning"
-                isLoading={isFixingData}
-            />
         </div>
     );
 };
