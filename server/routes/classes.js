@@ -22,8 +22,8 @@ router.get('/', async (req, res) => {
 // Create a new class
 router.post('/', async (req, res) => {
   try {
-    const { name } = req.body;
-    console.log('Creating class:', name);
+    const { name, subjectIds = [] } = req.body;
+    console.log('Creating class:', name, 'with subjects:', subjectIds);
     
     // Generate a unique ID for the class
     const classId = `C${Date.now()}`;
@@ -31,9 +31,44 @@ router.post('/', async (req, res) => {
     const classData = await prisma.class.create({
       data: {
         id: classId,
-        name: name
+        name: name,
+        subjectIds: subjectIds
       }
     });
+    
+    // If subjects were assigned, update teachers' classIds
+    if (subjectIds.length > 0) {
+      console.log('Updating teacher class assignments for new class:', classId);
+      
+      // Get all teachers
+      const teachers = await prisma.user.findMany({
+        where: { role: 'TEACHER' }
+      });
+      
+      // For each teacher, check if they teach any of the subjects in this class
+      for (const teacher of teachers) {
+        if (teacher.subject) {
+          // Find the subject by name
+          const subject = await prisma.subject.findFirst({
+            where: { name: teacher.subject }
+          });
+          
+          if (subject && subjectIds.includes(subject.id)) {
+            // This teacher teaches a subject in this class
+            const currentClassIds = teacher.classIds || [];
+            if (!currentClassIds.includes(classId)) {
+              // Add this class to the teacher's classIds
+              const updatedClassIds = [...currentClassIds, classId];
+              await prisma.user.update({
+                where: { id: teacher.id },
+                data: { classIds: updatedClassIds }
+              });
+              console.log(`Added class ${classId} to teacher ${teacher.name} (${teacher.subject})`);
+            }
+          }
+        }
+      }
+    }
     
     console.log('Created class:', classData);
     res.json({ success: true, class: classData });
@@ -65,12 +100,61 @@ router.put('/:id', async (req, res) => {
     if (name !== undefined) {
       updateData.name = name;
     }
+    if (subjectIds !== undefined) {
+      updateData.subjectIds = subjectIds;
+    }
     
     // Update the class
     const updatedClass = await prisma.class.update({
       where: { id: id },
       data: updateData
     });
+    
+    // If subjectIds were updated, update teachers' classIds
+    if (subjectIds !== undefined) {
+      console.log('Updating teacher class assignments for class:', id);
+      
+      // Get all teachers
+      const teachers = await prisma.user.findMany({
+        where: { role: 'TEACHER' }
+      });
+      
+      // For each teacher, check if they teach any of the subjects in this class
+      for (const teacher of teachers) {
+        if (teacher.subject) {
+          // Find the subject by name
+          const subject = await prisma.subject.findFirst({
+            where: { name: teacher.subject }
+          });
+          
+          if (subject && subjectIds.includes(subject.id)) {
+            // This teacher teaches a subject in this class
+            const currentClassIds = teacher.classIds || [];
+            if (!currentClassIds.includes(id)) {
+              // Add this class to the teacher's classIds
+              const updatedClassIds = [...currentClassIds, id];
+              await prisma.user.update({
+                where: { id: teacher.id },
+                data: { classIds: updatedClassIds }
+              });
+              console.log(`Added class ${id} to teacher ${teacher.name} (${teacher.subject})`);
+            }
+          } else if (subject && !subjectIds.includes(subject.id)) {
+            // This teacher's subject is no longer in this class
+            const currentClassIds = teacher.classIds || [];
+            if (currentClassIds.includes(id)) {
+              // Remove this class from the teacher's classIds
+              const updatedClassIds = currentClassIds.filter(cid => cid !== id);
+              await prisma.user.update({
+                where: { id: teacher.id },
+                data: { classIds: updatedClassIds }
+              });
+              console.log(`Removed class ${id} from teacher ${teacher.name} (${teacher.subject})`);
+            }
+          }
+        }
+      }
+    }
     
     console.log('Successfully updated class:', updatedClass);
     res.json({ success: true, class: updatedClass });
