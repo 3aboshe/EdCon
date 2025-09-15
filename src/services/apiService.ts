@@ -438,6 +438,27 @@ class ApiService {
     const response = await this.request<{ message: string }>('/health');
     return response.data!;
   }
+
+  // Backup functionality
+  async createBackup(): Promise<Blob> {
+    const response = await fetch(`${this.baseURL}/backup/create`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to create backup');
+    }
+    
+    return response.blob();
+  }
+
+  async getBackupStats(): Promise<any> {
+    const response = await this.request<any>('/backup/stats');
+    return response.data || response;
+  }
 }
 
 export default new ApiService(); 

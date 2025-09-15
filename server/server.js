@@ -12,6 +12,7 @@ import homeworkRoutes from './routes/homework.js';
 import announcementRoutes from './routes/announcements.js';
 import attendanceRoutes from './routes/attendance.js';
 import messageRoutes from './routes/messages.js';
+import backupRoutes from './routes/backup.js';
 
 dotenv.config();
 
@@ -62,6 +63,7 @@ app.use('/api/homework', homeworkRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/backup', backupRoutes);
 
 // File serving route
 app.get('/uploads/:filename', (req, res) => {
