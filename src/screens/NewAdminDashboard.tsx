@@ -657,13 +657,17 @@ const StatCard: React.FC<{ title: string; value: number; icon: string; color: st
 const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg: string) => void }> = ({ searchTerm, setSuccessMessage }) => {
     const { students, users, classes, subjects, setUsers, setStudents } = useContext(AppContext);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
     const [newStudent, setNewStudent] = useState({
         name: '',
         classId: '',
         parentId: ''
     });
+    const [editingStudent, setEditingStudent] = useState<any | null>(null);
     const [parentSearch, setParentSearch] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [deleteConfirm, setDeleteConfirm] = useState<{isOpen: boolean, student: any | null}>({isOpen: false, student: null});
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const filteredStudents = useMemo(() => {
         return students.filter(student => 
@@ -734,19 +738,106 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
         }
     };
 
-    const handleDeleteStudent = async (studentId: string, studentName: string) => {
-        if (!confirm(`Are you sure you want to delete "${studentName}"? This action cannot be undone.`)) {
-            return;
-        }
+    const startEditStudent = (student: any) => {
+        setEditingStudent(student);
+        setNewStudent({
+            name: student.name,
+            classId: student.classId || '',
+            parentId: student.parentId || ''
+        });
+        const parentUser = users.find(u => u.id === student.parentId);
+        setParentSearch(parentUser?.name || '');
+        setShowEditModal(true);
+    };
 
+    const handleEditStudent = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newStudent.name.trim() || !newStudent.classId || !editingStudent) return;
+
+        setIsLoading(true);
         try {
-            await apiService.deleteUser(studentId);
-            setStudents(students.filter(s => s.id !== studentId));
-            setUsers(users.filter(u => u.id !== studentId));
-            setSuccessMessage(`Student "${studentName}" deleted successfully!`);
+            const selectedClass = classes.find(c => c.id === newStudent.classId);
+            const classSubjects = (selectedClass as any)?.subjectIds || [];
+
+            const updatedStudentData = {
+                name: newStudent.name.trim(),
+                classId: newStudent.classId,
+                parentId: newStudent.parentId || undefined
+            };
+
+            await apiService.updateUser(editingStudent.id, updatedStudentData);
+            
+            // Update students list
+            setStudents(students.map(s => s.id === editingStudent.id ? {
+                ...s,
+                name: newStudent.name.trim(),
+                classId: newStudent.classId,
+                parentId: newStudent.parentId || undefined
+            } : s));
+
+            // Update users list
+            setUsers(users.map(u => u.id === editingStudent.id ? {
+                ...u,
+                name: newStudent.name.trim(),
+                classId: newStudent.classId,
+                parentId: newStudent.parentId || undefined
+            } : u));
+
+            // Update parent's children if parent changed
+            if (newStudent.parentId && newStudent.parentId !== editingStudent.parentId) {
+                setUsers(users.map(user => {
+                    if (user.id === newStudent.parentId) {
+                        const currentChildren = user.childrenIds || [];
+                        if (!currentChildren.includes(editingStudent.id)) {
+                            return {
+                                ...user,
+                                childrenIds: [...currentChildren, editingStudent.id]
+                            };
+                        }
+                    }
+                    // Remove from old parent if changed
+                    if (user.id === editingStudent.parentId && newStudent.parentId !== editingStudent.parentId) {
+                        return {
+                            ...user,
+                            childrenIds: (user.childrenIds || []).filter(id => id !== editingStudent.id)
+                        };
+                    }
+                    return user;
+                }));
+            }
+
+            setSuccessMessage(`Student "${newStudent.name}" updated successfully! Assigned to class "${selectedClass?.name}" with ${classSubjects.length} subjects.`);
+            setNewStudent({ name: '', classId: '', parentId: '' });
+            setParentSearch('');
+            setEditingStudent(null);
+            setShowEditModal(false);
+        } catch (error) {
+            console.error('Error updating student:', error);
+            setSuccessMessage('Failed to update student. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const confirmDeleteStudent = (student: any) => {
+        setDeleteConfirm({ isOpen: true, student });
+    };
+
+    const handleDeleteStudent = async () => {
+        if (!deleteConfirm.student) return;
+
+        setIsDeleting(true);
+        try {
+            await apiService.deleteUser(deleteConfirm.student.id);
+            setStudents(students.filter(s => s.id !== deleteConfirm.student!.id));
+            setUsers(users.filter(u => u.id !== deleteConfirm.student!.id));
+            setSuccessMessage(`Student "${deleteConfirm.student.name}" deleted successfully!`);
+            setDeleteConfirm({ isOpen: false, student: null });
         } catch (error) {
             console.error('Error deleting student:', error);
             setSuccessMessage('Failed to delete student. Please try again.');
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -778,7 +869,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                                 </div>
                                 <div className="space-y-1 text-sm">
                                     <p><span className="font-medium">Class:</span> {studentClass?.name || 'Not assigned'}</p>
-                                    <p><span className="font-medium">Parent:</span> {parentUser?.name || 'Not assigned'}</p>
+                                    <p><span className="font-medium">Parent:</span> {parentUser?.name || 'No parent assigned'}</p>
                                     {studentClass && (studentClass as any).subjectIds && (
                                         <div>
                                             <p className="font-medium">Subjects:</p>
@@ -800,10 +891,18 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                                         </div>
                                     )}
                                 </div>
-                                <div className="mt-3 flex justify-end">
+                                <div className="mt-3 flex justify-end space-x-2">
                                     <button 
-                                        onClick={() => handleDeleteStudent(student.id, student.name)}
+                                        onClick={() => startEditStudent(student)}
+                                        className="text-blue-600 hover:text-blue-800 transition"
+                                        title="Edit student"
+                                    >
+                                        <i className="fas fa-edit"></i>
+                                    </button>
+                                    <button 
+                                        onClick={() => confirmDeleteStudent(student)}
                                         className="text-red-600 hover:text-red-800 transition"
+                                        title="Delete student"
                                     >
                                         <i className="fas fa-trash"></i>
                                     </button>
@@ -936,6 +1035,135 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                     </div>
                 </form>
             </Modal>
+
+            {/* Edit Student Modal */}
+            <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Student">
+                <form onSubmit={handleEditStudent} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Student Name
+                        </label>
+                        <input
+                            type="text"
+                            value={newStudent.name}
+                            onChange={(e) => setNewStudent({...newStudent, name: e.target.value})}
+                            placeholder="Enter student name"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            required
+                        />
+                    </div>
+                    
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Assign to Class (Required)
+                        </label>
+                        <select
+                            value={newStudent.classId}
+                            onChange={(e) => setNewStudent({...newStudent, classId: e.target.value})}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            required
+                        >
+                            <option value="">Select a class</option>
+                            {classes.map(classItem => (
+                                <option key={classItem.id} value={classItem.id}>
+                                    {classItem.name} 
+                                    {(classItem as any).subjectIds && ` (${(classItem as any).subjectIds.length} subjects)`}
+                                </option>
+                            ))}
+                        </select>
+                        {newStudent.classId && (
+                            <div className="mt-2 p-2 bg-green-50 rounded-lg">
+                                <p className="text-xs text-green-700 font-medium">Auto-Enrollment Preview:</p>
+                                <p className="text-xs text-green-600">Student will be enrolled in all class subjects:</p>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                    {classes.find(c => c.id === newStudent.classId) && 
+                                        ((classes.find(c => c.id === newStudent.classId) as any).subjectIds || []).map((subjectId: string) => {
+                                            const subject = subjects.find(s => s.id === subjectId);
+                                            return subject ? (
+                                                <span key={subjectId} className="px-1 py-0.5 bg-green-100 text-green-800 text-xs rounded">
+                                                    {subject.name}
+                                                </span>
+                                            ) : null;
+                                        })
+                                    }
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Assign to Parent (Optional)
+                        </label>
+                        <div className="space-y-2">
+                            <input
+                                type="text"
+                                value={parentSearch}
+                                onChange={(e) => setParentSearch(e.target.value)}
+                                placeholder="Search parents..."
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            {parentSearch && (
+                                <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-lg">
+                                    {filteredParents.map(parent => (
+                                        <button
+                                            key={parent.id}
+                                            type="button"
+                                            onClick={() => {
+                                                setNewStudent({...newStudent, parentId: parent.id});
+                                                setParentSearch(parent.name);
+                                            }}
+                                            className="w-full text-left px-3 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                                        >
+                                            <div className="flex items-center space-x-2">
+                                                <ProfileImage name={parent.name} avatarUrl={parent.avatar} className="w-6 h-6" />
+                                                <span className="text-sm">{parent.name} ({parent.id})</span>
+                                            </div>
+                                        </button>
+                                    ))}
+                                    {filteredParents.length === 0 && (
+                                        <p className="text-gray-500 text-sm p-3">No parents found</p>
+                                    )}
+                                </div>
+                            )}
+                            {newStudent.parentId && (
+                                <p className="text-xs text-green-600">
+                                    ✓ Selected: {parentUsers.find(p => p.id === newStudent.parentId)?.name}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                    
+                    <div className="flex space-x-3 pt-4">
+                        <button
+                            type="button"
+                            onClick={() => setShowEditModal(false)}
+                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isLoading || !newStudent.name.trim() || !newStudent.classId}
+                            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
+                        >
+                            {isLoading ? <LoadingSpinner size="sm" /> : 'Update Student'}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* Delete Confirmation Dialog */}
+            <ConfirmDialog
+                isOpen={deleteConfirm.isOpen}
+                onClose={() => setDeleteConfirm({ isOpen: false, student: null })}
+                onConfirm={handleDeleteStudent}
+                title="Delete Student"
+                message={`Are you sure you want to delete "${deleteConfirm.student?.name}"? This will remove them from their class and parent.`}
+                confirmText="Delete Student"
+                type="danger"
+                isLoading={isDeleting}
+            />
         </>
     );
 };
@@ -1519,6 +1747,61 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
                     </div>
                 </form>
             </Modal>
+
+            {/* Edit Parent Modal */}
+            <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Parent">
+                <form onSubmit={handleEditParent} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Parent Name
+                        </label>
+                        <input
+                            type="text"
+                            value={newParentName}
+                            onChange={(e) => setNewParentName(e.target.value)}
+                            placeholder="Enter parent name"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            required
+                        />
+                    </div>
+                    
+                    <div className="bg-blue-50 p-3 rounded-lg">
+                        <p className="text-sm text-blue-700">
+                            <i className="fas fa-info-circle mr-2"></i>
+                            Children relationships are managed when editing students.
+                        </p>
+                    </div>
+                    
+                    <div className="flex space-x-3 pt-4">
+                        <button
+                            type="button"
+                            onClick={() => setShowEditModal(false)}
+                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isLoading || !newParentName.trim()}
+                            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
+                        >
+                            {isLoading ? <LoadingSpinner size="sm" /> : 'Update Parent'}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* Delete Confirmation Dialog */}
+            <ConfirmDialog
+                isOpen={deleteConfirm.isOpen}
+                onClose={() => setDeleteConfirm({ isOpen: false, parent: null })}
+                onConfirm={handleDeleteParent}
+                title="Delete Parent"
+                message={`Are you sure you want to delete "${deleteConfirm.parent?.name}"? This will also affect their children's records.`}
+                confirmText="Delete Parent"
+                type="danger"
+                isLoading={isDeleting}
+            />
         </>
     );
 };
