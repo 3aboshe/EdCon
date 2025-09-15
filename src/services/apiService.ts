@@ -272,6 +272,22 @@ class ApiService {
     });
   }
 
+  // Update subject
+  async updateSubject(subjectId: string, updates: { name: string }): Promise<Subject> {
+    const response = await this.request<{success: boolean, subject: Subject}>(`/subjects/${subjectId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+    
+    if (response && response.subject) {
+      return response.subject;
+    } else if (response.data && response.data.subject) {
+      return response.data.subject;
+    } else {
+      throw new Error('Invalid response format from server');
+    }
+  }
+
   // Delete a subject
   async deleteSubject(subjectId: string): Promise<void> {
     await this.request(`/subjects/${subjectId}`, {
