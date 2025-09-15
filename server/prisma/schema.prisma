@@ -51,9 +51,10 @@ model User {
 }
 
 model Class {
-  id       String @id
-  name     String
-  students User[] @relation("StudentClass")
+  id        String @id
+  name      String
+  subjectIds String[]
+  students  User[] @relation("StudentClass")
   
   @@map("classes")
 }
