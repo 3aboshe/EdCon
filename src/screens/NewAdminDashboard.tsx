@@ -10,7 +10,7 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import apiService from '../services/apiService';
 import { allAvatars } from '../data/avatars';
 
-type AdminSection = 'dashboard' | 'analytics' | 'users' | 'academic' | 'communication' | 'system' | 'reports';
+type AdminSection = 'dashboard' | 'analytics' | 'users' | 'academic' | 'system' | 'reports';
 type UserManagementTab = 'students' | 'teachers' | 'parents';
 type AcademicTab = 'classes' | 'subjects';
 
@@ -33,7 +33,6 @@ const AdminDashboard: React.FC = () => {
         { id: 'analytics', label: 'Analytics', icon: 'fa-chart-bar', color: 'purple' },
         { id: 'users', label: 'User Management', icon: 'fa-users', color: 'green' },
         { id: 'academic', label: 'Academic', icon: 'fa-graduation-cap', color: 'orange' },
-        { id: 'communication', label: 'Communication', icon: 'fa-comments', color: 'indigo' },
         { id: 'system', label: 'System', icon: 'fa-cogs', color: 'red' },
         { id: 'reports', label: 'Reports', icon: 'fa-file-alt', color: 'teal' }
     ] as const;
@@ -48,8 +47,6 @@ const AdminDashboard: React.FC = () => {
                 return <UserManagementSection setSuccessMessage={setSuccessMessage} />;
             case 'academic':
                 return <AcademicManagement selectedClassId={selectedClassId} setSuccessMessage={setSuccessMessage} />;
-            case 'communication':
-                return <CommunicationCenter />;
             case 'system':
                 return <SystemSettings setSuccessMessage={setSuccessMessage} />;
             case 'reports':
@@ -388,58 +385,6 @@ const AcademicManagement: React.FC<{ selectedClassId: string, setSuccessMessage:
     );
 };
 
-// Communication Center
-const CommunicationCenter: React.FC = () => {
-    const { messages, announcements, users } = useContext(AppContext);
-
-    const messageStats = useMemo(() => {
-        const totalMessages = messages.length;
-        const unreadMessages = messages.filter(m => !m.isRead).length;
-        const todayMessages = messages.filter(m => 
-            new Date(m.timestamp).toDateString() === new Date().toDateString()
-        ).length;
-
-        return { totalMessages, unreadMessages, todayMessages };
-    }, [messages]);
-
-    return (
-        <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-800">Communication Center</h2>
-
-            {/* Message Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <StatCard title="Total Messages" value={messageStats.totalMessages} icon="fa-envelope" color="blue" />
-                <StatCard title="Unread" value={messageStats.unreadMessages} icon="fa-envelope-open" color="red" />
-                <StatCard title="Today" value={messageStats.todayMessages} icon="fa-clock" color="green" />
-            </div>
-
-            {/* Communication Activity */}
-            <Card>
-                <h3 className="text-lg font-bold text-gray-800 mb-4">Recent Communication Activity</h3>
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {messages.slice(0, 10).map(message => {
-                        const sender = users.find(u => u.id === message.senderId);
-                        const receiver = users.find(u => u.id === message.receiverId);
-                        return (
-                            <div key={message.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                                <ProfileImage name={sender?.name || 'Unknown'} avatarUrl={sender?.avatar} className="w-10 h-10" />
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center space-x-2">
-                                        <p className="font-medium text-gray-800">{sender?.name || 'Unknown'}</p>
-                                        <i className="fas fa-arrow-right text-gray-400"></i>
-                                        <p className="font-medium text-gray-600">{receiver?.name || 'Unknown'}</p>
-                                    </div>
-                                    <p className="text-sm text-gray-500 italic">Message sent (content private)</p>
-                                    <p className="text-xs text-gray-500">{new Date(message.timestamp).toLocaleString()}</p>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </Card>
-        </div>
-    );
-};
 
 // System Settings
 const SystemSettings: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({ setSuccessMessage }) => {
