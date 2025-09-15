@@ -12,7 +12,7 @@ import { allAvatars } from '../data/avatars';
 
 type AdminSection = 'dashboard' | 'analytics' | 'users' | 'academic' | 'communication' | 'system' | 'reports';
 type UserManagementTab = 'students' | 'teachers' | 'parents';
-type AcademicTab = 'classes' | 'subjects' | 'grades' | 'homework' | 'attendance';
+type AcademicTab = 'classes' | 'subjects';
 
 const AdminDashboard: React.FC = () => {
     const { t, classes: classList, users, students, teachers, subjects, grades, homework, announcements, attendance, messages } = useContext(AppContext);
@@ -354,10 +354,7 @@ const AcademicManagement: React.FC<{ selectedClassId: string, setSuccessMessage:
 
     const tabs = [
         { id: 'classes', label: 'Classes', icon: 'fa-school' },
-        { id: 'subjects', label: 'Subjects', icon: 'fa-book' },
-        { id: 'grades', label: 'Grades', icon: 'fa-chart-line' },
-        { id: 'homework', label: 'Homework', icon: 'fa-tasks' },
-        { id: 'attendance', label: 'Attendance', icon: 'fa-calendar-check' }
+        { id: 'subjects', label: 'Subjects', icon: 'fa-book' }
     ] as const;
 
     return (
@@ -387,9 +384,6 @@ const AcademicManagement: React.FC<{ selectedClassId: string, setSuccessMessage:
             {/* Tab Content */}
             {activeTab === 'classes' && <ClassManagement setSuccessMessage={setSuccessMessage} />}
             {activeTab === 'subjects' && <SubjectManagement setSuccessMessage={setSuccessMessage} />}
-            {activeTab === 'grades' && <GradeManagement selectedClassId={selectedClassId} />}
-            {activeTab === 'homework' && <HomeworkManagement selectedClassId={selectedClassId} />}
-            {activeTab === 'attendance' && <AttendanceManagement selectedClassId={selectedClassId} />}
         </div>
     );
 };
@@ -419,11 +413,11 @@ const CommunicationCenter: React.FC = () => {
                 <StatCard title="Today" value={messageStats.todayMessages} icon="fa-clock" color="green" />
             </div>
 
-            {/* Recent Messages */}
+            {/* Communication Activity */}
             <Card>
-                <h3 className="text-lg font-bold text-gray-800 mb-4">Recent Messages</h3>
+                <h3 className="text-lg font-bold text-gray-800 mb-4">Recent Communication Activity</h3>
                 <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {messages.slice(0, 20).map(message => {
+                    {messages.slice(0, 10).map(message => {
                         const sender = users.find(u => u.id === message.senderId);
                         const receiver = users.find(u => u.id === message.receiverId);
                         return (
@@ -435,7 +429,7 @@ const CommunicationCenter: React.FC = () => {
                                         <i className="fas fa-arrow-right text-gray-400"></i>
                                         <p className="font-medium text-gray-600">{receiver?.name || 'Unknown'}</p>
                                     </div>
-                                    <p className="text-sm text-gray-600 truncate">{message.content}</p>
+                                    <p className="text-sm text-gray-500 italic">Message sent (content private)</p>
                                     <p className="text-xs text-gray-500">{new Date(message.timestamp).toLocaleString()}</p>
                                 </div>
                             </div>
@@ -454,10 +448,22 @@ const SystemSettings: React.FC<{ setSuccessMessage: (msg: string) => void }> = (
     const handleBackup = async () => {
         setIsBackupLoading(true);
         try {
-            // Simulate backup process
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            setSuccessMessage('System backup completed successfully');
+            console.log('Creating backup...');
+            const backupBlob = await apiService.createBackup();
+            
+            // Create download link
+            const url = window.URL.createObjectURL(backupBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `edcon-backup-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            
+            setSuccessMessage('System backup downloaded successfully');
         } catch (error) {
+            console.error('Backup error:', error);
             setSuccessMessage('Backup failed. Please try again.');
         } finally {
             setIsBackupLoading(false);
@@ -515,6 +521,105 @@ const SystemSettings: React.FC<{ setSuccessMessage: (msg: string) => void }> = (
 
 // Reports Section
 const ReportsSection: React.FC<{ selectedClassId: string }> = ({ selectedClassId }) => {
+    const { users, messages, announcements, classes, subjects } = useContext(AppContext);
+    const [reportType, setReportType] = useState<string>('');
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    const generateReport = async (type: string) => {
+        setIsGenerating(true);
+        setReportType(type);
+        
+        try {
+            let reportData;
+            let fileName;
+            
+            switch (type) {
+                case 'users':
+                    reportData = {
+                        title: 'User Activity Report',
+                        generated: new Date().toISOString(),
+                        data: {
+                            totalUsers: users.length,
+                            usersByRole: {
+                                students: users.filter(u => u.role?.toLowerCase() === 'student').length,
+                                teachers: users.filter(u => u.role?.toLowerCase() === 'teacher').length,
+                                parents: users.filter(u => u.role?.toLowerCase() === 'parent').length,
+                                admins: users.filter(u => u.role?.toLowerCase() === 'admin').length
+                            },
+                            usersList: users.map(u => ({
+                                id: u.id,
+                                name: u.name,
+                                role: u.role,
+                                createdAt: u.createdAt
+                            }))
+                        }
+                    };
+                    fileName = `user-activity-report-${new Date().toISOString().split('T')[0]}.json`;
+                    break;
+                    
+                case 'system':
+                    reportData = {
+                        title: 'System Usage Report',
+                        generated: new Date().toISOString(),
+                        data: {
+                            totalClasses: classes.length,
+                            totalSubjects: subjects.length,
+                            totalAnnouncements: announcements.length,
+                            systemHealth: 'Good',
+                            classesList: classes,
+                            subjectsList: subjects
+                        }
+                    };
+                    fileName = `system-usage-report-${new Date().toISOString().split('T')[0]}.json`;
+                    break;
+                    
+                case 'communication':
+                    const today = new Date().toDateString();
+                    const todayMessages = messages.filter(m => 
+                        new Date(m.timestamp).toDateString() === today
+                    );
+                    reportData = {
+                        title: 'Communication Summary',
+                        generated: new Date().toISOString(),
+                        data: {
+                            totalMessages: messages.length,
+                            messagesToday: todayMessages.length,
+                            totalAnnouncements: announcements.length,
+                            messagingActivity: {
+                                byDay: {} // Could be expanded
+                            }
+                        }
+                    };
+                    fileName = `communication-summary-${new Date().toISOString().split('T')[0]}.json`;
+                    break;
+                    
+                default:
+                    throw new Error('Unknown report type');
+            }
+            
+            // Create and download file
+            const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            
+        } catch (error) {
+            console.error('Report generation error:', error);
+        } finally {
+            setIsGenerating(false);
+            setReportType('');
+        }
+    };
+
+    const todayMessages = messages.filter(m => 
+        new Date(m.timestamp).toDateString() === new Date().toDateString()
+    );
+
     return (
         <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-800">Reports & Analytics</h2>
@@ -523,35 +628,51 @@ const ReportsSection: React.FC<{ selectedClassId: string }> = ({ selectedClassId
                 <Card>
                     <h3 className="text-lg font-bold text-gray-800 mb-4">Generate Reports</h3>
                     <div className="space-y-3">
-                        <button className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                            <i className="fas fa-chart-bar text-blue-600 mr-3"></i>
-                            Student Performance Report
+                        <button 
+                            onClick={() => generateReport('users')}
+                            disabled={isGenerating}
+                            className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition disabled:opacity-50">
+                            <i className="fas fa-users text-blue-600 mr-3"></i>
+                            User Activity Report
+                            {isGenerating && reportType === 'users' && <LoadingSpinner size="sm" className="ml-2 inline" />}
                         </button>
-                        <button className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                            <i className="fas fa-calendar-check text-green-600 mr-3"></i>
-                            Attendance Report
+                        <button 
+                            onClick={() => generateReport('system')}
+                            disabled={isGenerating}
+                            className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition disabled:opacity-50">
+                            <i className="fas fa-chart-line text-green-600 mr-3"></i>
+                            System Usage Report
+                            {isGenerating && reportType === 'system' && <LoadingSpinner size="sm" className="ml-2 inline" />}
                         </button>
-                        <button className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                            <i className="fas fa-tasks text-orange-600 mr-3"></i>
-                            Homework Completion Report
+                        <button 
+                            onClick={() => generateReport('communication')}
+                            disabled={isGenerating}
+                            className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition disabled:opacity-50">
+                            <i className="fas fa-comments text-orange-600 mr-3"></i>
+                            Communication Summary
+                            {isGenerating && reportType === 'communication' && <LoadingSpinner size="sm" className="ml-2 inline" />}
                         </button>
                     </div>
                 </Card>
 
                 <Card>
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">Quick Stats</h3>
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">Live Stats</h3>
                     <div className="space-y-3">
                         <div className="flex justify-between items-center">
                             <span className="text-gray-600">Total Users</span>
-                            <span className="text-xl font-bold text-blue-600">150</span>
+                            <span className="text-xl font-bold text-blue-600">{users.length}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Active Sessions</span>
-                            <span className="text-xl font-bold text-green-600">12</span>
+                            <span className="text-gray-600">Total Classes</span>
+                            <span className="text-xl font-bold text-green-600">{classes.length}</span>
                         </div>
                         <div className="flex justify-between items-center">
                             <span className="text-gray-600">Messages Today</span>
-                            <span className="text-xl font-bold text-purple-600">45</span>
+                            <span className="text-xl font-bold text-purple-600">{todayMessages.length}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-gray-600">Total Announcements</span>
+                            <span className="text-xl font-bold text-orange-600">{announcements.length}</span>
                         </div>
                     </div>
                 </Card>
