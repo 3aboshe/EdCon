@@ -826,64 +826,281 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
 
 // More placeholder components for academic management
 const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({ setSuccessMessage }) => {
-    const { classes } = useContext(AppContext);
+    const { classes, setClasses, subjects } = useContext(AppContext);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [newClassName, setNewClassName] = useState('');
+    const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleAddClass = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newClassName.trim()) return;
+
+        setIsLoading(true);
+        try {
+            const newClass = await apiService.createClass(newClassName.trim(), selectedSubjects);
+            setClasses([...classes, newClass]);
+            setSuccessMessage(`Class "${newClassName}" created successfully with ${selectedSubjects.length} subjects!`);
+            setNewClassName('');
+            setSelectedSubjects([]);
+            setShowAddModal(false);
+        } catch (error) {
+            console.error('Error creating class:', error);
+            setSuccessMessage('Failed to create class. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleDeleteClass = async (classId: string, className: string) => {
+        if (!confirm(`Are you sure you want to delete "${className}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            await apiService.deleteClass(classId);
+            setClasses(classes.filter(c => c.id !== classId));
+            setSuccessMessage(`Class "${className}" deleted successfully!`);
+        } catch (error) {
+            console.error('Error deleting class:', error);
+            setSuccessMessage('Failed to delete class. Please try again.');
+        }
+    };
+
+    const handleSubjectToggle = (subjectId: string) => {
+        setSelectedSubjects(prev => 
+            prev.includes(subjectId) 
+                ? prev.filter(id => id !== subjectId)
+                : [...prev, subjectId]
+        );
+    };
 
     return (
-        <Card>
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-800">Classes ({classes.length})</h3>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-                    <i className="fas fa-plus mr-2"></i>Add Class
-                </button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {classes.map(classItem => (
-                    <div key={classItem.id} className="p-4 bg-gray-50 rounded-lg">
-                        <h4 className="font-bold text-gray-800">{classItem.name}</h4>
-                        <p className="text-sm text-gray-600">Class ID: {classItem.id}</p>
-                        <div className="mt-3 flex space-x-2">
-                            <button className="text-blue-600 hover:text-blue-800">
-                                <i className="fas fa-edit"></i>
-                            </button>
-                            <button className="text-red-600 hover:text-red-800">
-                                <i className="fas fa-trash"></i>
-                            </button>
+        <>
+            <Card>
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-gray-800">Classes ({classes.length})</h3>
+                    <button 
+                        onClick={() => setShowAddModal(true)}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center"
+                    >
+                        <i className="fas fa-plus mr-2"></i>Add Class
+                    </button>
+                </div>
+                <div className="space-y-4">
+                    {classes.map(classItem => (
+                        <div key={classItem.id} className="p-4 bg-gray-50 rounded-lg">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <h4 className="font-bold text-gray-800 text-lg">{classItem.name}</h4>
+                                    <p className="text-sm text-gray-600">Class ID: {classItem.id}</p>
+                                    {(classItem as any).subjectIds && (
+                                        <div className="mt-2">
+                                            <p className="text-sm font-medium text-gray-700">Subjects:</p>
+                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                {(classItem as any).subjectIds.map((subjectId: string) => {
+                                                    const subject = subjects.find(s => s.id === subjectId);
+                                                    return subject ? (
+                                                        <span key={subjectId} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                                                            {subject.name}
+                                                        </span>
+                                                    ) : null;
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                <button 
+                                    onClick={() => handleDeleteClass(classItem.id, classItem.name)}
+                                    className="text-red-600 hover:text-red-800 transition"
+                                >
+                                    <i className="fas fa-trash"></i>
+                                </button>
+                            </div>
                         </div>
+                    ))}
+                    {classes.length === 0 && (
+                        <div className="text-center text-gray-500 py-8">
+                            <i className="fas fa-school text-4xl mb-4"></i>
+                            <p>No classes yet. Add your first class to get started!</p>
+                        </div>
+                    )}
+                </div>
+            </Card>
+
+            {/* Add Class Modal */}
+            <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add New Class">
+                <form onSubmit={handleAddClass} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Class Name
+                        </label>
+                        <input
+                            type="text"
+                            value={newClassName}
+                            onChange={(e) => setNewClassName(e.target.value)}
+                            placeholder="e.g., Grade 5A, Class 10B"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            required
+                        />
                     </div>
-                ))}
-            </div>
-        </Card>
+                    
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Assign Subjects to Class
+                        </label>
+                        {subjects.length === 0 ? (
+                            <p className="text-gray-500 text-sm">No subjects available. Create subjects first.</p>
+                        ) : (
+                            <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                                {subjects.map(subject => (
+                                    <label key={subject.id} className="flex items-center space-x-3 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedSubjects.includes(subject.id)}
+                                            onChange={() => handleSubjectToggle(subject.id)}
+                                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        />
+                                        <span className="text-sm">{subject.name}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+                        <p className="text-xs text-gray-500 mt-1">
+                            Selected: {selectedSubjects.length} subject{selectedSubjects.length !== 1 ? 's' : ''}
+                        </p>
+                    </div>
+                    
+                    <div className="flex space-x-3 pt-4">
+                        <button
+                            type="button"
+                            onClick={() => setShowAddModal(false)}
+                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isLoading || !newClassName.trim()}
+                            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
+                        >
+                            {isLoading ? <LoadingSpinner size="sm" /> : 'Add Class'}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
+        </>
     );
 };
 
 const SubjectManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({ setSuccessMessage }) => {
-    const { subjects } = useContext(AppContext);
+    const { subjects, setSubjects } = useContext(AppContext);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [newSubjectName, setNewSubjectName] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleAddSubject = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newSubjectName.trim()) return;
+
+        setIsLoading(true);
+        try {
+            const newSubject = await apiService.createSubject(newSubjectName.trim());
+            setSubjects([...subjects, newSubject]);
+            setSuccessMessage(`Subject "${newSubjectName}" created successfully!`);
+            setNewSubjectName('');
+            setShowAddModal(false);
+        } catch (error) {
+            console.error('Error creating subject:', error);
+            setSuccessMessage('Failed to create subject. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleDeleteSubject = async (subjectId: string, subjectName: string) => {
+        if (!confirm(`Are you sure you want to delete "${subjectName}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            await apiService.deleteSubject(subjectId);
+            setSubjects(subjects.filter(s => s.id !== subjectId));
+            setSuccessMessage(`Subject "${subjectName}" deleted successfully!`);
+        } catch (error) {
+            console.error('Error deleting subject:', error);
+            setSuccessMessage('Failed to delete subject. Please try again.');
+        }
+    };
 
     return (
-        <Card>
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-800">Subjects ({subjects.length})</h3>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-                    <i className="fas fa-plus mr-2"></i>Add Subject
-                </button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {subjects.map(subject => (
-                    <div key={subject.id} className="p-4 bg-gray-50 rounded-lg">
-                        <h4 className="font-bold text-gray-800">{subject.name}</h4>
-                        <p className="text-sm text-gray-600">Subject ID: {subject.id}</p>
-                        <div className="mt-3 flex space-x-2">
-                            <button className="text-blue-600 hover:text-blue-800">
-                                <i className="fas fa-edit"></i>
-                            </button>
-                            <button className="text-red-600 hover:text-red-800">
+        <>
+            <Card>
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-gray-800">Subjects ({subjects.length})</h3>
+                    <button 
+                        onClick={() => setShowAddModal(true)}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center"
+                    >
+                        <i className="fas fa-plus mr-2"></i>Add Subject
+                    </button>
+                </div>
+                <div className="space-y-2">
+                    {subjects.map(subject => (
+                        <div key={subject.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span className="font-medium">{subject.name}</span>
+                            <button 
+                                onClick={() => handleDeleteSubject(subject.id, subject.name)}
+                                className="text-red-600 hover:text-red-800 transition"
+                            >
                                 <i className="fas fa-trash"></i>
                             </button>
                         </div>
+                    ))}
+                    {subjects.length === 0 && (
+                        <div className="text-center text-gray-500 py-8">
+                            <i className="fas fa-book text-4xl mb-4"></i>
+                            <p>No subjects yet. Add your first subject to get started!</p>
+                        </div>
+                    )}
+                </div>
+            </Card>
+
+            {/* Add Subject Modal */}
+            <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add New Subject">
+                <form onSubmit={handleAddSubject} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Subject Name
+                        </label>
+                        <input
+                            type="text"
+                            value={newSubjectName}
+                            onChange={(e) => setNewSubjectName(e.target.value)}
+                            placeholder="e.g., Mathematics, English, History"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            required
+                        />
                     </div>
-                ))}
-            </div>
-        </Card>
+                    <div className="flex space-x-3 pt-4">
+                        <button
+                            type="button"
+                            onClick={() => setShowAddModal(false)}
+                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isLoading || !newSubjectName.trim()}
+                            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
+                        >
+                            {isLoading ? <LoadingSpinner size="sm" /> : 'Add Subject'}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
+        </>
     );
 };
 
