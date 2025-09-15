@@ -943,11 +943,15 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
 const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg: string) => void }> = ({ searchTerm, setSuccessMessage }) => {
     const { teachers, users, subjects, classes, setUsers, setTeachers } = useContext(AppContext);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
     const [newTeacher, setNewTeacher] = useState({
         name: '',
         subjectId: ''
     });
+    const [editingTeacher, setEditingTeacher] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [deleteConfirm, setDeleteConfirm] = useState<{isOpen: boolean, teacher: any | null}>({isOpen: false, teacher: null});
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const teacherUsers = useMemo(() => {
         return users.filter(u => u.role?.toLowerCase() === 'teacher')
@@ -999,19 +1003,83 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
         }
     };
 
-    const handleDeleteTeacher = async (teacherId: string, teacherName: string) => {
-        if (!confirm(`Are you sure you want to delete "${teacherName}"? This action cannot be undone.`)) {
-            return;
-        }
+    const startEditTeacher = (teacher: any) => {
+        setEditingTeacher(teacher);
+        setNewTeacher({
+            name: teacher.name,
+            subjectId: subjects.find(s => s.name === teacher.subject)?.id || ''
+        });
+        setShowEditModal(true);
+    };
 
+    const handleEditTeacher = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newTeacher.name.trim() || !newTeacher.subjectId || !editingTeacher) return;
+
+        setIsLoading(true);
         try {
-            await apiService.deleteUser(teacherId);
-            setTeachers(teachers.filter(t => t.id !== teacherId));
-            setUsers(users.filter(u => u.id !== teacherId));
-            setSuccessMessage(`Teacher "${teacherName}" deleted successfully!`);
+            const selectedSubject = subjects.find(s => s.id === newTeacher.subjectId);
+            
+            // Find all classes that have this subject
+            const classesWithSubject = classes.filter(classItem => 
+                (classItem as any).subjectIds?.includes(newTeacher.subjectId)
+            );
+
+            const updatedTeacherData = {
+                name: newTeacher.name.trim(),
+                subject: selectedSubject?.name,
+                classIds: classesWithSubject.map(c => c.id)
+            };
+
+            await apiService.updateUser(editingTeacher.id, updatedTeacherData);
+            
+            // Update teachers list
+            setTeachers(teachers.map(t => t.id === editingTeacher.id ? {
+                ...t,
+                name: newTeacher.name.trim(),
+                subject: selectedSubject?.name || '',
+                classIds: classesWithSubject.map(c => c.id)
+            } : t));
+
+            // Update users list
+            setUsers(users.map(u => u.id === editingTeacher.id ? {
+                ...u,
+                name: newTeacher.name.trim(),
+                subject: selectedSubject?.name,
+                classIds: classesWithSubject.map(c => c.id)
+            } : u));
+
+            setSuccessMessage(`Teacher "${newTeacher.name}" updated successfully! Assigned to ${selectedSubject?.name} and ${classesWithSubject.length} classes.`);
+            setNewTeacher({ name: '', subjectId: '' });
+            setEditingTeacher(null);
+            setShowEditModal(false);
+        } catch (error) {
+            console.error('Error updating teacher:', error);
+            setSuccessMessage('Failed to update teacher. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const confirmDeleteTeacher = (teacher: any) => {
+        setDeleteConfirm({ isOpen: true, teacher });
+    };
+
+    const handleDeleteTeacher = async () => {
+        if (!deleteConfirm.teacher) return;
+
+        setIsDeleting(true);
+        try {
+            await apiService.deleteUser(deleteConfirm.teacher.id);
+            setTeachers(teachers.filter(t => t.id !== deleteConfirm.teacher!.id));
+            setUsers(users.filter(u => u.id !== deleteConfirm.teacher!.id));
+            setSuccessMessage(`Teacher "${deleteConfirm.teacher.name}" deleted successfully!`);
+            setDeleteConfirm({ isOpen: false, teacher: null });
         } catch (error) {
             console.error('Error deleting teacher:', error);
             setSuccessMessage('Failed to delete teacher. Please try again.');
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -1058,10 +1126,18 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                                         )}
                                     </div>
                                 </div>
-                                <div className="mt-3 flex justify-end">
+                                <div className="mt-3 flex justify-end space-x-2">
                                     <button 
-                                        onClick={() => handleDeleteTeacher(teacher.id, teacher.name)}
+                                        onClick={() => startEditTeacher(teacher)}
+                                        className="text-blue-600 hover:text-blue-800 transition"
+                                        title="Edit teacher"
+                                    >
+                                        <i className="fas fa-edit"></i>
+                                    </button>
+                                    <button 
+                                        onClick={() => confirmDeleteTeacher(teacher)}
                                         className="text-red-600 hover:text-red-800 transition"
+                                        title="Delete teacher"
                                     >
                                         <i className="fas fa-trash"></i>
                                     </button>
@@ -1152,6 +1228,93 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                     </div>
                 </form>
             </Modal>
+
+            {/* Edit Teacher Modal */}
+            <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Teacher">
+                <form onSubmit={handleEditTeacher} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Teacher Name
+                        </label>
+                        <input
+                            type="text"
+                            value={newTeacher.name}
+                            onChange={(e) => setNewTeacher({...newTeacher, name: e.target.value})}
+                            placeholder="Enter teacher name"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            required
+                        />
+                    </div>
+                    
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Assign to Subject (Required)
+                        </label>
+                        <select
+                            value={newTeacher.subjectId}
+                            onChange={(e) => setNewTeacher({...newTeacher, subjectId: e.target.value})}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            required
+                        >
+                            <option value="">Select a subject</option>
+                            {subjects.map(subject => {
+                                const classesWithSubject = classes.filter(c => 
+                                    (c as any).subjectIds?.includes(subject.id)
+                                );
+                                return (
+                                    <option key={subject.id} value={subject.id}>
+                                        {subject.name} ({classesWithSubject.length} classes)
+                                    </option>
+                                );
+                            })}
+                        </select>
+                        {newTeacher.subjectId && (
+                            <div className="mt-2 p-2 bg-green-50 rounded-lg">
+                                <p className="text-xs text-green-700 font-medium">Auto-Assignment Preview:</p>
+                                <p className="text-xs text-green-600">
+                                    Will be assigned to all classes teaching {subjects.find(s => s.id === newTeacher.subjectId)?.name}:
+                                </p>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                    {classes.filter(c => (c as any).subjectIds?.includes(newTeacher.subjectId)).map(classItem => (
+                                        <span key={classItem.id} className="px-1 py-0.5 bg-green-100 text-green-800 text-xs rounded">
+                                            {classItem.name}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="flex space-x-3 pt-4">
+                        <button
+                            type="button"
+                            onClick={() => setShowEditModal(false)}
+                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isLoading || !newTeacher.name.trim() || !newTeacher.subjectId}
+                            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
+                        >
+                            {isLoading ? <LoadingSpinner size="sm" /> : 'Update Teacher'}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* Delete Confirmation Dialog */}
+            <ConfirmDialog
+                isOpen={deleteConfirm.isOpen}
+                onClose={() => setDeleteConfirm({ isOpen: false, teacher: null })}
+                onConfirm={handleDeleteTeacher}
+                title="Delete Teacher"
+                message={`Are you sure you want to delete "${deleteConfirm.teacher?.name}"? This will remove them from all assigned classes.`}
+                confirmText="Delete Teacher"
+                type="danger"
+                isLoading={isDeleting}
+            />
         </>
     );
 };
@@ -1159,8 +1322,12 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
 const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg: string) => void }> = ({ searchTerm, setSuccessMessage }) => {
     const { users, students, setUsers } = useContext(AppContext);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
     const [newParentName, setNewParentName] = useState('');
+    const [editingParent, setEditingParent] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [deleteConfirm, setDeleteConfirm] = useState<{isOpen: boolean, parent: any | null}>({isOpen: false, parent: null});
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const parentUsers = useMemo(() => {
         return users.filter(u => u.role?.toLowerCase() === 'parent')
@@ -1192,18 +1359,50 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
         }
     };
 
-    const handleDeleteParent = async (parentId: string, parentName: string) => {
-        if (!confirm(`Are you sure you want to delete "${parentName}"? This action cannot be undone.`)) {
-            return;
-        }
+    const startEditParent = (parent: any) => {
+        setEditingParent(parent);
+        setNewParentName(parent.name);
+        setShowEditModal(true);
+    };
 
+    const handleEditParent = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newParentName.trim() || !editingParent) return;
+
+        setIsLoading(true);
         try {
-            await apiService.deleteUser(parentId);
-            setUsers(users.filter(u => u.id !== parentId));
-            setSuccessMessage(`Parent "${parentName}" deleted successfully!`);
+            await apiService.updateUser(editingParent.id, { name: newParentName.trim() });
+            setUsers(users.map(u => u.id === editingParent.id ? { ...u, name: newParentName.trim() } : u));
+            setSuccessMessage(`Parent "${newParentName}" updated successfully!`);
+            setNewParentName('');
+            setEditingParent(null);
+            setShowEditModal(false);
+        } catch (error) {
+            console.error('Error updating parent:', error);
+            setSuccessMessage('Failed to update parent. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const confirmDeleteParent = (parent: any) => {
+        setDeleteConfirm({ isOpen: true, parent });
+    };
+
+    const handleDeleteParent = async () => {
+        if (!deleteConfirm.parent) return;
+
+        setIsDeleting(true);
+        try {
+            await apiService.deleteUser(deleteConfirm.parent.id);
+            setUsers(users.filter(u => u.id !== deleteConfirm.parent!.id));
+            setSuccessMessage(`Parent "${deleteConfirm.parent.name}" deleted successfully!`);
+            setDeleteConfirm({ isOpen: false, parent: null });
         } catch (error) {
             console.error('Error deleting parent:', error);
             setSuccessMessage('Failed to delete parent. Please try again.');
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -1250,10 +1449,18 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
                                         )}
                                     </div>
                                 </div>
-                                <div className="mt-3 flex justify-end">
+                                <div className="mt-3 flex justify-end space-x-2">
                                     <button 
-                                        onClick={() => handleDeleteParent(parent.id, parent.name)}
+                                        onClick={() => startEditParent(parent)}
+                                        className="text-blue-600 hover:text-blue-800 transition"
+                                        title="Edit parent"
+                                    >
+                                        <i className="fas fa-edit"></i>
+                                    </button>
+                                    <button 
+                                        onClick={() => confirmDeleteParent(parent)}
                                         className="text-red-600 hover:text-red-800 transition"
+                                        title="Delete parent"
                                     >
                                         <i className="fas fa-trash"></i>
                                     </button>
@@ -1320,9 +1527,13 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
 const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({ setSuccessMessage }) => {
     const { classes, setClasses, subjects } = useContext(AppContext);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
     const [newClassName, setNewClassName] = useState('');
     const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
+    const [editingClass, setEditingClass] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [deleteConfirm, setDeleteConfirm] = useState<{isOpen: boolean, class: any | null}>({isOpen: false, class: null});
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const handleAddClass = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -1344,18 +1555,55 @@ const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = 
         }
     };
 
-    const handleDeleteClass = async (classId: string, className: string) => {
-        if (!confirm(`Are you sure you want to delete "${className}"? This action cannot be undone.`)) {
-            return;
-        }
+    const handleEditClass = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newClassName.trim() || !editingClass) return;
 
+        setIsLoading(true);
         try {
-            await apiService.deleteClass(classId);
-            setClasses(classes.filter(c => c.id !== classId));
-            setSuccessMessage(`Class "${className}" deleted successfully!`);
+            const updatedClass = await apiService.updateClass(editingClass.id, {
+                name: newClassName.trim(),
+                subjectIds: selectedSubjects
+            });
+            setClasses(classes.map(c => c.id === editingClass.id ? updatedClass : c));
+            setSuccessMessage(`Class "${newClassName}" updated successfully with ${selectedSubjects.length} subjects!`);
+            setNewClassName('');
+            setSelectedSubjects([]);
+            setEditingClass(null);
+            setShowEditModal(false);
+        } catch (error) {
+            console.error('Error updating class:', error);
+            setSuccessMessage('Failed to update class. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const startEditClass = (classItem: any) => {
+        setEditingClass(classItem);
+        setNewClassName(classItem.name);
+        setSelectedSubjects((classItem as any).subjectIds || []);
+        setShowEditModal(true);
+    };
+
+    const confirmDeleteClass = (classItem: any) => {
+        setDeleteConfirm({ isOpen: true, class: classItem });
+    };
+
+    const handleDeleteClass = async () => {
+        if (!deleteConfirm.class) return;
+
+        setIsDeleting(true);
+        try {
+            await apiService.deleteClass(deleteConfirm.class.id);
+            setClasses(classes.filter(c => c.id !== deleteConfirm.class!.id));
+            setSuccessMessage(`Class "${deleteConfirm.class.name}" deleted successfully!`);
+            setDeleteConfirm({ isOpen: false, class: null });
         } catch (error) {
             console.error('Error deleting class:', error);
             setSuccessMessage('Failed to delete class. Please try again.');
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -1402,12 +1650,22 @@ const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = 
                                         </div>
                                     )}
                                 </div>
-                                <button 
-                                    onClick={() => handleDeleteClass(classItem.id, classItem.name)}
-                                    className="text-red-600 hover:text-red-800 transition"
-                                >
-                                    <i className="fas fa-trash"></i>
-                                </button>
+                                            <div className="flex space-x-2">
+                                                <button 
+                                                    onClick={() => startEditClass(classItem)}
+                                                    className="text-blue-600 hover:text-blue-800 transition"
+                                                    title="Edit class"
+                                                >
+                                                    <i className="fas fa-edit"></i>
+                                                </button>
+                                                <button 
+                                                    onClick={() => confirmDeleteClass(classItem)}
+                                                    className="text-red-600 hover:text-red-800 transition"
+                                                    title="Delete class"
+                                                >
+                                                    <i className="fas fa-trash"></i>
+                                                </button>
+                                            </div>
                             </div>
                         </div>
                     ))}
@@ -1481,6 +1739,80 @@ const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = 
                     </div>
                 </form>
             </Modal>
+
+            {/* Edit Class Modal */}
+            <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Class">
+                <form onSubmit={handleEditClass} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Class Name
+                        </label>
+                        <input
+                            type="text"
+                            value={newClassName}
+                            onChange={(e) => setNewClassName(e.target.value)}
+                            placeholder="e.g., Grade 5A, Class 10B"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            required
+                        />
+                    </div>
+                    
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Assign Subjects to Class
+                        </label>
+                        {subjects.length === 0 ? (
+                            <p className="text-gray-500 text-sm">No subjects available. Create subjects first.</p>
+                        ) : (
+                            <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                                {subjects.map(subject => (
+                                    <label key={subject.id} className="flex items-center space-x-3 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedSubjects.includes(subject.id)}
+                                            onChange={() => handleSubjectToggle(subject.id)}
+                                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        />
+                                        <span className="text-sm">{subject.name}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+                        <p className="text-xs text-gray-500 mt-1">
+                            Selected: {selectedSubjects.length} subject{selectedSubjects.length !== 1 ? 's' : ''}
+                        </p>
+                    </div>
+                    
+                    <div className="flex space-x-3 pt-4">
+                        <button
+                            type="button"
+                            onClick={() => setShowEditModal(false)}
+                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isLoading || !newClassName.trim()}
+                            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
+                        >
+                            {isLoading ? <LoadingSpinner size="sm" /> : 'Update Class'}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* Delete Confirmation Dialog */}
+            <ConfirmDialog
+                isOpen={deleteConfirm.isOpen}
+                onClose={() => setDeleteConfirm({ isOpen: false, class: null })}
+                onConfirm={handleDeleteClass}
+                title="Delete Class"
+                message={`Are you sure you want to delete "${deleteConfirm.class?.name}"? This will affect all students and teachers in this class.`}
+                confirmText="Delete Class"
+                type="danger"
+                isLoading={isDeleting}
+            />
         </>
     );
 };
