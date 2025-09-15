@@ -654,7 +654,15 @@ const StatCard: React.FC<{ title: string; value: number; icon: string; color: st
 
 // Placeholder components for detailed management sections
 const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg: string) => void }> = ({ searchTerm, setSuccessMessage }) => {
-    const { students, users, classes } = useContext(AppContext);
+    const { students, users, classes, subjects, setUsers, setStudents } = useContext(AppContext);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [newStudent, setNewStudent] = useState({
+        name: '',
+        classId: '',
+        parentId: ''
+    });
+    const [parentSearch, setParentSearch] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const filteredStudents = useMemo(() => {
         return students.filter(student => 
@@ -662,165 +670,648 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
         );
     }, [students, searchTerm]);
 
+    const parentUsers = useMemo(() => {
+        return users.filter(u => u.role?.toLowerCase() === 'parent');
+    }, [users]);
+
+    const filteredParents = useMemo(() => {
+        return parentUsers.filter(parent => 
+            parent.name.toLowerCase().includes(parentSearch.toLowerCase())
+        );
+    }, [parentUsers, parentSearch]);
+
+    const handleAddStudent = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newStudent.name.trim() || !newStudent.classId) return;
+
+        setIsLoading(true);
+        try {
+            // Get selected class subjects
+            const selectedClass = classes.find(c => c.id === newStudent.classId);
+            const classSubjects = (selectedClass as any)?.subjectIds || [];
+
+            const studentData = {
+                name: newStudent.name.trim(),
+                role: 'student',
+                classId: newStudent.classId,
+                parentId: newStudent.parentId || undefined
+            };
+
+            const result = await apiService.createUser(studentData);
+            
+            // Update students list
+            const newStudentRecord = {
+                ...result.user,
+                grade: 1,
+                classId: newStudent.classId,
+                parentId: newStudent.parentId || undefined
+            };
+            setStudents([...students, newStudentRecord as any]);
+
+            // Update parent's children if parent assigned
+            if (newStudent.parentId) {
+                setUsers(users.map(user => {
+                    if (user.id === newStudent.parentId) {
+                        return {
+                            ...user,
+                            childrenIds: [...(user.childrenIds || []), result.user.id]
+                        };
+                    }
+                    return user;
+                }));
+            }
+
+            setSuccessMessage(`Student "${newStudent.name}" created successfully! Assigned to class "${selectedClass?.name}" with ${classSubjects.length} subjects.`);
+            setNewStudent({ name: '', classId: '', parentId: '' });
+            setParentSearch('');
+            setShowAddModal(false);
+        } catch (error) {
+            console.error('Error creating student:', error);
+            setSuccessMessage('Failed to create student. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleDeleteStudent = async (studentId: string, studentName: string) => {
+        if (!confirm(`Are you sure you want to delete "${studentName}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            await apiService.deleteUser(studentId);
+            setStudents(students.filter(s => s.id !== studentId));
+            setUsers(users.filter(u => u.id !== studentId));
+            setSuccessMessage(`Student "${studentName}" deleted successfully!`);
+        } catch (error) {
+            console.error('Error deleting student:', error);
+            setSuccessMessage('Failed to delete student. Please try again.');
+        }
+    };
+
     return (
-        <Card>
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-800">Students ({filteredStudents.length})</h3>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-                    <i className="fas fa-plus mr-2"></i>Add Student
-                </button>
-            </div>
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                    <thead className="bg-gray-100">
-                        <tr>
-                            <th className="p-3 text-left">Student</th>
-                            <th className="p-3 text-left">Class</th>
-                            <th className="p-3 text-left">Parent</th>
-                            <th className="p-3 text-left">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredStudents.slice(0, 10).map(student => (
-                            <tr key={student.id} className="border-b">
-                                <td className="p-3">
-                                    <div className="flex items-center space-x-3">
-                                        <img src={student.avatar} alt={student.name} className="w-8 h-8 rounded-full" />
-                                        <span className="font-medium">{student.name}</span>
+        <>
+            <Card>
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-gray-800">Students ({filteredStudents.length})</h3>
+                    <button 
+                        onClick={() => setShowAddModal(true)}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center"
+                    >
+                        <i className="fas fa-plus mr-2"></i>Add Student
+                    </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredStudents.map(student => {
+                        const studentClass = classes.find(c => c.id === student.classId);
+                        const parentUser = users.find(u => u.id === student.parentId);
+                        
+                        return (
+                            <div key={student.id} className="p-4 bg-gray-50 rounded-lg">
+                                <div className="flex items-center space-x-3 mb-3">
+                                    <ProfileImage name={student.name} avatarUrl={student.avatar} className="w-12 h-12" />
+                                    <div>
+                                        <h4 className="font-bold text-gray-800">{student.name}</h4>
+                                        <p className="text-sm text-gray-600">ID: {student.id}</p>
                                     </div>
-                                </td>
-                                <td className="p-3">{classes.find(c => c.id === student.classId)?.name || 'N/A'}</td>
-                                <td className="p-3">
-                                    {users.find(u => u.childrenIds?.includes(student.id))?.name || 'N/A'}
-                                </td>
-                                <td className="p-3">
-                                    <div className="flex space-x-2">
-                                        <button className="text-blue-600 hover:text-blue-800">
-                                            <i className="fas fa-edit"></i>
+                                </div>
+                                <div className="space-y-1 text-sm">
+                                    <p><span className="font-medium">Class:</span> {studentClass?.name || 'Not assigned'}</p>
+                                    <p><span className="font-medium">Parent:</span> {parentUser?.name || 'Not assigned'}</p>
+                                    {studentClass && (studentClass as any).subjectIds && (
+                                        <div>
+                                            <p className="font-medium">Subjects:</p>
+                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                {(studentClass as any).subjectIds.slice(0, 3).map((subjectId: string) => {
+                                                    const subject = subjects.find(s => s.id === subjectId);
+                                                    return subject ? (
+                                                        <span key={subjectId} className="px-1 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">
+                                                            {subject.name}
+                                                        </span>
+                                                    ) : null;
+                                                })}
+                                                {(studentClass as any).subjectIds.length > 3 && (
+                                                    <span className="px-1 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
+                                                        +{(studentClass as any).subjectIds.length - 3} more
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="mt-3 flex justify-end">
+                                    <button 
+                                        onClick={() => handleDeleteStudent(student.id, student.name)}
+                                        className="text-red-600 hover:text-red-800 transition"
+                                    >
+                                        <i className="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })}
+                    {filteredStudents.length === 0 && (
+                        <div className="col-span-full text-center text-gray-500 py-8">
+                            <i className="fas fa-user-graduate text-4xl mb-4"></i>
+                            <p>No students found. Add your first student!</p>
+                        </div>
+                    )}
+                </div>
+            </Card>
+
+            {/* Add Student Modal */}
+            <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add New Student">
+                <form onSubmit={handleAddStudent} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Student Name
+                        </label>
+                        <input
+                            type="text"
+                            value={newStudent.name}
+                            onChange={(e) => setNewStudent({...newStudent, name: e.target.value})}
+                            placeholder="Enter student name"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            required
+                        />
+                    </div>
+                    
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Assign to Class (Required)
+                        </label>
+                        <select
+                            value={newStudent.classId}
+                            onChange={(e) => setNewStudent({...newStudent, classId: e.target.value})}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            required
+                        >
+                            <option value="">Select a class</option>
+                            {classes.map(classItem => (
+                                <option key={classItem.id} value={classItem.id}>
+                                    {classItem.name} 
+                                    {(classItem as any).subjectIds && ` (${(classItem as any).subjectIds.length} subjects)`}
+                                </option>
+                            ))}
+                        </select>
+                        {newStudent.classId && (
+                            <div className="mt-2 p-2 bg-green-50 rounded-lg">
+                                <p className="text-xs text-green-700 font-medium">Auto-Enrollment Preview:</p>
+                                <p className="text-xs text-green-600">Student will be enrolled in all class subjects:</p>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                    {classes.find(c => c.id === newStudent.classId) && 
+                                        ((classes.find(c => c.id === newStudent.classId) as any).subjectIds || []).map((subjectId: string) => {
+                                            const subject = subjects.find(s => s.id === subjectId);
+                                            return subject ? (
+                                                <span key={subjectId} className="px-1 py-0.5 bg-green-100 text-green-800 text-xs rounded">
+                                                    {subject.name}
+                                                </span>
+                                            ) : null;
+                                        })
+                                    }
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Assign to Parent (Optional)
+                        </label>
+                        <div className="space-y-2">
+                            <input
+                                type="text"
+                                value={parentSearch}
+                                onChange={(e) => setParentSearch(e.target.value)}
+                                placeholder="Search parents..."
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            {parentSearch && (
+                                <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-lg">
+                                    {filteredParents.map(parent => (
+                                        <button
+                                            key={parent.id}
+                                            type="button"
+                                            onClick={() => {
+                                                setNewStudent({...newStudent, parentId: parent.id});
+                                                setParentSearch(parent.name);
+                                            }}
+                                            className="w-full text-left px-3 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                                        >
+                                            <div className="flex items-center space-x-2">
+                                                <ProfileImage name={parent.name} avatarUrl={parent.avatar} className="w-6 h-6" />
+                                                <span className="text-sm">{parent.name} ({parent.id})</span>
+                                            </div>
                                         </button>
-                                        <button className="text-red-600 hover:text-red-800">
-                                            <i className="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </Card>
+                                    ))}
+                                    {filteredParents.length === 0 && (
+                                        <p className="text-gray-500 text-sm p-3">No parents found</p>
+                                    )}
+                                </div>
+                            )}
+                            {newStudent.parentId && (
+                                <p className="text-xs text-green-600">
+                                    ✓ Selected: {parentUsers.find(p => p.id === newStudent.parentId)?.name}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                    
+                    <div className="flex space-x-3 pt-4">
+                        <button
+                            type="button"
+                            onClick={() => setShowAddModal(false)}
+                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isLoading || !newStudent.name.trim() || !newStudent.classId}
+                            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
+                        >
+                            {isLoading ? <LoadingSpinner size="sm" /> : 'Add Student'}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
+        </>
     );
 };
 
 const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg: string) => void }> = ({ searchTerm, setSuccessMessage }) => {
-    const { teachers, users } = useContext(AppContext);
+    const { teachers, users, subjects, classes, setUsers, setTeachers } = useContext(AppContext);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [newTeacher, setNewTeacher] = useState({
+        name: '',
+        subjectId: ''
+    });
+    const [isLoading, setIsLoading] = useState(false);
 
     const teacherUsers = useMemo(() => {
         return users.filter(u => u.role?.toLowerCase() === 'teacher')
             .filter(teacher => teacher.name.toLowerCase().includes(searchTerm.toLowerCase()));
     }, [users, searchTerm]);
 
+    const handleAddTeacher = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newTeacher.name.trim() || !newTeacher.subjectId) return;
+
+        setIsLoading(true);
+        try {
+            const selectedSubject = subjects.find(s => s.id === newTeacher.subjectId);
+            
+            // Find all classes that have this subject
+            const classesWithSubject = classes.filter(classItem => 
+                (classItem as any).subjectIds?.includes(newTeacher.subjectId)
+            );
+
+            const teacherData = {
+                name: newTeacher.name.trim(),
+                role: 'teacher',
+                subject: selectedSubject?.name,
+                classIds: classesWithSubject.map(c => c.id)
+            };
+
+            const result = await apiService.createUser(teacherData);
+            
+            // Update teachers list
+            const newTeacherRecord = {
+                id: result.user.id,
+                name: result.user.name,
+                subject: selectedSubject?.name || '',
+                classIds: classesWithSubject.map(c => c.id)
+            };
+            setTeachers([...teachers, newTeacherRecord as any]);
+
+            // Update users list
+            setUsers([...users, result.user]);
+
+            setSuccessMessage(`Teacher "${newTeacher.name}" created successfully! Assigned to ${selectedSubject?.name} and automatically assigned to ${classesWithSubject.length} classes.`);
+            setNewTeacher({ name: '', subjectId: '' });
+            setShowAddModal(false);
+        } catch (error) {
+            console.error('Error creating teacher:', error);
+            setSuccessMessage('Failed to create teacher. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleDeleteTeacher = async (teacherId: string, teacherName: string) => {
+        if (!confirm(`Are you sure you want to delete "${teacherName}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            await apiService.deleteUser(teacherId);
+            setTeachers(teachers.filter(t => t.id !== teacherId));
+            setUsers(users.filter(u => u.id !== teacherId));
+            setSuccessMessage(`Teacher "${teacherName}" deleted successfully!`);
+        } catch (error) {
+            console.error('Error deleting teacher:', error);
+            setSuccessMessage('Failed to delete teacher. Please try again.');
+        }
+    };
+
     return (
-        <Card>
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-800">Teachers ({teacherUsers.length})</h3>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-                    <i className="fas fa-plus mr-2"></i>Add Teacher
-                </button>
-            </div>
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                    <thead className="bg-gray-100">
-                        <tr>
-                            <th className="p-3 text-left">Teacher</th>
-                            <th className="p-3 text-left">Subject</th>
-                            <th className="p-3 text-left">Classes</th>
-                            <th className="p-3 text-left">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {teacherUsers.slice(0, 10).map(teacher => (
-                            <tr key={teacher.id} className="border-b">
-                                <td className="p-3">
-                                    <div className="flex items-center space-x-3">
-                                        <ProfileImage name={teacher.name} avatarUrl={teacher.avatar} className="w-8 h-8" />
-                                        <span className="font-medium">{teacher.name}</span>
+        <>
+            <Card>
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-gray-800">Teachers ({teacherUsers.length})</h3>
+                    <button 
+                        onClick={() => setShowAddModal(true)}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center"
+                    >
+                        <i className="fas fa-plus mr-2"></i>Add Teacher
+                    </button>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {teacherUsers.map(teacher => {
+                        const teacherSubject = subjects.find(s => s.name === teacher.subject);
+                        const teacherClasses = classes.filter(c => teacher.classIds?.includes(c.id));
+                        
+                        return (
+                            <div key={teacher.id} className="p-4 bg-gray-50 rounded-lg">
+                                <div className="flex items-center space-x-3 mb-3">
+                                    <ProfileImage name={teacher.name} avatarUrl={teacher.avatar} className="w-12 h-12" />
+                                    <div>
+                                        <h4 className="font-bold text-gray-800">{teacher.name}</h4>
+                                        <p className="text-sm text-gray-600">ID: {teacher.id}</p>
                                     </div>
-                                </td>
-                                <td className="p-3">{teacher.subject || 'N/A'}</td>
-                                <td className="p-3">{teacher.classIds?.length || 0} classes</td>
-                                <td className="p-3">
-                                    <div className="flex space-x-2">
-                                        <button className="text-blue-600 hover:text-blue-800">
-                                            <i className="fas fa-edit"></i>
-                                        </button>
-                                        <button className="text-red-600 hover:text-red-800">
-                                            <i className="fas fa-trash"></i>
-                                        </button>
+                                </div>
+                                <div className="space-y-2 text-sm">
+                                    <p><span className="font-medium">Subject:</span> {teacher.subject || 'Not assigned'}</p>
+                                    <div>
+                                        <p className="font-medium">Classes ({teacherClasses.length}):</p>
+                                        {teacherClasses.length > 0 ? (
+                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                {teacherClasses.map(classItem => (
+                                                    <span key={classItem.id} className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
+                                                        {classItem.name}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="text-gray-500 text-xs">No classes assigned</p>
+                                        )}
                                     </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </Card>
+                                </div>
+                                <div className="mt-3 flex justify-end">
+                                    <button 
+                                        onClick={() => handleDeleteTeacher(teacher.id, teacher.name)}
+                                        className="text-red-600 hover:text-red-800 transition"
+                                    >
+                                        <i className="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })}
+                    {teacherUsers.length === 0 && (
+                        <div className="col-span-full text-center text-gray-500 py-8">
+                            <i className="fas fa-chalkboard-teacher text-4xl mb-4"></i>
+                            <p>No teachers found. Add your first teacher!</p>
+                        </div>
+                    )}
+                </div>
+            </Card>
+
+            {/* Add Teacher Modal */}
+            <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add New Teacher">
+                <form onSubmit={handleAddTeacher} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Teacher Name
+                        </label>
+                        <input
+                            type="text"
+                            value={newTeacher.name}
+                            onChange={(e) => setNewTeacher({...newTeacher, name: e.target.value})}
+                            placeholder="Enter teacher name"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            required
+                        />
+                    </div>
+                    
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Assign to Subject (Required)
+                        </label>
+                        <select
+                            value={newTeacher.subjectId}
+                            onChange={(e) => setNewTeacher({...newTeacher, subjectId: e.target.value})}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            required
+                        >
+                            <option value="">Select a subject</option>
+                            {subjects.map(subject => {
+                                const classesWithSubject = classes.filter(c => 
+                                    (c as any).subjectIds?.includes(subject.id)
+                                );
+                                return (
+                                    <option key={subject.id} value={subject.id}>
+                                        {subject.name} ({classesWithSubject.length} classes)
+                                    </option>
+                                );
+                            })}
+                        </select>
+                        {newTeacher.subjectId && (
+                            <div className="mt-2 p-2 bg-green-50 rounded-lg">
+                                <p className="text-xs text-green-700 font-medium">Auto-Assignment Preview:</p>
+                                <p className="text-xs text-green-600">
+                                    Will be assigned to all classes teaching {subjects.find(s => s.id === newTeacher.subjectId)?.name}:
+                                </p>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                    {classes.filter(c => (c as any).subjectIds?.includes(newTeacher.subjectId)).map(classItem => (
+                                        <span key={classItem.id} className="px-1 py-0.5 bg-green-100 text-green-800 text-xs rounded">
+                                            {classItem.name}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="flex space-x-3 pt-4">
+                        <button
+                            type="button"
+                            onClick={() => setShowAddModal(false)}
+                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isLoading || !newTeacher.name.trim() || !newTeacher.subjectId}
+                            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
+                        >
+                            {isLoading ? <LoadingSpinner size="sm" /> : 'Add Teacher'}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
+        </>
     );
 };
 
 const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg: string) => void }> = ({ searchTerm, setSuccessMessage }) => {
-    const { users, students } = useContext(AppContext);
+    const { users, students, setUsers } = useContext(AppContext);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [newParentName, setNewParentName] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const parentUsers = useMemo(() => {
         return users.filter(u => u.role?.toLowerCase() === 'parent')
             .filter(parent => parent.name.toLowerCase().includes(searchTerm.toLowerCase()));
     }, [users, searchTerm]);
 
+    const handleAddParent = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newParentName.trim()) return;
+
+        setIsLoading(true);
+        try {
+            const parentData = {
+                name: newParentName.trim(),
+                role: 'parent'
+            };
+
+            const result = await apiService.createUser(parentData);
+            setUsers([...users, result.user]);
+
+            setSuccessMessage(`Parent "${newParentName}" created successfully! Parent code: ${result.user.id}`);
+            setNewParentName('');
+            setShowAddModal(false);
+        } catch (error) {
+            console.error('Error creating parent:', error);
+            setSuccessMessage('Failed to create parent. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleDeleteParent = async (parentId: string, parentName: string) => {
+        if (!confirm(`Are you sure you want to delete "${parentName}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            await apiService.deleteUser(parentId);
+            setUsers(users.filter(u => u.id !== parentId));
+            setSuccessMessage(`Parent "${parentName}" deleted successfully!`);
+        } catch (error) {
+            console.error('Error deleting parent:', error);
+            setSuccessMessage('Failed to delete parent. Please try again.');
+        }
+    };
+
     return (
-        <Card>
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-800">Parents ({parentUsers.length})</h3>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-                    <i className="fas fa-plus mr-2"></i>Add Parent
-                </button>
-            </div>
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                    <thead className="bg-gray-100">
-                        <tr>
-                            <th className="p-3 text-left">Parent</th>
-                            <th className="p-3 text-left">Children</th>
-                            <th className="p-3 text-left">Contact</th>
-                            <th className="p-3 text-left">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {parentUsers.slice(0, 10).map(parent => (
-                            <tr key={parent.id} className="border-b">
-                                <td className="p-3">
-                                    <div className="flex items-center space-x-3">
-                                        <ProfileImage name={parent.name} avatarUrl={parent.avatar} className="w-8 h-8" />
-                                        <span className="font-medium">{parent.name}</span>
+        <>
+            <Card>
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-gray-800">Parents ({parentUsers.length})</h3>
+                    <button 
+                        onClick={() => setShowAddModal(true)}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center"
+                    >
+                        <i className="fas fa-plus mr-2"></i>Add Parent
+                    </button>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {parentUsers.map(parent => {
+                        const parentChildren = students.filter(s => parent.childrenIds?.includes(s.id));
+                        
+                        return (
+                            <div key={parent.id} className="p-4 bg-gray-50 rounded-lg">
+                                <div className="flex items-center space-x-3 mb-3">
+                                    <ProfileImage name={parent.name} avatarUrl={parent.avatar} className="w-12 h-12" />
+                                    <div>
+                                        <h4 className="font-bold text-gray-800">{parent.name}</h4>
+                                        <p className="text-sm text-gray-600">ID: {parent.id}</p>
                                     </div>
-                                </td>
-                                <td className="p-3">{parent.childrenIds?.length || 0} children</td>
-                                <td className="p-3">{parent.id}</td>
-                                <td className="p-3">
-                                    <div className="flex space-x-2">
-                                        <button className="text-blue-600 hover:text-blue-800">
-                                            <i className="fas fa-edit"></i>
-                                        </button>
-                                        <button className="text-red-600 hover:text-red-800">
-                                            <i className="fas fa-trash"></i>
-                                        </button>
+                                </div>
+                                <div className="space-y-2 text-sm">
+                                    <div>
+                                        <p className="font-medium">Children ({parentChildren.length}):</p>
+                                        {parentChildren.length > 0 ? (
+                                            <div className="space-y-1 mt-1">
+                                                {parentChildren.map(child => (
+                                                    <div key={child.id} className="flex items-center space-x-2 text-xs">
+                                                        <ProfileImage name={child.name} avatarUrl={child.avatar} className="w-6 h-6" />
+                                                        <span>{child.name}</span>
+                                                        <span className="text-gray-500">({child.id})</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="text-gray-500 text-xs">No children assigned</p>
+                                        )}
                                     </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </Card>
+                                </div>
+                                <div className="mt-3 flex justify-end">
+                                    <button 
+                                        onClick={() => handleDeleteParent(parent.id, parent.name)}
+                                        className="text-red-600 hover:text-red-800 transition"
+                                    >
+                                        <i className="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })}
+                    {parentUsers.length === 0 && (
+                        <div className="col-span-full text-center text-gray-500 py-8">
+                            <i className="fas fa-users text-4xl mb-4"></i>
+                            <p>No parents found. Add your first parent!</p>
+                        </div>
+                    )}
+                </div>
+            </Card>
+
+            {/* Add Parent Modal */}
+            <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add New Parent">
+                <form onSubmit={handleAddParent} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Parent Name
+                        </label>
+                        <input
+                            type="text"
+                            value={newParentName}
+                            onChange={(e) => setNewParentName(e.target.value)}
+                            placeholder="Enter parent name"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            required
+                        />
+                    </div>
+                    
+                    <div className="bg-blue-50 p-3 rounded-lg">
+                        <p className="text-sm text-blue-700">
+                            <i className="fas fa-info-circle mr-2"></i>
+                            A unique parent code will be generated automatically. Children can be assigned later when creating students.
+                        </p>
+                    </div>
+                    
+                    <div className="flex space-x-3 pt-4">
+                        <button
+                            type="button"
+                            onClick={() => setShowAddModal(false)}
+                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isLoading || !newParentName.trim()}
+                            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
+                        >
+                            {isLoading ? <LoadingSpinner size="sm" /> : 'Add Parent'}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
+        </>
     );
 };
 
