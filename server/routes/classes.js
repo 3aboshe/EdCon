@@ -43,6 +43,43 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Update a class
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, subjectIds } = req.body;
+    console.log('Updating class:', id, 'with data:', { name, subjectIds });
+    
+    // Check if class exists
+    const existingClass = await prisma.class.findUnique({
+      where: { id: id }
+    });
+    
+    if (!existingClass) {
+      console.log('Class not found:', id);
+      return res.status(404).json({ message: 'Class not found' });
+    }
+    
+    // Prepare update data
+    const updateData = {};
+    if (name !== undefined) {
+      updateData.name = name;
+    }
+    
+    // Update the class
+    const updatedClass = await prisma.class.update({
+      where: { id: id },
+      data: updateData
+    });
+    
+    console.log('Successfully updated class:', updatedClass);
+    res.json({ success: true, class: updatedClass });
+  } catch (error) {
+    console.error('Error updating class:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // Delete a class
 router.delete('/:id', async (req, res) => {
   try {
