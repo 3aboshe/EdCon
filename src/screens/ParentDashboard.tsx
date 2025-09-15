@@ -12,7 +12,7 @@ import ProfileImage from '../components/common/ProfileImage';
 import ProfileScreen from './ProfileScreen';
 import apiService from '../services/apiService';
 
-type ParentTab = 'dashboard' | 'performance' | 'homework' | 'announcements' | 'messages' | 'profile' | 'codes';
+type ParentTab = 'dashboard' | 'performance' | 'homework' | 'announcements' | 'messages' | 'profile';
 
 const getTabIcon = (tab: ParentTab): string => {
     const icons: Record<ParentTab, string> = {
@@ -21,8 +21,7 @@ const getTabIcon = (tab: ParentTab): string => {
         homework: 'fa-book-open',
         announcements: 'fa-bullhorn',
         messages: 'fa-comments',
-        profile: 'fa-user-circle',
-        codes: 'fa-key'
+        profile: 'fa-user-circle'
     };
     return icons[tab];
 };
@@ -175,9 +174,6 @@ const ParentDashboard: React.FC = () => {
                         <ParentMessaging student={selectedStudent} />
                     )}
 
-                    {activeTab === 'codes' && (
-                        <StudentCodesTab students={parentStudents} />
-                    )}
 
                     {activeTab === 'profile' && (
                         <ProfileScreen />
@@ -596,20 +592,9 @@ const ParentMessaging: React.FC<{ student: Student }> = ({ student }) => {
     const [selectedTeacher, setSelectedTeacher] = useState<User | null>(null);
 
     const teachers = useMemo(() => {
-        // Get the student's class
-        const studentClass = classes.find(c => c.id === student.classId);
-        if (!studentClass || !(studentClass as any).subjectIds) {
-            return [];
-        }
-
-        // Get all teachers and filter by those who teach subjects in this class
-        const allTeachers = users.filter(u => u.role?.toLowerCase() === 'teacher');
-        return allTeachers.filter(teacher => {
-            // Teacher should have a subject that's taught in this class
-            const teacherSubject = subjects.find(s => s.name === teacher.subject);
-            return teacherSubject && (studentClass as any).subjectIds.includes(teacherSubject.id);
-        });
-    }, [users, student.classId, classes, subjects]);
+        // Show ALL teachers with their subjects
+        return users.filter(u => u.role?.toLowerCase() === 'teacher');
+    }, [users]);
 
     const conversations = useMemo(() => {
         if (!user) return [];
@@ -905,44 +890,5 @@ const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: Us
     );
 };
 
-const StudentCodesTab: React.FC<{ students: Student[] }> = ({ students }) => {
-    const { t } = useContext(AppContext);
-
-    const copyToClipboard = (code: string) => {
-        navigator.clipboard.writeText(code);
-        // You could add a toast notification here
-    };
-
-    return (
-        <Card>
-            <h2 className="text-lg font-bold mb-4">{t('student_codes')}</h2>
-            <p className="text-gray-600 mb-4">{t('student_codes_description')}</p>
-            <div className="space-y-3">
-                {students.map(student => (
-                    <div key={student.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                            <img src={student.avatar} alt={student.name} className="w-10 h-10 rounded-full object-cover bg-gray-200" />
-                            <div>
-                                <div className="font-medium">{student.name}</div>
-                                <div className="text-sm text-gray-600">{t('student')}</div>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="font-mono text-sm bg-gray-200 px-2 py-1 rounded">
-                                {student.id}
-                            </span>
-                            <button
-                                onClick={() => copyToClipboard(student.id)}
-                                className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
-                            >
-                                {t('copy')}
-                            </button>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </Card>
-    );
-};
 
 export default ParentDashboard;

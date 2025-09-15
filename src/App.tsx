@@ -5,7 +5,6 @@ import LoginScreen from './screens/LoginScreen';
 import ParentDashboard from './screens/ParentDashboard';
 import TeacherDashboard from './screens/TeacherDashboard';
 import AdminDashboard from './screens/NewAdminDashboard';
-import StudentDashboard from './screens/StudentDashboard';
 import { translations } from './constants';
 import apiService from './services/apiService';
 
@@ -321,8 +320,6 @@ const App: React.FC = () => {
                 return <TeacherDashboard />;
             case 'admin':
                 return <AdminDashboard />;
-            case 'student':
-                return <StudentDashboard />;
             default:
                 console.log('Unknown role:', userRole);
                 return <LoginScreen />;

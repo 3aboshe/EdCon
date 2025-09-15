@@ -265,6 +265,22 @@ class ApiService {
     }
   }
 
+  // Update class
+  async updateClass(classId: string, updates: { name?: string; subjectIds?: string[] }): Promise<Class> {
+    const response = await this.request<{success: boolean, class: Class}>(`/classes/${classId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+    
+    if (response && response.class) {
+      return response.class;
+    } else if (response.data && response.data.class) {
+      return response.data.class;
+    } else {
+      throw new Error('Invalid response format from server');
+    }
+  }
+
   // Delete a class
   async deleteClass(classId: string): Promise<void> {
     await this.request(`/classes/${classId}`, {
