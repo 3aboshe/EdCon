@@ -5,6 +5,12 @@ import Card from '../components/common/Card';
 import ProfileImage from '../components/common/ProfileImage';
 import { Student, Grade, Homework, Attendance, Message, User, Class, Subject } from '../types';
 import apiService from '../services/apiService';
+import Header from '../components/common/Header';
+import LoadingSpinner from '../components/common/LoadingSpinner';
+import TabBar from '../components/common/TabBar';
+import ProfileScreen from './ProfileScreen';
+import Modal from '../components/common/Modal';
+
 
 type ParentTab = 'dashboard' | 'performance' | 'homework' | 'announcements' | 'messages' | 'profile';
 
