@@ -57,17 +57,17 @@ app.use((err, req, res, next) => {
 });
 
 // Routes
-app.use('/api', authRoutes);
-app.use('/api', classRoutes);
-app.use('/api', subjectRoutes);
-app.use('/api', gradeRoutes);
-app.use('/api', homeworkRoutes);
-app.use('/api', attendanceRoutes);
-app.use('/api', announcementRoutes);
-app.use('/api', messageRoutes);
-app.use('/api', parentChildRoutes);
-app.use('/api', healthRoutes);
-app.use('/api', backupRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/classes', classRoutes);
+app.use('/api/subjects', subjectRoutes);
+app.use('/api/grades', gradeRoutes);
+app.use('/api/homework', homeworkRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/announcements', announcementRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/parent-child', parentChildRoutes);
+app.use('/api/health', healthRoutes);
+app.use('/api/backup', backupRoutes);
 
 // File serving route
 app.get('/uploads/:filename', (req, res) => {
