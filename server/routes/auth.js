@@ -98,9 +98,38 @@ router.post('/create', async (req, res) => {
       }
     }
     
-    // If this is a teacher with classIds, ensure they are properly stored
-    if (userRole === 'TEACHER' && rest.classIds && Array.isArray(rest.classIds)) {
-      console.log(`Teacher ${user.name} assigned to classes:`, rest.classIds);
+    // If this is a teacher with a subject, automatically assign to classes with that subject
+    if (userRole === 'TEACHER' && rest.subject) {
+      try {
+        // Find the subject by name
+        const subject = await prisma.subject.findFirst({
+          where: { name: rest.subject }
+        });
+        
+        if (subject) {
+          // Find all classes that have this subject
+          const classesWithSubject = await prisma.class.findMany({
+            where: {
+              subjectIds: {
+                has: subject.id
+              }
+            }
+          });
+          
+          const classIds = classesWithSubject.map(c => c.id);
+          
+          // Update the teacher with the class assignments
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { classIds: classIds }
+          });
+          
+          console.log(`Teacher ${user.name} automatically assigned to ${classIds.length} classes based on subject ${rest.subject}:`, classIds);
+        }
+      } catch (subjectError) {
+        console.error('Error auto-assigning teacher to classes:', subjectError);
+        // Don't fail the user creation if class assignment fails
+      }
     }
     
     res.status(201).json({ success: true, code, user });
