@@ -97,6 +97,18 @@ const ProfileScreen: React.FC = () => {
 
     if (!user) return null;
 
+    // Debug logging for parent-children relationship
+    if (user.role?.toLowerCase() === 'parent') {
+        console.log('=== PARENT PROFILE DEBUG ===');
+        console.log('User ID:', user.id);
+        console.log('User role:', user.role);
+        console.log('All students:', students?.length || 0);
+        console.log('Students data:', students?.map(s => ({ id: s.id, name: s.name, parentId: s.parentId })));
+        const myChildren = students?.filter((child: any) => child.parentId === user.id) || [];
+        console.log('My children:', myChildren.length);
+        console.log('Children details:', myChildren.map(c => ({ id: c.id, name: c.name, parentId: c.parentId })));
+    }
+
     return (
         <div className="p-4 space-y-6">
             <Card className="flex flex-col items-center">
@@ -129,36 +141,49 @@ const ProfileScreen: React.FC = () => {
             </Card>
 
             {/* Child Avatar Selection Section - Only for Parents */}
-            {user.role?.toLowerCase() === 'parent' && students && students.filter((child: any) => child.parentId === user.id).length > 0 && (
+            {user.role?.toLowerCase() === 'parent' && (
                 <Card>
                     <h3 className="text-lg font-bold text-gray-800 mb-4">Children Avatars</h3>
-                    <div className="space-y-4">
-                        {students.filter((child: any) => child.parentId === user.id).map((child: any) => (
-                            <div key={child.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                <div className="flex items-center space-x-3">
-                                    <ProfileImage 
-                                        name={child.name}
-                                        avatarUrl={child.avatar}
-                                        className="w-12 h-12"
-                                        textClassName="text-lg"
-                                    />
-                                    <div>
-                                        <p className="font-medium text-gray-800">{child.name}</p>
-                                        <p className="text-sm text-gray-600">Student</p>
+                    {students && students.length > 0 ? (
+                        <div className="space-y-4">
+                            {students.filter((child: any) => child.parentId === user.id).length > 0 ? (
+                                students.filter((child: any) => child.parentId === user.id).map((child: any) => (
+                                    <div key={child.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div className="flex items-center space-x-3">
+                                            <ProfileImage 
+                                                name={child.name}
+                                                avatarUrl={child.avatar}
+                                                className="w-12 h-12"
+                                                textClassName="text-lg"
+                                            />
+                                            <div>
+                                                <p className="font-medium text-gray-800">{child.name}</p>
+                                                <p className="text-sm text-gray-600">Student</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                setSelectedChild(child);
+                                                setShowChildAvatarSelector(true);
+                                            }}
+                                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                                        >
+                                            Change Avatar
+                                        </button>
                                     </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-8 text-gray-500">
+                                    <p>No children assigned to this parent account.</p>
+                                    <p className="text-sm mt-2">Contact your administrator to assign students.</p>
                                 </div>
-                                <button
-                                    onClick={() => {
-                                        setSelectedChild(child);
-                                        setShowChildAvatarSelector(true);
-                                    }}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                                >
-                                    Change Avatar
-                                </button>
-                            </div>
-                        ))}
-                    </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="text-center py-8 text-gray-500">
+                            <p>Loading children...</p>
+                        </div>
+                    )}
                 </Card>
             )}
 
