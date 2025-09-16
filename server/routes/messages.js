@@ -1,11 +1,9 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/db.js';
 import multer from 'multer';
-import path from 'path';
 import fs from 'fs';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({

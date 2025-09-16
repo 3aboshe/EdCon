@@ -1,8 +1,7 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/db.js';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Create a full database backup
 router.post('/create', async (req, res) => {
