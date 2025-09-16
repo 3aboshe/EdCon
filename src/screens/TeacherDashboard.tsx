@@ -368,7 +368,14 @@ const HomeworkManager: React.FC<{ studentsInClass: Student[], setSuccessMessage:
     
     const handleAssignHomework = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newHwTitle || !newHwSubject || !newHwDueDate || !user || selectedClassIds.length === 0) return;
+        if (!newHwTitle || !newHwSubject || !newHwDueDate || !user) return;
+
+        // Use selected classes or default to teacher's classes
+        const targetClassIds = teacherClasses.length === 1 
+            ? [teacherClasses[0].id] 
+            : selectedClassIds;
+
+        if (targetClassIds.length === 0) return;
 
         try {
             const newHomework = {
@@ -377,7 +384,7 @@ const HomeworkManager: React.FC<{ studentsInClass: Student[], setSuccessMessage:
                 dueDate: newHwDueDate,
                 assignedDate: new Date().toISOString().slice(0, 10),
                 teacherId: user.id,
-                classIds: selectedClassIds,
+                classIds: targetClassIds,
                 submitted: []
             };
             const createdHomework = await apiService.createHomework(newHomework);
@@ -386,7 +393,7 @@ const HomeworkManager: React.FC<{ studentsInClass: Student[], setSuccessMessage:
             setNewHwTitle('');
             setNewHwSubject(subjects[0]?.name || '');
             setNewHwDueDate('');
-            setSelectedClassIds(teacherClasses.length === 1 ? [teacherClasses[0].id] : []);
+            setSelectedClassIds([]);
             setSuccessMessage(t('homework_assigned_success'));
         } catch (error) {
             console.error('Error creating homework:', error);
@@ -488,7 +495,7 @@ const HomeworkManager: React.FC<{ studentsInClass: Student[], setSuccessMessage:
                         </div>
                     )}
                     
-                    <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg" disabled={selectedClassIds.length === 0}>{t('assign_new_homework')}</button>
+                    <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg" disabled={teacherClasses.length > 1 && selectedClassIds.length === 0}>{t('assign_new_homework')}</button>
                 </form>
             </Modal>
             
@@ -542,7 +549,14 @@ const AnnouncementManager: React.FC<{ setSuccessMessage: (msg: string) => void, 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if(!title || !content || !user || selectedClassIds.length === 0) return;
+        if(!title || !content || !user) return;
+        
+        // Use selected classes or default to teacher's classes
+        const targetClassIds = teacherClasses.length === 1 
+            ? [teacherClasses[0].id] 
+            : selectedClassIds;
+
+        if (targetClassIds.length === 0) return;
         
         try {
             const newAnnouncement = {
@@ -550,7 +564,7 @@ const AnnouncementManager: React.FC<{ setSuccessMessage: (msg: string) => void, 
                 content, 
                 priority,
                 teacherId: user.id,
-                classIds: selectedClassIds,
+                classIds: targetClassIds,
                 date: new Date().toISOString().slice(0, 10)
             };
             
@@ -559,7 +573,7 @@ const AnnouncementManager: React.FC<{ setSuccessMessage: (msg: string) => void, 
             setSuccessMessage(t('announcement_posted_success'));
             setTitle('');
             setContent('');
-            setSelectedClassIds(teacherClasses.length === 1 ? [teacherClasses[0].id] : []);
+            setSelectedClassIds([]);
             onPost();
         } catch (error) {
             console.error('Error creating announcement:', error);
@@ -623,7 +637,7 @@ const AnnouncementManager: React.FC<{ setSuccessMessage: (msg: string) => void, 
                     </div>
                 )}
                 
-                 <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg" disabled={selectedClassIds.length === 0}>{t('post_announcement')}</button>
+                 <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg" disabled={teacherClasses.length > 1 && selectedClassIds.length === 0}>{t('post_announcement')}</button>
             </form>
         </Card>
     );
