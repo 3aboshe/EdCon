@@ -148,7 +148,8 @@ const App: React.FC = () => {
                 console.log('=== STUDENTS PROCESSING DEBUG ===');
                 console.log('All users:', allUsers.length);
                 console.log('Student users:', studentUsers.length);
-                console.log('Student details:', studentUsers.map(s => ({ id: s.id, name: s.name, classId: s.classId, role: s.role })));
+                console.log('Student details:', studentUsers.map(s => ({ id: s.id, name: s.name, classId: s.classId, parentId: s.parentId })));
+                console.log('Students with parentId:', studentUsers.filter(s => s.parentId).length);
                 
                 setStudents(studentUsers);
 

@@ -4,15 +4,17 @@ import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 import connectDB from './config/db.js';
-import authRoutes from './routes/auth.js';
-import gradeRoutes from './routes/grades.js';
-import classRoutes from './routes/classes.js';
-import subjectRoutes from './routes/subjects.js';
-import homeworkRoutes from './routes/homework.js';
-import announcementRoutes from './routes/announcements.js';
-import attendanceRoutes from './routes/attendance.js';
-import messageRoutes from './routes/messages.js';
-import backupRoutes from './routes/backup.js';
+const authRoutes = require('./routes/auth');
+const classRoutes = require('./routes/classes');
+const subjectRoutes = require('./routes/subjects');
+const gradeRoutes = require('./routes/grades');
+const homeworkRoutes = require('./routes/homework');
+const attendanceRoutes = require('./routes/attendance');
+const announcementRoutes = require('./routes/announcements');
+const messageRoutes = require('./routes/messages');
+const parentChildRoutes = require('./routes/parent-child');
+const healthRoutes = require('./routes/health');
+const backupRoutes = require('./routes/backup');
 
 dotenv.config();
 
@@ -55,15 +57,17 @@ app.use((err, req, res, next) => {
 });
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/grades', gradeRoutes);
-app.use('/api/classes', classRoutes);
-app.use('/api/subjects', subjectRoutes);
-app.use('/api/homework', homeworkRoutes);
-app.use('/api/announcements', announcementRoutes);
-app.use('/api/attendance', attendanceRoutes);
-app.use('/api/messages', messageRoutes);
-app.use('/api/backup', backupRoutes);
+app.use('/api', authRoutes);
+app.use('/api', classRoutes);
+app.use('/api', subjectRoutes);
+app.use('/api', gradeRoutes);
+app.use('/api', homeworkRoutes);
+app.use('/api', attendanceRoutes);
+app.use('/api', announcementRoutes);
+app.use('/api', messageRoutes);
+app.use('/api', parentChildRoutes);
+app.use('/api', healthRoutes);
+app.use('/api', backupRoutes);
 
 // File serving route
 app.get('/uploads/:filename', (req, res) => {
