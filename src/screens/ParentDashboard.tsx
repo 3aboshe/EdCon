@@ -1,16 +1,9 @@
 
-
-import React, { useState, useContext, useMemo, useEffect, useRef } from 'react';
+import React, { useContext, useRef, useState, useEffect, useMemo } from 'react';
 import { AppContext } from '../App';
-import { Student, Grade, Homework, Announcement, User, Message, UserRole } from '../types';
-import Header from '../components/common/Header';
 import Card from '../components/common/Card';
-import LoadingSpinner from '../components/common/LoadingSpinner';
-import TabBar from '../components/common/TabBar';
-import Modal from '../components/common/Modal';
 import ProfileImage from '../components/common/ProfileImage';
-import ProfileScreen from './ProfileScreen';
-import ChildAvatarSelector from '../components/common/ChildAvatarSelector';
+import { Student, Grade, Homework, Attendance, Message, User, Class, Subject } from '../types';
 import apiService from '../services/apiService';
 
 type ParentTab = 'dashboard' | 'performance' | 'homework' | 'announcements' | 'messages' | 'profile';
@@ -192,71 +185,33 @@ const ParentDashboard: React.FC = () => {
 // Sub-components for better organization
 
 const SelectedStudentCard: React.FC<{ student: Student, otherStudents: Student[], onSelect: (id: string) => void }> = ({ student, otherStudents, onSelect }) => {
-    const { t, updateUserAvatar } = useContext(AppContext);
-    const [showAvatarSelector, setShowAvatarSelector] = useState(false);
-    const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
+    const { t } = useContext(AppContext);
     const showSelector = otherStudents.length > 1;
 
-    const handleAvatarSelect = async (avatarUrl: string) => {
-        setIsUpdatingAvatar(true);
-        try {
-            await apiService.updateUser(student.id, { avatar: avatarUrl });
-            updateUserAvatar(student.id, avatarUrl);
-        } catch (error) {
-            console.error('Error updating child avatar:', error);
-        } finally {
-            setIsUpdatingAvatar(false);
-        }
-    };
-
     return (
-        <>
-            <Card className="flex items-center gap-4">
-                <div className="relative">
-                    <ProfileImage 
-                        name={student.name} 
-                        avatarUrl={student.avatar} 
-                        className="w-16 h-16"
-                    />
-                    <button
-                        onClick={() => setShowAvatarSelector(true)}
-                        disabled={isUpdatingAvatar}
-                        className="absolute -bottom-1 -right-1 bg-blue-600 text-white rounded-full h-6 w-6 flex items-center justify-center shadow-md border-2 border-white hover:bg-blue-700 transition disabled:opacity-50"
-                        title={`Change ${student.name}'s avatar`}
-                    >
-                        {isUpdatingAvatar ? (
-                            <i className="fas fa-spinner fa-spin text-xs"></i>
-                        ) : (
-                            <i className="fas fa-edit text-xs"></i>
-                        )}
-                    </button>
-                </div>
-                <div className="flex-grow">
-                    {showSelector ? (
-                        <select
-                            id="student-select"
-                            value={student.id || ''}
-                            onChange={(e) => onSelect(e.target.value)}
-                            className="w-full text-lg font-bold text-gray-800 p-2 border-0 rounded-md shadow-sm focus:ring-0 focus:border-0 bg-transparent -ml-2"
-                            aria-label={t('select_student')}
-                        >
-                            {otherStudents.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                        </select>
-                    ) : (
-                        <h2 className="text-xl font-bold text-gray-800">{student.name}</h2>
-                    )}
-                     <p className="text-sm text-gray-500">{t('parent_of')} {student.name.split(' ')[0]}</p>
-                </div>
-            </Card>
-
-            <ChildAvatarSelector
-                isOpen={showAvatarSelector}
-                onClose={() => setShowAvatarSelector(false)}
-                onSelectAvatar={handleAvatarSelect}
-                currentAvatar={student.avatar}
-                childName={student.name}
+        <Card className="flex items-center gap-4">
+            <ProfileImage 
+                name={student.name} 
+                avatarUrl={student.avatar} 
+                className="w-16 h-16"
             />
-        </>
+            <div className="flex-grow">
+                {showSelector ? (
+                    <select
+                        id="student-select"
+                        value={student.id || ''}
+                        onChange={(e) => onSelect(e.target.value)}
+                        className="w-full text-lg font-bold text-gray-800 p-2 border-0 rounded-md shadow-sm focus:ring-0 focus:border-0 bg-transparent -ml-2"
+                        aria-label={t('select_student')}
+                    >
+                        {otherStudents.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                ) : (
+                    <h2 className="text-xl font-bold text-gray-800">{student.name}</h2>
+                )}
+                 <p className="text-sm text-gray-500">{t('parent_of')} {student.name.split(' ')[0]}</p>
+            </div>
+        </Card>
     );
 };
 

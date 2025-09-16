@@ -129,11 +129,11 @@ const ProfileScreen: React.FC = () => {
             </Card>
 
             {/* Child Avatar Selection Section - Only for Parents */}
-            {user.role?.toLowerCase() === 'parent' && students && students.length > 0 && (
+            {user.role?.toLowerCase() === 'parent' && students && students.filter((child: any) => child.parentId === user.id).length > 0 && (
                 <Card>
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">{t('children_avatars')}</h3>
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">Children Avatars</h3>
                     <div className="space-y-4">
-                        {students.map((child: any) => (
+                        {students.filter((child: any) => child.parentId === user.id).map((child: any) => (
                             <div key={child.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                 <div className="flex items-center space-x-3">
                                     <ProfileImage 
@@ -144,7 +144,7 @@ const ProfileScreen: React.FC = () => {
                                     />
                                     <div>
                                         <p className="font-medium text-gray-800">{child.name}</p>
-                                        <p className="text-sm text-gray-600">{t('student')}</p>
+                                        <p className="text-sm text-gray-600">Student</p>
                                     </div>
                                 </div>
                                 <button
@@ -154,7 +154,7 @@ const ProfileScreen: React.FC = () => {
                                     }}
                                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                                 >
-                                    {t('change_avatar')}
+                                    Change Avatar
                                 </button>
                             </div>
                         ))}
