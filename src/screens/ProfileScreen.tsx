@@ -9,7 +9,7 @@ import { allAvatars, defaultParentAvatar } from '../data/avatars';
 import apiService from '../services/apiService';
 
 const ProfileScreen: React.FC = () => {
-    const { user, t, updateUserAvatar, updateUser, students } = useContext(AppContext);
+    const { user, t, updateUserAvatar, updateUser, students, logout } = useContext(AppContext);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [successMessage, setSuccessMessage] = useState('');
     const [showChildAvatarSelector, setShowChildAvatarSelector] = useState(false);
@@ -102,10 +102,11 @@ const ProfileScreen: React.FC = () => {
         console.log('=== PARENT PROFILE DEBUG ===');
         console.log('User ID:', user.id);
         console.log('User role:', user.role);
+        console.log('User childrenIds:', user.childrenIds);
         console.log('All students:', students?.length || 0);
         console.log('Students data:', students?.map(s => ({ id: s.id, name: s.name, parentId: s.parentId })));
-        const myChildren = students?.filter((child: any) => child.parentId === user.id) || [];
-        console.log('My children:', myChildren.length);
+        const myChildren = students?.filter((child: any) => user.childrenIds?.includes(child.id)) || [];
+        console.log('My children (using childrenIds):', myChildren.length);
         console.log('Children details:', myChildren.map(c => ({ id: c.id, name: c.name, parentId: c.parentId })));
     }
 
@@ -131,6 +132,17 @@ const ProfileScreen: React.FC = () => {
                 <h2 className="text-2xl font-bold text-gray-800">{user.name}</h2>
                 <p className="text-gray-500 capitalize">{t(user.role)}</p>
                 
+                {/* Logout Button - Only for Parents */}
+                {user.role?.toLowerCase() === 'parent' && (
+                    <button
+                        onClick={logout}
+                        className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center gap-2"
+                    >
+                        <i className="fa-solid fa-sign-out-alt"></i>
+                        Logout
+                    </button>
+                )}
+                
                 <input 
                     type="file"
                     ref={fileInputRef}
@@ -146,8 +158,8 @@ const ProfileScreen: React.FC = () => {
                     <h3 className="text-lg font-bold text-gray-800 mb-4">Children Avatars</h3>
                     {students && students.length > 0 ? (
                         <div className="space-y-4">
-                            {students.filter((child: any) => child.parentId === user.id).length > 0 ? (
-                                students.filter((child: any) => child.parentId === user.id).map((child: any) => (
+                            {students.filter((child: any) => user.childrenIds?.includes(child.id)).length > 0 ? (
+                                students.filter((child: any) => user.childrenIds?.includes(child.id)).map((child: any) => (
                                     <div key={child.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                         <div className="flex items-center space-x-3">
                                             <ProfileImage 
