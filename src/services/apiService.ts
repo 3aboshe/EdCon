@@ -488,6 +488,28 @@ class ApiService {
     return response.data || response;
   }
 
+  // Parent-Child relationships
+  async assignStudentToParent(studentId: string, parentId: string) {
+    const response = await this.request<any>('/assign-student', {
+      method: 'POST',
+      body: JSON.stringify({ studentId, parentId }),
+    });
+    return response;
+  }
+
+  async unassignStudentFromParent(studentId: string) {
+    const response = await this.request<any>('/unassign-student', {
+      method: 'POST',
+      body: JSON.stringify({ studentId }),
+    });
+    return response;
+  }
+
+  async getParentChildRelationships() {
+    const response = await this.request<any>('/relationships');
+    return response;
+  }
+
 }
 
 export default new ApiService(); 
