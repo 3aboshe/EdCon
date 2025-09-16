@@ -4,17 +4,17 @@ import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 import connectDB from './config/db.js';
-const authRoutes = require('./routes/auth');
-const classRoutes = require('./routes/classes');
-const subjectRoutes = require('./routes/subjects');
-const gradeRoutes = require('./routes/grades');
-const homeworkRoutes = require('./routes/homework');
-const attendanceRoutes = require('./routes/attendance');
-const announcementRoutes = require('./routes/announcements');
-const messageRoutes = require('./routes/messages');
-const parentChildRoutes = require('./routes/parent-child');
-const healthRoutes = require('./routes/health');
-const backupRoutes = require('./routes/backup');
+import authRoutes from './routes/auth.js';
+import classRoutes from './routes/classes.js';
+import subjectRoutes from './routes/subjects.js';
+import gradeRoutes from './routes/grades.js';
+import homeworkRoutes from './routes/homework.js';
+import attendanceRoutes from './routes/attendance.js';
+import announcementRoutes from './routes/announcements.js';
+import messageRoutes from './routes/messages.js';
+import parentChildRoutes from './routes/parent-child.js';
+import healthRoutes from './routes/health.js';
+import backupRoutes from './routes/backup.js';
 
 dotenv.config();
 
