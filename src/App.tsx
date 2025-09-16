@@ -271,6 +271,12 @@ const App: React.FC = () => {
         return 'ltr';
     }, [lang]);
 
+    // Update HTML direction attribute when language changes
+    useEffect(() => {
+        document.documentElement.dir = dir;
+        document.documentElement.lang = lang;
+    }, [dir, lang]);
+
     const appContextValue = useMemo(() => ({
         user,
         login: handleLogin,

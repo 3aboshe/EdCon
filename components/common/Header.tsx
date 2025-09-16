@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { AppContext } from '../../App';
 import { APP_NAME } from '../../constants';
+import LanguageSwitcher from './LanguageSwitcher';
 
 interface HeaderProps {
     title?: string;
@@ -23,6 +24,7 @@ const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onBack }
                 </div>
                 <h1 className="text-xl font-bold text-center truncate w-1/3">{title || APP_NAME}</h1>
                 <div className="flex items-center justify-end gap-2 w-1/3">
+                    <LanguageSwitcher theme="dark" />
                     {user && (
                          <button onClick={logout} title={t('logout')} className="text-white hover:text-gray-200 transition-colors">
                             <i className="fa-solid fa-sign-out-alt"></i>
