@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { avatarCategories, categoryNames, childAvatars } from '../../data/avatars';
+import { allAvatars } from '../../data/avatars';
 import Modal from './Modal';
 
 interface ChildAvatarSelectorProps {
@@ -17,7 +17,6 @@ const ChildAvatarSelector: React.FC<ChildAvatarSelectorProps> = ({
     currentAvatar,
     childName
 }) => {
-    const [selectedCategory, setSelectedCategory] = useState<keyof typeof avatarCategories>('robots');
     const [selectedAvatar, setSelectedAvatar] = useState<string>(currentAvatar || '');
 
     const handleSelectAvatar = (avatarUrl: string) => {
@@ -31,31 +30,12 @@ const ChildAvatarSelector: React.FC<ChildAvatarSelectorProps> = ({
         }
     };
 
-    const categories = Object.keys(avatarCategories) as Array<keyof typeof avatarCategories>;
-
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={`Choose Avatar for ${childName}`}>
             <div className="space-y-6">
-                {/* Category Tabs */}
-                <div className="flex flex-wrap gap-2">
-                    {categories.map((category) => (
-                        <button
-                            key={category}
-                            onClick={() => setSelectedCategory(category)}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                selectedCategory === category
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
-                        >
-                            {categoryNames[category]}
-                        </button>
-                    ))}
-                </div>
-
                 {/* Avatar Grid */}
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-3 max-h-96 overflow-y-auto">
-                    {avatarCategories[selectedCategory].map((avatarUrl, index) => (
+                    {allAvatars.map((avatarUrl, index) => (
                         <button
                             key={index}
                             onClick={() => handleSelectAvatar(avatarUrl)}

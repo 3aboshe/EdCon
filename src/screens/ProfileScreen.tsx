@@ -3,13 +3,17 @@ import React, { useContext, useRef, useState, useEffect } from 'react';
 import { AppContext } from '../App';
 import Card from '../components/common/Card';
 import ProfileImage from '../components/common/ProfileImage';
+import ChildAvatarSelector from '../components/common/ChildAvatarSelector';
 import { UserRole } from '../types';
+import { allAvatars, defaultParentAvatar } from '../data/avatars';
 import apiService from '../services/apiService';
 
 const ProfileScreen: React.FC = () => {
-    const { user, t, updateUserAvatar, updateUser } = useContext(AppContext);
+    const { user, t, updateUserAvatar, updateUser, students } = useContext(AppContext);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [successMessage, setSuccessMessage] = useState('');
+    const [showChildAvatarSelector, setShowChildAvatarSelector] = useState(false);
+    const [selectedChild, setSelectedChild] = useState<any>(null);
     const [availability, setAvailability] = useState({
         startTime: user?.messagingAvailability?.startTime || '14:00',
         endTime: user?.messagingAvailability?.endTime || '16:00',
@@ -57,6 +61,20 @@ const ProfileScreen: React.FC = () => {
                 }
             };
             reader.readAsDataURL(file);
+        }
+    };
+
+    const handleChildAvatarSelect = async (avatarUrl: string) => {
+        if (!selectedChild) return;
+        try {
+            await apiService.updateUser(selectedChild.id, { avatar: avatarUrl });
+            updateUserAvatar(selectedChild.id, avatarUrl);
+            setSuccessMessage(`${selectedChild.name}'s avatar updated successfully!`);
+            setTimeout(() => setSuccessMessage(''), 3000);
+        } catch (error) {
+            console.error('Error updating child avatar:', error);
+            setSuccessMessage('Error updating avatar. Please try again.');
+            setTimeout(() => setSuccessMessage(''), 3000);
         }
     };
 
@@ -110,6 +128,40 @@ const ProfileScreen: React.FC = () => {
                 />
             </Card>
 
+            {/* Child Avatar Selection Section - Only for Parents */}
+            {user.role?.toLowerCase() === 'parent' && students && students.length > 0 && (
+                <Card>
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">{t('children_avatars')}</h3>
+                    <div className="space-y-4">
+                        {students.map((child: any) => (
+                            <div key={child.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div className="flex items-center space-x-3">
+                                    <ProfileImage 
+                                        name={child.name}
+                                        avatarUrl={child.avatar}
+                                        className="w-12 h-12"
+                                        textClassName="text-lg"
+                                    />
+                                    <div>
+                                        <p className="font-medium text-gray-800">{child.name}</p>
+                                        <p className="text-sm text-gray-600">{t('student')}</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setSelectedChild(child);
+                                        setShowChildAvatarSelector(true);
+                                    }}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                                >
+                                    {t('change_avatar')}
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </Card>
+            )}
+
             {user.role?.toLowerCase() === 'teacher' && (
                 <Card>
                     <h3 className="text-lg font-bold text-gray-800 mb-4">{t('availability')}</h3>
@@ -127,7 +179,7 @@ const ProfileScreen: React.FC = () => {
                             </div>
                             <div className="flex-1">
                                 <label htmlFor="end-time" className="block text-sm font-medium text-gray-700">{t('available_to')}</label>
-                                 <input 
+                                <input 
                                     type="time" 
                                     id="end-time"
                                     value={availability.endTime}
@@ -148,6 +200,18 @@ const ProfileScreen: React.FC = () => {
                     {successMessage}
                 </div>
             )}
+
+            {/* Child Avatar Selector Modal */}
+            <ChildAvatarSelector
+                isOpen={showChildAvatarSelector}
+                onClose={() => {
+                    setShowChildAvatarSelector(false);
+                    setSelectedChild(null);
+                }}
+                onSelectAvatar={handleChildAvatarSelect}
+                currentAvatar={selectedChild?.avatar}
+                childName={selectedChild?.name || ''}
+            />
         </div>
     );
 };
