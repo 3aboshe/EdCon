@@ -1,8 +1,7 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/db.js';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Assign student to parent
 router.post('/assign-student', async (req, res) => {

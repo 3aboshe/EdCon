@@ -1,9 +1,8 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/db.js';
 import { nanoid } from 'nanoid';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Helper to generate unique code by role
 function generateCode(role) {

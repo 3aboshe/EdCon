@@ -3,7 +3,10 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-let prisma;
+// Create a single Prisma client instance
+const prisma = new PrismaClient({
+  log: ['query', 'info', 'warn', 'error'],
+});
 
 const connectDB = async () => {
   try {
@@ -13,11 +16,6 @@ const connectDB = async () => {
     if (!process.env.DATABASE_URL) {
       throw new Error('DATABASE_URL environment variable is not set');
     }
-    
-    // Initialize Prisma Client
-    prisma = new PrismaClient({
-      log: ['query', 'info', 'warn', 'error'],
-    });
     
     // Test the connection
     await prisma.$connect();
