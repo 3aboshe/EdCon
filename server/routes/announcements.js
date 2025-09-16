@@ -38,7 +38,7 @@ router.get('/teacher/:teacherId', async (req, res) => {
 // Add new announcement
 router.post('/', async (req, res) => {
   try {
-    const { title, content, date, teacherId, priority } = req.body;
+    const { title, content, date, teacherId, priority, classIds } = req.body;
     
     // Generate a unique ID for the announcement
     const announcementId = `ANN${Date.now()}`;
@@ -50,6 +50,7 @@ router.post('/', async (req, res) => {
         content,
         date,
         teacherId,
+        classIds: classIds || [],
         priority: priority || 'medium'
       }
     });

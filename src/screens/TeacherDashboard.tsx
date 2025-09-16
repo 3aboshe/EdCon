@@ -313,7 +313,7 @@ const AttendanceManager: React.FC<{ students: Student[], setSuccessMessage: (msg
 };
 
 const HomeworkManager: React.FC<{ studentsInClass: Student[], setSuccessMessage: (msg: string) => void }> = ({ studentsInClass, setSuccessMessage }) => {
-    const { t, user, homework: allHomework, setHomework: setAllHomework, subjects } = useContext(AppContext);
+    const { t, user, homework: allHomework, setHomework: setAllHomework, subjects, classes } = useContext(AppContext);
     const [isSubmissionsModalOpen, setSubmissionsModalOpen] = useState(false);
     const [isCreateModalOpen, setCreateModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -325,6 +325,20 @@ const HomeworkManager: React.FC<{ studentsInClass: Student[], setSuccessMessage:
     const [newHwTitle, setNewHwTitle] = useState('');
     const [newHwSubject, setNewHwSubject] = useState(subjects[0]?.name || '');
     const [newHwDueDate, setNewHwDueDate] = useState('');
+    const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
+
+    // Get teacher's classes
+    const teacherClasses = useMemo(() => {
+        if (!user?.classIds) return [];
+        return classes.filter(cls => user.classIds.includes(cls.id));
+    }, [user, classes]);
+
+    // Auto-select single class if teacher only teaches one
+    useEffect(() => {
+        if (teacherClasses.length === 1) {
+            setSelectedClassIds([teacherClasses[0].id]);
+        }
+    }, [teacherClasses]);
 
     const openSubmissionModal = (hw: Homework) => {
         setHomeworkToMark(hw);
@@ -354,23 +368,25 @@ const HomeworkManager: React.FC<{ studentsInClass: Student[], setSuccessMessage:
     
     const handleAssignHomework = async (e: React.FormEvent) => {
         e.preventDefault();
-        if(!newHwTitle || !newHwSubject || !newHwDueDate || !user) return;
-        
+        if (!newHwTitle || !newHwSubject || !newHwDueDate || !user || selectedClassIds.length === 0) return;
+
         try {
-            const newHomework = await apiService.createHomework({
+            const newHomework = {
                 title: newHwTitle,
                 subject: newHwSubject,
                 dueDate: newHwDueDate,
                 assignedDate: new Date().toISOString().slice(0, 10),
                 teacherId: user.id,
+                classIds: selectedClassIds,
                 submitted: []
-            });
-            
-            setAllHomework([...allHomework, newHomework]);
+            };
+            const createdHomework = await apiService.createHomework(newHomework);
+            setAllHomework([createdHomework, ...allHomework]);
             setCreateModalOpen(false);
             setNewHwTitle('');
             setNewHwSubject(subjects[0]?.name || '');
             setNewHwDueDate('');
+            setSelectedClassIds(teacherClasses.length === 1 ? [teacherClasses[0].id] : []);
             setSuccessMessage(t('homework_assigned_success'));
         } catch (error) {
             console.error('Error creating homework:', error);
@@ -429,14 +445,50 @@ const HomeworkManager: React.FC<{ studentsInClass: Student[], setSuccessMessage:
                     <div>
                         <label htmlFor="hw-subject" className="block text-sm font-medium text-gray-700">{t('subject')}</label>
                         <select id="hw-subject" value={newHwSubject} onChange={e => setNewHwSubject(e.target.value)} className="w-full mt-1 p-2 border rounded-md" required>
-                            {subjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                            {subjects.map(subject => <option key={subject.id} value={subject.name}>{subject.name}</option>)}
                         </select>
                     </div>
                     <div>
                         <label htmlFor="hw-due-date" className="block text-sm font-medium text-gray-700">{t('due_date_label')}</label>
                         <input id="hw-due-date" type="date" value={newHwDueDate} onChange={e => setNewHwDueDate(e.target.value)} className="w-full mt-1 p-2 border rounded-md" required />
                     </div>
-                    <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg">{t('assign_new_homework')}</button>
+                    
+                    {teacherClasses.length > 1 && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">{t('select_classes')}</label>
+                            <div className="mt-2 space-y-2 max-h-32 overflow-y-auto border rounded-md p-2">
+                                {teacherClasses.map(cls => (
+                                    <label key={cls.id} className="flex items-center space-x-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedClassIds.includes(cls.id)}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    setSelectedClassIds([...selectedClassIds, cls.id]);
+                                                } else {
+                                                    setSelectedClassIds(selectedClassIds.filter(id => id !== cls.id));
+                                                }
+                                            }}
+                                            className="rounded"
+                                        />
+                                        <span className="text-sm">{cls.name}</span>
+                                    </label>
+                                ))}
+                            </div>
+                            {selectedClassIds.length === 0 && (
+                                <p className="text-red-500 text-sm mt-1">{t('select_at_least_one_class')}</p>
+                            )}
+                        </div>
+                    )}
+                    
+                    {teacherClasses.length === 1 && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">{t('class')}</label>
+                            <p className="mt-1 p-2 bg-gray-100 rounded-md text-sm">{teacherClasses[0].name}</p>
+                        </div>
+                    )}
+                    
+                    <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg" disabled={selectedClassIds.length === 0}>{t('assign_new_homework')}</button>
                 </form>
             </Modal>
             
@@ -469,23 +521,50 @@ const HomeworkManager: React.FC<{ studentsInClass: Student[], setSuccessMessage:
 };
 
 const AnnouncementManager: React.FC<{ setSuccessMessage: (msg: string) => void, onPost: () => void }> = ({ setSuccessMessage, onPost }) => {
-    const { t, user, announcements, setAnnouncements } = useContext(AppContext);
+    const { t, user, announcements, setAnnouncements, classes } = useContext(AppContext);
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [priority, setPriority] = useState<'high' | 'medium' | 'low'>('medium');
+    const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    // Get teacher's classes
+    const teacherClasses = useMemo(() => {
+        if (!user?.classIds) return [];
+        return classes.filter(cls => user.classIds.includes(cls.id));
+    }, [user, classes]);
+
+    // Auto-select single class if teacher only teaches one
+    useEffect(() => {
+        if (teacherClasses.length === 1) {
+            setSelectedClassIds([teacherClasses[0].id]);
+        }
+    }, [teacherClasses]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if(!title || !content || !user) return;
-        const newAnnouncement: Announcement = {
-            id: `AN${Date.now()}`,
-            title, content, priority,
-            teacherId: user.id,
-            date: new Date().toISOString().slice(0, 10)
-        };
-        setAnnouncements([newAnnouncement, ...announcements]);
-        setSuccessMessage(t('announcement_posted_success'));
-        onPost();
+        if(!title || !content || !user || selectedClassIds.length === 0) return;
+        
+        try {
+            const newAnnouncement = {
+                title, 
+                content, 
+                priority,
+                teacherId: user.id,
+                classIds: selectedClassIds,
+                date: new Date().toISOString().slice(0, 10)
+            };
+            
+            const createdAnnouncement = await apiService.createAnnouncement(newAnnouncement);
+            setAnnouncements([createdAnnouncement, ...announcements]);
+            setSuccessMessage(t('announcement_posted_success'));
+            setTitle('');
+            setContent('');
+            setSelectedClassIds(teacherClasses.length === 1 ? [teacherClasses[0].id] : []);
+            onPost();
+        } catch (error) {
+            console.error('Error creating announcement:', error);
+            setSuccessMessage(t('error_creating_announcement'));
+        }
     };
 
     return (
@@ -508,7 +587,43 @@ const AnnouncementManager: React.FC<{ setSuccessMessage: (msg: string) => void, 
                         <option value="high">{t('high_priority')}</option>
                     </select>
                 </div>
-                 <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg">{t('post_announcement')}</button>
+                
+                {teacherClasses.length > 1 && (
+                    <div>
+                        <label className="text-sm font-medium text-gray-700">{t('select_classes')}</label>
+                        <div className="mt-2 space-y-2 max-h-32 overflow-y-auto border rounded-md p-2">
+                            {teacherClasses.map(cls => (
+                                <label key={cls.id} className="flex items-center space-x-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedClassIds.includes(cls.id)}
+                                        onChange={(e) => {
+                                            if (e.target.checked) {
+                                                setSelectedClassIds([...selectedClassIds, cls.id]);
+                                            } else {
+                                                setSelectedClassIds(selectedClassIds.filter(id => id !== cls.id));
+                                            }
+                                        }}
+                                        className="rounded"
+                                    />
+                                    <span className="text-sm">{cls.name}</span>
+                                </label>
+                            ))}
+                        </div>
+                        {selectedClassIds.length === 0 && (
+                            <p className="text-red-500 text-sm mt-1">{t('select_at_least_one_class')}</p>
+                        )}
+                    </div>
+                )}
+                
+                {teacherClasses.length === 1 && (
+                    <div>
+                        <label className="text-sm font-medium text-gray-700">{t('class')}</label>
+                        <p className="mt-1 p-2 bg-gray-100 rounded-md text-sm">{teacherClasses[0].name}</p>
+                    </div>
+                )}
+                
+                 <button type="submit" className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg" disabled={selectedClassIds.length === 0}>{t('post_announcement')}</button>
             </form>
         </Card>
     );

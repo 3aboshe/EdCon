@@ -151,7 +151,7 @@ class ApiService {
     // Handle both response formats (direct user object or { success: true, user })
     const responseAny = response as any;
     if (responseAny.success && responseAny.user) {
-      return response as ApiResponse<{ user: User }>;
+      return response.data || response as any;
     } else if (responseAny.id && responseAny.name && responseAny.role) {
       // Backend returns user object directly
       return { success: true, user: responseAny } as ApiResponse<{ user: User }>;
@@ -221,10 +221,10 @@ class ApiService {
     console.log('Raw API response:', response);
     
     // The server returns {success: true, class: {...}}
-    if (response && response.class) {
-      return response.class;
-    } else if (response.data && response.data.class) {
-      return response.data.class;
+    if (response && (response as any).class) {
+      return (response as any).class;
+    } else if (response.data && (response.data as any).class) {
+      return (response.data as any).class;
     } else {
       console.error('Invalid response format:', response);
       throw new Error('Invalid response format from server');
@@ -253,12 +253,12 @@ class ApiService {
     
     // The server returns {success: true, subject: {...}}
     // But response.data might be undefined, so check the response directly
-    if (response && response.subject) {
-      console.log('Extracted subject from response:', response.subject);
-      return response.subject;
-    } else if (response.data && response.data.subject) {
-      console.log('Extracted subject from response.data:', response.data.subject);
-      return response.data.subject;
+    if (response && (response as any).subject) {
+      console.log('Extracted subject from response:', (response as any).subject);
+      return (response as any).subject;
+    } else if (response.data && (response.data as any).subject) {
+      console.log('Extracted subject from response.data:', (response.data as any).subject);
+      return (response.data as any).subject;
     } else {
       console.error('Invalid response format:', response);
       throw new Error('Invalid response format from server');
@@ -272,10 +272,10 @@ class ApiService {
       body: JSON.stringify(updates),
     });
     
-    if (response && response.class) {
-      return response.class;
-    } else if (response.data && response.data.class) {
-      return response.data.class;
+    if (response && (response as any).class) {
+      return (response as any).class;
+    } else if (response.data && (response.data as any).class) {
+      return (response.data as any).class;
     } else {
       throw new Error('Invalid response format from server');
     }
@@ -295,10 +295,10 @@ class ApiService {
       body: JSON.stringify(updates),
     });
     
-    if (response && response.subject) {
-      return response.subject;
-    } else if (response.data && response.data.subject) {
-      return response.data.subject;
+    if (response && (response as any).subject) {
+      return (response as any).subject;
+    } else if (response.data && (response.data as any).subject) {
+      return (response.data as any).subject;
     } else {
       throw new Error('Invalid response format from server');
     }
@@ -323,13 +323,13 @@ class ApiService {
     return Array.isArray(response) ? response : (response as any).data || [];
   }
 
-  // Create new homework
+  // Create homework
   async createHomework(homework: Omit<Homework, 'id'>): Promise<Homework> {
     const response = await this.request<Homework>('/homework', {
       method: 'POST',
       body: JSON.stringify(homework),
     });
-    return response.data || response as Homework;
+    return response.data || response as any;
   }
 
   // Update homework
@@ -338,7 +338,7 @@ class ApiService {
       method: 'PUT',
       body: JSON.stringify(homework),
     });
-    return response.data || response as Homework;
+    return response.data || response as any;
   }
 
   // Delete homework
@@ -352,6 +352,15 @@ class ApiService {
   async getAllAnnouncements(): Promise<Announcement[]> {
     const response = await this.request<Announcement[]>('/announcements');
     return Array.isArray(response) ? response : (response as any).data || [];
+  }
+
+  // Create announcement
+  async createAnnouncement(announcement: Omit<Announcement, 'id'>): Promise<Announcement> {
+    const response = await this.request<Announcement>('/announcements', {
+      method: 'POST',
+      body: JSON.stringify(announcement),
+    });
+    return response.data!;
   }
 
   // Get all attendance
@@ -410,7 +419,7 @@ class ApiService {
       body: formData,
       headers: {}, // Let browser set Content-Type for FormData
     });
-    return response.data || response as Message;
+    return response.data || response as any;
   }
 
   // Get student grades

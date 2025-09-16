@@ -89,6 +89,7 @@ model Homework {
   dueDate      String
   assignedDate String
   teacherId    String
+  classIds     String[] @default([])
   submitted    String[] @default([])
   createdAt    DateTime @default(now())
   
@@ -105,12 +106,13 @@ model Announcement {
   content   String
   date      String
   teacherId String
+  classIds  String[]           @default([])
   priority  AnnouncementPriority @default(MEDIUM)
   createdAt DateTime           @default(now())
-  
+
   // Relations
   teacher   User               @relation(fields: [teacherId], references: [id])
-  
+
   @@map("announcements")
 }
 

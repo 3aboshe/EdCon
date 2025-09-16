@@ -53,6 +53,7 @@ export interface Announcement {
   content: string;
   date: string;
   teacherId: string;
+  classIds: string[];
   priority: 'high' | 'medium' | 'low';
 }
 
@@ -63,6 +64,7 @@ export interface Homework {
   dueDate: string;
   assignedDate: string;
   teacherId: string;
+  classIds: string[];
   submitted: string[]; // list of student IDs who submitted
 }
 

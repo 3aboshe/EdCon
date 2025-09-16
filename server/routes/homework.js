@@ -37,10 +37,10 @@ router.get('/teacher/:teacherId', async (req, res) => {
   }
 });
 
-// Add new homework
+// Create homework
 router.post('/', async (req, res) => {
   try {
-    const { title, subject, dueDate, assignedDate, teacherId, submitted } = req.body;
+    const { title, subject, dueDate, assignedDate, teacherId, classIds } = req.body;
     
     // Generate a unique ID for the homework
     const homeworkId = `HW${Date.now()}`;
@@ -53,13 +53,13 @@ router.post('/', async (req, res) => {
         dueDate,
         assignedDate,
         teacherId,
-        submitted: submitted || []
+        classIds: classIds || []
       }
     });
     
     res.status(201).json(newHomework);
   } catch (error) {
-    console.error('Add homework error:', error);
+    console.error('Create homework error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
