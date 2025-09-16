@@ -66,7 +66,6 @@ const ParentDashboard: React.FC = () => {
         announcements: t('announcements'),
         messages: t('messages'),
         profile: t('profile'),
-        codes: t('codes'),
     };
 
     if (!user) return null;
@@ -592,9 +591,27 @@ const ParentMessaging: React.FC<{ student: Student }> = ({ student }) => {
     const [selectedTeacher, setSelectedTeacher] = useState<User | null>(null);
 
     const teachers = useMemo(() => {
-        // Show ALL teachers with their subjects
-        return users.filter(u => u.role?.toLowerCase() === 'teacher');
-    }, [users]);
+        if (!student?.classId) {
+            return users.filter(u => u.role?.toLowerCase() === 'teacher');
+        }
+        
+        // Find the student's class
+        const studentClass = classes.find(c => c.id === student.classId);
+        if (!studentClass || !studentClass.subjectIds) {
+            return users.filter(u => u.role?.toLowerCase() === 'teacher');
+        }
+        
+        // Get subject names for the student's class
+        const classSubjects = subjects.filter(s => studentClass.subjectIds.includes(s.id));
+        const classSubjectNames = classSubjects.map(s => s.name);
+        
+        // Filter teachers who teach subjects in this student's class
+        return users.filter(u => 
+            u.role?.toLowerCase() === 'teacher' && 
+            u.subject && 
+            classSubjectNames.includes(u.subject)
+        );
+    }, [users, student, classes, subjects]);
 
     const conversations = useMemo(() => {
         if (!user) return [];
