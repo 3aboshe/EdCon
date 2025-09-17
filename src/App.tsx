@@ -112,13 +112,16 @@ const App: React.FC = () => {
 
     // Session restoration - runs immediately on app start
     useEffect(() => {
+        console.log('App: Attempting to load user session...');
         const savedUser = loadUserSession();
         if (savedUser) {
-            console.log('Restoring session for user:', savedUser.name);
+            console.log('App: Restoring session for user:', savedUser.name, 'Role:', savedUser.role);
             setUser(savedUser);
             
             // Start activity tracking immediately
             initActivityTracking();
+        } else {
+            console.log('App: No saved session found');
         }
     }, []);
 
@@ -331,10 +334,8 @@ const App: React.FC = () => {
                 <NavigationHandler>
                     <div dir={dir} className="font-sans">
                         <div className="w-full min-h-screen bg-white lg:bg-gray-50">
-                            <div className="max-w-md mx-auto lg:max-w-none lg:mx-0 min-h-screen bg-white lg:bg-transparent lg:p-4">
-                                <div className="lg:max-w-7xl lg:mx-auto">
-                                    <AppRoutes />
-                                </div>
+                            <div className="max-w-md mx-auto lg:max-w-none lg:mx-0 min-h-screen bg-white lg:bg-transparent">
+                                <AppRoutes />
                             </div>
                         </div>
                     </div>
