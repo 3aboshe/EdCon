@@ -4,7 +4,13 @@ import { User } from '../types';
 export const setCookie = (name: string, value: string, days: number = 7) => {
   const expires = new Date();
   expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+  
+  // Secure cookie settings
+  const isProduction = window.location.protocol === 'https:';
+  const secureFlag = isProduction ? 'Secure;' : '';
+  const sameSiteFlag = isProduction ? 'SameSite=None;' : 'SameSite=Lax;';
+  
+  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;${secureFlag}${sameSiteFlag}HttpOnly=false`;
 };
 
 export const getCookie = (name: string): string | null => {
@@ -55,6 +61,22 @@ export const loadUserSession = (): User | null => {
       return null;
     }
     
+    // Load user data
+    const userData = localStorage.getItem(SESSION_KEYS.USER_DATA);
+    if (!userData) {
+      console.log('No user data found in localStorage');
+      clearUserSession();
+      return null;
+    }
+    
+    // Parse and validate user data
+    const user = JSON.parse(userData) as User;
+    if (!user.id || !user.name || !user.role) {
+      console.log('Invalid user data structure');
+      clearUserSession();
+      return null;
+    }
+    
     // Check session validity (30 days max)
     const lastActivity = localStorage.getItem(SESSION_KEYS.LAST_ACTIVITY);
     if (lastActivity) {
@@ -63,24 +85,25 @@ export const loadUserSession = (): User | null => {
       const daysSinceLastActivity = (now.getTime() - lastActivityTime.getTime()) / (1000 * 60 * 60 * 24);
       
       if (daysSinceLastActivity > 30) {
-        console.log('Session expired');
+        console.log('Session expired after 30 days');
         clearUserSession();
         return null;
       }
     }
     
-    // Load user data
-    const userData = localStorage.getItem(SESSION_KEYS.USER_DATA);
-    if (userData) {
-      const user = JSON.parse(userData) as User;
-      updateLastActivity();
-      console.log('Session loaded for user:', user.name);
-      return user;
+    // Verify session token matches user ID
+    if (sessionToken !== user.id) {
+      console.log('Session token mismatch');
+      clearUserSession();
+      return null;
     }
     
-    return null;
+    updateLastActivity();
+    console.log('Session successfully loaded for user:', user.name);
+    return user;
   } catch (error) {
     console.error('Error loading user session:', error);
+    clearUserSession();
     return null;
   }
 };

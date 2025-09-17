@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AppContext } from '../App';
 import LoginScreen from '../screens/LoginScreen';
@@ -44,9 +44,37 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return <>{children}</>;
 };
 
+// Loading component for session restoration
+const SessionLoader: React.FC = () => {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    </div>
+  );
+};
+
 // Main App Routes Component
 const AppRoutes: React.FC = () => {
   const { user } = useContext(AppContext);
+  const [isSessionChecked, setIsSessionChecked] = useState(false);
+  
+  // Check if session restoration is complete
+  useEffect(() => {
+    // Give a small delay to allow session restoration to complete
+    const timer = setTimeout(() => {
+      setIsSessionChecked(true);
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  // Show loading while session is being checked
+  if (!isSessionChecked) {
+    return <SessionLoader />;
+  }
   
   return (
     <Routes>
