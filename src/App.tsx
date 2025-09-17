@@ -12,6 +12,8 @@ import {
   stopActivityTracking 
 } from './utils/sessionManager';
 import { realTimeManager } from './utils/realTimeManager';
+import RealTimeStatus from './components/ui/RealTimeStatus';
+import NavigationHandler from './components/layout/NavigationHandler';
 
 export interface AppContextType {
     user: User | null;
@@ -178,52 +180,51 @@ const App: React.FC = () => {
         fetchAllData();
     }, []);
 
-    // Session management and real-time updates
+    // Session restoration - runs immediately on app start
     useEffect(() => {
-        // Try to load saved session on app start
         const savedUser = loadUserSession();
-        if (savedUser && users.length > 0) {
-            // Verify user still exists in the system
-            const currentUser = users.find(u => u.id === savedUser.id);
-            if (currentUser) {
-                console.log('Restoring session for user:', currentUser.name);
-                setUser(currentUser);
-                
-                // Initialize real-time manager
-                realTimeManager.setCallbacks({
-                    onMessagesUpdate: (newMessages) => {
-                        console.log('Real-time: Messages updated');
-                        setMessages(newMessages);
-                    },
-                    onAnnouncementsUpdate: (newAnnouncements) => {
-                        console.log('Real-time: Announcements updated');
-                        setAnnouncements(newAnnouncements);
-                    }
-                });
-                
-                // Initialize data counts for change detection
-                realTimeManager.initializeDataCounts(messages.length, announcements.length);
-                
-                // Start real-time polling
-                realTimeManager.startPolling();
-                
-                // Request notification permission
-                realTimeManager.requestNotificationPermission();
-                
-                // Start activity tracking
-                initActivityTracking();
-            } else {
-                console.log('Saved user no longer exists, clearing session');
-                clearUserSession();
-            }
+        if (savedUser) {
+            console.log('Restoring session for user:', savedUser.name);
+            setUser(savedUser);
+            
+            // Start activity tracking immediately
+            initActivityTracking();
+        }
+    }, []);
+
+    // Real-time setup - runs when user is set and data is loaded
+    useEffect(() => {
+        if (user && messages.length >= 0 && announcements.length >= 0) {
+            // Initialize real-time manager
+            realTimeManager.setCallbacks({
+                onMessagesUpdate: (newMessages) => {
+                    console.log('Real-time: Messages updated');
+                    setMessages(newMessages);
+                },
+                onAnnouncementsUpdate: (newAnnouncements) => {
+                    console.log('Real-time: Announcements updated');
+                    setAnnouncements(newAnnouncements);
+                }
+            });
+            
+            // Initialize data counts for change detection
+            realTimeManager.initializeDataCounts(messages.length, announcements.length);
+            
+            // Start real-time polling
+            realTimeManager.startPolling();
+            
+            // Request notification permission
+            realTimeManager.requestNotificationPermission();
         }
 
-        // Cleanup on unmount
+        // Cleanup on unmount or user change
         return () => {
-            realTimeManager.stopPolling();
-            stopActivityTracking();
+            if (!user) {
+                realTimeManager.stopPolling();
+                stopActivityTracking();
+            }
         };
-    }, [users, messages.length, announcements.length]);
+    }, [user, messages.length, announcements.length]);
 
     const handleLogin = (newUser: User) => {
         // Find the full user data from the users array
