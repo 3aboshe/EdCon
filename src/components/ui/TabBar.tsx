@@ -1,6 +1,6 @@
 
 import React, { useContext } from 'react';
-import { AppContext } from '../../App';
+import { AppContext } from '../../contexts/AppContext';
 
 type ParentTab = 'dashboard' | 'performance' | 'homework' | 'messages' | 'profile';
 

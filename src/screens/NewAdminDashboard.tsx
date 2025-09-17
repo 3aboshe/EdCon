@@ -1,13 +1,13 @@
 import React, { useContext, useMemo, useState, useEffect } from 'react';
-import { AppContext } from '../App';
-import Header from '../components/common/Header';
-import Card from '../components/common/Card';
-import Modal from '../components/common/Modal';
+import { AppContext } from '../contexts/AppContext';
+import Header from '../components/ui/Header';
+import Card from '../components/ui/Card';
+import Modal from '../components/ui/Modal';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { Teacher, UserRole, Subject, User, Student } from '../types';
-import ProfileImage from '../components/common/ProfileImage';
-import LoadingSpinner from '../components/common/LoadingSpinner';
-import ConfirmDialog from '../components/common/ConfirmDialog';
+import ProfileImage from '../components/ui/ProfileImage';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import apiService from '../services/apiService';
 import { allAvatars } from '../data/avatars';
 

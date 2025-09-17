@@ -14,76 +14,7 @@ import {
 import { realTimeManager } from './utils/realTimeManager';
 import RealTimeStatus from './components/ui/RealTimeStatus';
 import NavigationHandler from './components/layout/NavigationHandler';
-
-export interface AppContextType {
-    user: User | null;
-    login: (user: User) => void;
-    logout: () => void;
-    lang: string;
-    setLang: (lang: string) => void;
-    t: (key: string, replacements?: Record<string, string>) => string;
-    dir: 'ltr' | 'rtl';
-    // Data
-    users: User[];
-    students: Student[];
-    classes: Class[];
-    teachers: Teacher[];
-    subjects: Subject[];
-    grades: Grade[];
-    homework: Homework[];
-    announcements: Announcement[];
-    attendance: Attendance[];
-    messages: Message[];
-    timetable: TimetableEntry[];
-    // Setters
-    setUsers: (users: User[]) => void;
-    setStudents: (students: Student[]) => void;
-    setClasses: (classes: Class[]) => void;
-    setTeachers: (teachers: Teacher[]) => void;
-    setSubjects: (subjects: Subject[]) => void;
-    setGrades: (grades: Grade[]) => void;
-    setHomework: (homework: Homework[]) => void;
-    setAnnouncements: (announcements: Announcement[]) => void;
-    setAttendance: (attendance: Attendance[]) => void;
-    setMessages: (messages: Message[]) => void;
-    setTimetable: (timetable: TimetableEntry[]) => void;
-    updateUserAvatar: (userId: string, avatarDataUrl: string) => void;
-    updateUser: (userId: string, updates: Partial<User>) => void;
-}
-
-export const AppContext = React.createContext<AppContextType>({
-    user: null,
-    login: () => {},
-    logout: () => {},
-    lang: 'en',
-    setLang: () => {},
-    t: (key) => key,
-    dir: 'ltr',
-    users: [],
-    students: [],
-    classes: [],
-    teachers: [],
-    subjects: [],
-    grades: [],
-    homework: [],
-    announcements: [],
-    attendance: [],
-    messages: [],
-    timetable: [],
-    setUsers: () => {},
-    setStudents: () => {},
-    setClasses: () => {},
-    setTeachers: () => {},
-    setSubjects: () => {},
-    setGrades: () => {},
-    setHomework: () => {},
-    setAnnouncements: () => {},
-    setAttendance: () => {},
-    setMessages: () => {},
-    setTimetable: () => {},
-    updateUserAvatar: () => {},
-    updateUser: () => {},
-});
+import { AppContext, AppContextType } from './contexts/AppContext';
 
 const App: React.FC = () => {
     const [user, setUser] = useState<User | null>(null);

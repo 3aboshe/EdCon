@@ -1,14 +1,14 @@
 
 
 import React, { useState, useContext, useMemo, useCallback, useEffect, useRef } from 'react';
-import { AppContext } from '../App';
-import Header from '../components/common/Header';
-import Card from '../components/common/Card';
-import Modal from '../components/common/Modal';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import { AppContext } from '../contexts/AppContext';
+import Header from '../components/ui/Header';
+import Card from '../components/ui/Card';
+import Modal from '../components/ui/Modal';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { Homework, Student, Attendance, Announcement, User, Message, UserRole } from '../types';
 import { Grade } from '../services/apiService';
-import ProfileImage from '../components/common/ProfileImage';
+import ProfileImage from '../components/ui/ProfileImage';
 import ProfileScreen from './ProfileScreen';
 import apiService from '../services/apiService';
 

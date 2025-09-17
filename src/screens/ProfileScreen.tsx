@@ -1,9 +1,9 @@
 
 import React, { useContext, useRef, useState, useEffect } from 'react';
-import { AppContext } from '../App';
-import Card from '../components/common/Card';
-import ProfileImage from '../components/common/ProfileImage';
-import ChildAvatarSelector from '../components/common/ChildAvatarSelector';
+import { AppContext } from '../contexts/AppContext';
+import Card from '../components/ui/Card';
+import ProfileImage from '../components/ui/ProfileImage';
+import ChildAvatarSelector from '../components/ui/ChildAvatarSelector';
 import { UserRole } from '../types';
 import { allAvatars, defaultParentAvatar } from '../data/avatars';
 import apiService from '../services/apiService';
