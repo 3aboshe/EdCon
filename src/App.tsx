@@ -1,10 +1,6 @@
 import React, { useState, useEffect, createContext, useCallback, useMemo } from 'react';
-import LoginScreen from './screens/LoginScreen';
-import StudentDashboard from './screens/StudentDashboard';
-import ParentDashboard from './screens/ParentDashboard';
-import TeacherDashboard from './screens/TeacherDashboard';
-import AdminDashboard from './screens/AdminDashboard';
-import NewAdminDashboard from './screens/NewAdminDashboard';
+import { BrowserRouter as Router, useNavigate } from 'react-router-dom';
+import AppRoutes from './routes/AppRoutes';
 import { User, Student, Class, Teacher, Subject, Grade, Homework, Announcement, Attendance, Message, TimetableEntry } from './types';
 import apiService from './services/apiService';
 import { translations } from './constants';
@@ -17,6 +13,7 @@ import {
 } from './utils/sessionManager';
 import { realTimeManager } from './utils/realTimeManager';
 import RealTimeStatus from './components/common/RealTimeStatus';
+import NavigationHandler from './components/NavigationHandler';
 
 export interface AppContextType {
     user: User | null;
@@ -399,39 +396,21 @@ const App: React.FC = () => {
         updateUser: handleUpdateUser,
     }), [user, lang, t, dir, users, students, classes, teachers, subjects, grades, homework, announcements, attendance, messages, timetable, handleUpdateUserAvatar, handleUpdateUser]);
 
-    const renderContent = () => {
-        if (!user) {
-            return <LoginScreen />;
-        }
-        
-        // Convert role to lowercase for comparison
-        const userRole = user.role.toLowerCase();
-        console.log('Rendering content for role:', userRole);
-        
-        switch (userRole) {
-            case 'parent':
-                return <ParentDashboard />;
-            case 'teacher':
-                return <TeacherDashboard />;
-            case 'admin':
-                return <AdminDashboard />;
-            default:
-                console.log('Unknown role:', userRole);
-                return <LoginScreen />;
-        }
-    };
-    
     return (
-        <AppContext.Provider value={appContextValue}>
-           <div dir={dir} className="font-sans">
-                <div className="w-full min-h-screen bg-white lg:bg-gray-50">
-                    <div className="max-w-md mx-auto lg:max-w-none lg:mx-0 min-h-screen bg-white lg:bg-transparent">
-                        {renderContent()}
+        <Router>
+            <AppContext.Provider value={appContextValue}>
+                <NavigationHandler>
+                    <div dir={dir} className="font-sans">
+                        <div className="w-full min-h-screen bg-white lg:bg-gray-50">
+                            <div className="max-w-md mx-auto lg:max-w-none lg:mx-0 min-h-screen bg-white lg:bg-transparent">
+                                <AppRoutes />
+                            </div>
+                        </div>
+                        {user && <RealTimeStatus />}
                     </div>
-                </div>
-                {user && <RealTimeStatus />}
-           </div>
-        </AppContext.Provider>
+                </NavigationHandler>
+            </AppContext.Provider>
+        </Router>
     );
 };
 
