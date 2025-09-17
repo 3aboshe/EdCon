@@ -2,6 +2,8 @@ import React, { useContext, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AppContext } from '../../contexts/AppContext';
 
+// NavigationHandler - handles automatic role-based redirects
+
 const NavigationHandler: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useContext(AppContext);
   const navigate = useNavigate();
