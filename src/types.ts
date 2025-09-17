@@ -88,9 +88,10 @@ export interface Message {
   receiverId: string;
   timestamp: string; // ISO string
   isRead: boolean;
-  type: 'text' | 'voice';
+  type: 'text' | 'voice' | 'file';
   content?: string;
   audioSrc?: string;
+  attachments?: any; // For file attachments
 }
 
 export interface TimetableEntry {
