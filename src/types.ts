@@ -1,10 +1,5 @@
 
-export enum UserRole {
-  Parent = 'parent',
-  Teacher = 'teacher',
-  Admin = 'admin',
-  Student = 'student'
-}
+export type UserRole = 'parent' | 'teacher' | 'admin' | 'student';
 
 export interface User {
   id: string;
