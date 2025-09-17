@@ -213,19 +213,27 @@ const HomeworkView: React.FC<{ student: Student }> = ({ student }) => {
 };
 
 const AnnouncementsView: React.FC = () => {
-    const { t, announcements, teachers } = useContext(AppContext);
+    const { t, announcements, teachers, user } = useContext(AppContext);
     const priorityClasses = {
         high: 'border-red-500 bg-red-50',
         medium: 'border-yellow-500 bg-yellow-50',
         low: 'border-blue-500 bg-blue-50',
     };
 
+    // Filter announcements for the student's class
+    const studentAnnouncements = announcements.filter(ann => {
+        // If no classIds specified, it's a school-wide announcement
+        if (!ann.classIds || ann.classIds.length === 0) return true;
+        // Check if student's class is in the announcement's target classes
+        return user?.classId && ann.classIds.includes(user.classId);
+    });
+
     return (
         <Card>
             <h2 className="text-lg font-bold text-gray-800 mb-4">{t('announcements')}</h2>
-            {announcements.length > 0 ? (
+            {studentAnnouncements.length > 0 ? (
                 <ul className="space-y-4">
-                    {announcements.map(ann => {
+                    {studentAnnouncements.map(ann => {
                         const teacher = teachers.find(t => t.id === ann.teacherId);
                         return (
                             <li key={ann.id} className={`p-4 rounded-lg border-l-4 ${priorityClasses[ann.priority]}`}>

@@ -149,7 +149,7 @@ const ParentDashboard: React.FC = () => {
                                 <AttendanceSummary student={selectedStudent} />
                             </div>
                             <div className="xl:col-span-1">
-                                <RecentAnnouncements />
+                                <RecentAnnouncements student={selectedStudent} />
                             </div>
                         </div>
                     )}
@@ -166,7 +166,7 @@ const ParentDashboard: React.FC = () => {
                     )}
 
                     {activeTab === 'announcements' && selectedStudent && (
-                        <AnnouncementsList />
+                        <AnnouncementsList student={selectedStudent} />
                     )}
 
                     {activeTab === 'messages' && selectedStudent && (
@@ -509,10 +509,18 @@ const AttendanceSummary: React.FC<{ student: Student }> = ({ student }) => {
     );
 };
 
-const RecentAnnouncements: React.FC = () => {
+const RecentAnnouncements: React.FC<{ student: Student }> = ({ student }) => {
     const { t, announcements } = useContext(AppContext);
     
-    if (announcements.length === 0) {
+    // Filter announcements for the selected student's class
+    const filteredAnnouncements = announcements.filter(ann => {
+        // If no classIds specified, it's a school-wide announcement
+        if (!ann.classIds || ann.classIds.length === 0) return true;
+        // Check if selected student's class is in the announcement's target classes
+        return student?.classId && ann.classIds.includes(student.classId);
+    });
+    
+    if (filteredAnnouncements.length === 0) {
         return (
             <Card>
                 <h2 className="text-lg font-bold mb-4">{t('recent_announcements')}</h2>
@@ -521,7 +529,7 @@ const RecentAnnouncements: React.FC = () => {
         );
     }
 
-    const recentAnnouncements = announcements
+    const recentAnnouncements = filteredAnnouncements
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .slice(0, 3);
 
@@ -550,10 +558,18 @@ const RecentAnnouncements: React.FC = () => {
     );
 };
 
-const AnnouncementsList: React.FC = () => {
+const AnnouncementsList: React.FC<{ student: Student }> = ({ student }) => {
     const { t, announcements } = useContext(AppContext);
     
-    if (announcements.length === 0) {
+    // Filter announcements for the selected student's class
+    const filteredAnnouncements = announcements.filter(ann => {
+        // If no classIds specified, it's a school-wide announcement
+        if (!ann.classIds || ann.classIds.length === 0) return true;
+        // Check if selected student's class is in the announcement's target classes
+        return student?.classId && ann.classIds.includes(student.classId);
+    });
+    
+    if (filteredAnnouncements.length === 0) {
         return (
             <Card>
                 <h2 className="text-lg font-bold mb-4">{t('announcements')}</h2>
@@ -562,7 +578,7 @@ const AnnouncementsList: React.FC = () => {
         );
     }
 
-    const sortedAnnouncements = announcements.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const sortedAnnouncements = filteredAnnouncements.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return (
         <Card>
