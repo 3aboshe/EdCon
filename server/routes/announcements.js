@@ -43,6 +43,9 @@ router.post('/', async (req, res) => {
     // Generate a unique ID for the announcement
     const announcementId = `ANN${Date.now()}`;
     
+    // Convert priority to uppercase to match Prisma enum
+    const priorityValue = priority ? priority.toUpperCase() : 'MEDIUM';
+    
     const newAnnouncement = await prisma.announcement.create({
       data: {
         id: announcementId,
@@ -51,7 +54,7 @@ router.post('/', async (req, res) => {
         date,
         teacherId,
         classIds: classIds || [],
-        priority: priority || 'medium'
+        priority: priorityValue
       }
     });
     
@@ -66,7 +69,12 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+    const updateData = { ...req.body };
+    
+    // Convert priority to uppercase if it exists in the update data
+    if (updateData.priority) {
+      updateData.priority = updateData.priority.toUpperCase();
+    }
     
     const updatedAnnouncement = await prisma.announcement.update({
       where: { id },
