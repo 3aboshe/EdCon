@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { AppContext } from '../App';
+import { AppContext } from '../contexts/AppContext';
 import LoginScreen from '../screens/LoginScreen';
 import StudentDashboard from '../screens/StudentDashboard';
 import ParentDashboard from '../screens/ParentDashboard';

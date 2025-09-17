@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { AppContext } from '../../App';
+import { AppContext } from '../../contexts/AppContext';
 import { APP_NAME } from '../../constants';
 
 interface HeaderProps {

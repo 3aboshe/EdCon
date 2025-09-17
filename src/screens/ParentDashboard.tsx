@@ -1,15 +1,15 @@
 
 import React, { useContext, useRef, useState, useEffect, useMemo } from 'react';
-import { AppContext } from '../App';
-import Card from '../components/common/Card';
-import ProfileImage from '../components/common/ProfileImage';
+import { AppContext } from '../contexts/AppContext';
+import Card from '../components/ui/Card';
+import ProfileImage from '../components/ui/ProfileImage';
 import { Student, Grade, Homework, Attendance, Message, User, Class, Subject } from '../types';
 import apiService from '../services/apiService';
-import Header from '../components/common/Header';
-import LoadingSpinner from '../components/common/LoadingSpinner';
-import TabBar from '../components/common/TabBar';
+import Header from '../components/ui/Header';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
+import TabBar from '../components/ui/TabBar';
 import ProfileScreen from './ProfileScreen';
-import Modal from '../components/common/Modal';
+import Modal from '../components/ui/Modal';
 
 
 type ParentTab = 'dashboard' | 'performance' | 'homework' | 'announcements' | 'messages' | 'profile';

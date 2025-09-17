@@ -1,6 +1,6 @@
 import React, { useContext, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { AppContext } from '../App';
+import { AppContext } from '../../contexts/AppContext';
 
 const NavigationHandler: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useContext(AppContext);

@@ -1,12 +1,12 @@
 
 
 import React, { useContext, useMemo, useState } from 'react';
-import { AppContext } from '../App';
-import Header from '../components/common/Header';
-import Card from '../components/common/Card';
+import { AppContext } from '../contexts/AppContext';
+import Header from '../components/ui/Header';
+import Card from '../components/ui/Card';
 import { allAvatars } from '../data/avatars';
 import { Student, Grade, Homework, Announcement, TimetableEntry } from '../types';
-import ProfileImage from '../components/common/ProfileImage';
+import ProfileImage from '../components/ui/ProfileImage';
 
 type StudentTab = 'dashboard' | 'grades' | 'homework' | 'announcements' | 'timetable' | 'profile';
 

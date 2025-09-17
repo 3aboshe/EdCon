@@ -1,11 +1,11 @@
 
 import React, { useContext, useMemo, useState, useEffect } from 'react';
-import { AppContext } from '../App';
-import Header from '../components/common/Header';
-import Card from '../components/common/Card';
+import { AppContext } from '../contexts/AppContext';
+import Header from '../components/ui/Header';
+import Card from '../components/ui/Card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Teacher, UserRole, Subject, User, Student } from '../types';
-import ProfileImage from '../components/common/ProfileImage';
+import ProfileImage from '../components/ui/ProfileImage';
 import apiService from '../services/apiService';
 import { allAvatars } from '../data/avatars';
 

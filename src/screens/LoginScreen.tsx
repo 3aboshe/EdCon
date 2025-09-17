@@ -1,10 +1,10 @@
 
 import React, { useState, useContext } from 'react';
-import { AppContext } from '../App';
+import { AppContext } from '../contexts/AppContext';
 import apiService from '../services/apiService';
 import { APP_NAME } from '../constants';
-import Header from '../components/common/Header';
-import LanguageSwitcher from '../components/common/LanguageSwitcher';
+import Header from '../components/ui/Header';
+import LanguageSwitcher from '../components/ui/LanguageSwitcher';
 import EdConLogo from '../assets/EdCon_Logo.png';
 
 const LoginScreen: React.FC = () => {
