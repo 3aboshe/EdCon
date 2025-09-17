@@ -12,8 +12,6 @@ import {
   stopActivityTracking 
 } from './utils/sessionManager';
 import { realTimeManager } from './utils/realTimeManager';
-import RealTimeStatus from './components/common/RealTimeStatus';
-import NavigationHandler from './components/NavigationHandler';
 
 export interface AppContextType {
     user: User | null;
