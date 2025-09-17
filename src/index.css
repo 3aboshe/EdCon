@@ -5,6 +5,170 @@
 @tailwind components;
 @tailwind utilities;
 
+/* RTL Support for Arabic, Kurdish, and Syriac languages */
+[dir="rtl"] {
+  text-align: right;
+}
+
+[dir="rtl"] .space-x-2 > * + * {
+  margin-left: 0;
+  margin-right: 0.5rem;
+}
+
+[dir="rtl"] .space-x-4 > * + * {
+  margin-left: 0;
+  margin-right: 1rem;
+}
+
+[dir="rtl"] .ml-2 {
+  margin-left: 0;
+  margin-right: 0.5rem;
+}
+
+[dir="rtl"] .ml-4 {
+  margin-left: 0;
+  margin-right: 1rem;
+}
+
+[dir="rtl"] .mr-2 {
+  margin-right: 0;
+  margin-left: 0.5rem;
+}
+
+[dir="rtl"] .mr-4 {
+  margin-right: 0;
+  margin-left: 1rem;
+}
+
+[dir="rtl"] .pl-4 {
+  padding-left: 0;
+  padding-right: 1rem;
+}
+
+[dir="rtl"] .pr-4 {
+  padding-right: 0;
+  padding-left: 1rem;
+}
+
+[dir="rtl"] .text-left {
+  text-align: right;
+}
+
+[dir="rtl"] .text-right {
+  text-align: left;
+}
+
+/* Fix for flex layouts in RTL */
+[dir="rtl"] .flex-row {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .justify-start {
+  justify-content: flex-end;
+}
+
+[dir="rtl"] .justify-end {
+  justify-content: flex-start;
+}
+
+/* Better spacing for RTL cards and containers */
+[dir="rtl"] .max-w-md {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Fix for grid layouts */
+[dir="rtl"] .grid {
+  direction: ltr;
+}
+
+[dir="rtl"] .grid > * {
+  direction: rtl;
+}
+
+/* Desktop RTL improvements */
+@media (min-width: 1024px) {
+  [dir="rtl"] {
+    /* Better spacing for desktop */
+    --tw-space-x-reverse: 1;
+  }
+  
+  [dir="rtl"] .lg\\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2rem;
+  }
+  
+  [dir="rtl"] .lg\\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+  
+  [dir="rtl"] .lg\\:flex {
+    display: flex;
+    flex-direction: row-reverse;
+    gap: 1rem;
+  }
+  
+  [dir="rtl"] .lg\\:flex-row {
+    flex-direction: row-reverse;
+  }
+  
+  /* Fix cramped elements on desktop */
+  [dir="rtl"] .lg\\:p-4 {
+    padding: 1rem;
+  }
+  
+  [dir="rtl"] .lg\\:p-6 {
+    padding: 1.5rem;
+  }
+  
+  [dir="rtl"] .lg\\:space-x-4 > * + * {
+    margin-left: 0;
+    margin-right: 1rem;
+  }
+  
+  [dir="rtl"] .lg\\:space-x-6 > * + * {
+    margin-left: 0;
+    margin-right: 1.5rem;
+  }
+}
+
+/* Fix for buttons and form elements in RTL */
+[dir="rtl"] button,
+[dir="rtl"] input,
+[dir="rtl"] select,
+[dir="rtl"] textarea {
+  text-align: right;
+}
+
+[dir="rtl"] input[type="text"],
+[dir="rtl"] input[type="password"],
+[dir="rtl"] input[type="email"] {
+  padding-right: 0.75rem;
+  padding-left: 0.75rem;
+}
+
+/* Fix for modal and card layouts */
+[dir="rtl"] .modal-content,
+[dir="rtl"] .card {
+  text-align: right;
+}
+
+[dir="rtl"] .modal-header {
+  flex-direction: row-reverse;
+}
+
+/* Better spacing for lists and navigation */
+[dir="rtl"] ul,
+[dir="rtl"] ol {
+  padding-right: 1.5rem;
+  padding-left: 0;
+}
+
+[dir="rtl"] li {
+  text-align: right;
+}
+
 /* TEST: If you see this background, CSS is loading */
 body {
   background-color: #e5f3ff !important;

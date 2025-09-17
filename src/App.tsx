@@ -12,7 +12,6 @@ import {
   stopActivityTracking 
 } from './utils/sessionManager';
 import { realTimeManager } from './utils/realTimeManager';
-import RealTimeStatus from './components/ui/RealTimeStatus';
 import NavigationHandler from './components/layout/NavigationHandler';
 import { AppContext, AppContextType } from './contexts/AppContext';
 
@@ -332,11 +331,12 @@ const App: React.FC = () => {
                 <NavigationHandler>
                     <div dir={dir} className="font-sans">
                         <div className="w-full min-h-screen bg-white lg:bg-gray-50">
-                            <div className="max-w-md mx-auto lg:max-w-none lg:mx-0 min-h-screen bg-white lg:bg-transparent">
-                                <AppRoutes />
+                            <div className="max-w-md mx-auto lg:max-w-none lg:mx-0 min-h-screen bg-white lg:bg-transparent lg:p-4">
+                                <div className="lg:max-w-7xl lg:mx-auto">
+                                    <AppRoutes />
+                                </div>
                             </div>
                         </div>
-                        {user && <RealTimeStatus />}
                     </div>
                 </NavigationHandler>
             </AppContext.Provider>
