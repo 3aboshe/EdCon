@@ -20,7 +20,9 @@ export const useTranslation = (initialLang: string = 'en') => {
   }, [lang]);
 
   const dir = useMemo(() => {
-    return lang === 'ar' ? 'rtl' : 'ltr';
+    // RTL languages: Arabic, Kurdish (both dialects), and Syriac/Assyrian
+    const rtlLanguages = ['ar', 'ku-sorani', 'ku-badini', 'syr'];
+    return rtlLanguages.includes(lang) ? 'rtl' : 'ltr';
   }, [lang]);
 
   return {
