@@ -875,7 +875,6 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                                     <ProfileImage name={student.name} avatarUrl={student.avatar} className="w-12 h-12" />
                                     <div>
                                         <h4 className="font-bold text-gray-800">{student.name}</h4>
-                                        <p className="text-sm text-gray-600">ID: {student.id}</p>
                                     </div>
                                 </div>
                                 <div className="space-y-1 text-sm">

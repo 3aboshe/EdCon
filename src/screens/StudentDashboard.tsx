@@ -138,7 +138,7 @@ const StudentDashboard: React.FC = () => {
 // --- Tab-specific Components ---
 
 const DashboardView: React.FC<{ student: Student }> = ({ student }) => {
-    const { t } = useContext(AppContext);
+    const { t } = useTranslation();
     return (
         <Card className="text-center bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
             <ProfileImage 
@@ -153,7 +153,8 @@ const DashboardView: React.FC<{ student: Student }> = ({ student }) => {
 };
 
 const GradesView: React.FC<{ student: Student }> = ({ student }) => {
-    const { t, grades } = useContext(AppContext);
+    const { grades } = useContext(AppContext);
+    const { t } = useTranslation();
     const studentGrades = useMemo(() =>
         grades.filter(g => g.studentId === student.id)
               .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
@@ -185,7 +186,8 @@ const GradesView: React.FC<{ student: Student }> = ({ student }) => {
 };
 
 const HomeworkView: React.FC<{ student: Student }> = ({ student }) => {
-    const { t, homework } = useContext(AppContext);
+    const { homework } = useContext(AppContext);
+    const { t } = useTranslation();
 
     return (
         <Card>
@@ -215,7 +217,8 @@ const HomeworkView: React.FC<{ student: Student }> = ({ student }) => {
 };
 
 const AnnouncementsView: React.FC = () => {
-    const { t, announcements, teachers, user } = useContext(AppContext);
+    const { announcements, teachers, user } = useContext(AppContext);
+    const { t } = useTranslation();
     const priorityClasses = {
         high: 'border-red-500 bg-red-50',
         medium: 'border-yellow-500 bg-yellow-50',
@@ -252,7 +255,8 @@ const AnnouncementsView: React.FC = () => {
 };
 
 const TimetableView: React.FC<{ student: Student }> = ({ student }) => {
-    const { t, timetable } = useContext(AppContext);
+    const { timetable } = useContext(AppContext);
+    const { t } = useTranslation();
     const studentTimetable = useMemo(() => {
         const schedule = timetable.filter(entry => entry.classId === student.classId);
         const days: ('Monday'|'Tuesday'|'Wednesday'|'Thursday'|'Friday')[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
@@ -290,7 +294,8 @@ const TimetableView: React.FC<{ student: Student }> = ({ student }) => {
 };
 
 const ProfileView: React.FC<{ student: Student }> = ({ student }) => {
-    const { t, setStudents, students } = useContext(AppContext);
+    const { setStudents, students } = useContext(AppContext);
+    const { t } = useTranslation();
     const [successMessage, setSuccessMessage] = useState('');
 
     const handleSelectAvatar = (avatarUrl: string) => {
@@ -334,7 +339,7 @@ const ProfileView: React.FC<{ student: Student }> = ({ student }) => {
 
 // --- Tab Bar Component ---
 const StudentTabBar: React.FC<{ activeTab: StudentTab, onTabChange: (tab: StudentTab) => void }> = ({ activeTab, onTabChange }) => {
-    const { t } = useContext(AppContext);
+    const { t } = useTranslation();
 
     const tabs: { id: StudentTab; labelKey: string; icon: string }[] = [
         { id: 'dashboard', labelKey: 'dashboard', icon: 'fa-home' },

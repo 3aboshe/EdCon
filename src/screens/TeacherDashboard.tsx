@@ -187,7 +187,7 @@ const TeacherDashboard: React.FC = () => {
 };
 
 const DashboardMenu: React.FC<{ setScreen: (s: Screen) => void, teacherName: string }> = ({ setScreen, teacherName }) => {
-    const { t } = useContext(AppContext);
+    const { t } = useTranslation();
     const menuItems = [
         { screen: 'attendance', icon: 'fa-user-check', label: 'take_attendance' },
         { screen: 'homework', icon: 'fa-book-medical', label: 'manage_homework' },
@@ -214,7 +214,8 @@ const DashboardMenu: React.FC<{ setScreen: (s: Screen) => void, teacherName: str
 };
 
 const AttendanceManager: React.FC<{ students: Student[], setSuccessMessage: (msg: string) => void }> = ({ students, setSuccessMessage }) => {
-    const { t, attendance: allAttendance, setAttendance: setAllAttendance } = useContext(AppContext);
+    const { attendance: allAttendance, setAttendance: setAllAttendance } = useContext(AppContext);
+    const { t } = useTranslation();
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
     const [attendanceUpdates, setAttendanceUpdates] = useState<Record<string, 'present' | 'absent' | 'late'>>({});
 
@@ -315,7 +316,8 @@ const AttendanceManager: React.FC<{ students: Student[], setSuccessMessage: (msg
 };
 
 const HomeworkManager: React.FC<{ studentsInClass: Student[], setSuccessMessage: (msg: string) => void }> = ({ studentsInClass, setSuccessMessage }) => {
-    const { t, user, homework: allHomework, setHomework: setAllHomework, subjects, classes } = useContext(AppContext);
+    const { user, homework: allHomework, setHomework: setAllHomework, subjects, classes } = useContext(AppContext);
+    const { t } = useTranslation();
     const [isSubmissionsModalOpen, setSubmissionsModalOpen] = useState(false);
     const [isCreateModalOpen, setCreateModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -530,7 +532,8 @@ const HomeworkManager: React.FC<{ studentsInClass: Student[], setSuccessMessage:
 };
 
 const AnnouncementManager: React.FC<{ setSuccessMessage: (msg: string) => void, onPost: () => void }> = ({ setSuccessMessage, onPost }) => {
-    const { t, user, announcements, setAnnouncements, classes } = useContext(AppContext);
+    const { user, announcements, setAnnouncements, classes } = useContext(AppContext);
+    const { t } = useTranslation();
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [priority, setPriority] = useState<'high' | 'medium' | 'low'>('medium');
@@ -682,7 +685,8 @@ interface AssignmentListProps {
 }
 
 const AssignmentList: React.FC<AssignmentListProps> = ({ studentsInClass, onEdit, onCreate, setSuccessMessage }) => {
-    const { t, grades: allGrades, setGrades } = useContext(AppContext);
+    const { grades: allGrades, setGrades } = useContext(AppContext);
+    const { t } = useTranslation();
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [assignmentToDelete, setAssignmentToDelete] = useState<AssignmentIdentifier | null>(null);
     
@@ -775,7 +779,8 @@ const AssignmentList: React.FC<AssignmentListProps> = ({ studentsInClass, onEdit
 };
 
 const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentifier | null, onSave: (message: string) => void, teacherId: string }> = ({ students, assignment, onSave, teacherId }) => {
-    const { t, grades: allGrades, setGrades, subjects } = useContext(AppContext);
+    const { grades: allGrades, setGrades, subjects } = useContext(AppContext);
+    const { t } = useTranslation();
     
     // Safe initialization of details state
     const getInitialDetails = () => {
@@ -1024,7 +1029,8 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
 };
 
 const Leaderboard: React.FC<{ students: Student[] }> = ({ students }) => {
-    const { t, grades: allGrades } = useContext(AppContext);
+    const { grades: allGrades } = useContext(AppContext);
+    const { t } = useTranslation();
     const leaderboardData = useMemo(() => {
         return students.map(student => {
             const studentGrades = allGrades.filter(g => g.studentId === student.id);
@@ -1069,7 +1075,8 @@ const Leaderboard: React.FC<{ students: Student[] }> = ({ students }) => {
 };
 
 const TeacherMessagingInbox: React.FC = () => {
-    const { t, user, users, messages, setMessages } = useContext(AppContext);
+    const { user, users, messages, setMessages } = useContext(AppContext);
+    const { t } = useTranslation();
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [selectedParent, setSelectedParent] = useState<User | null>(null);
 
@@ -1145,7 +1152,8 @@ const TeacherMessagingInbox: React.FC = () => {
 };
 
 const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: User }> = ({ isOpen, onClose, otherParty }) => {
-    const { t, user, messages, setMessages } = useContext(AppContext);
+    const { user, messages, setMessages } = useContext(AppContext);
+    const { t } = useTranslation();
     const [newMessage, setNewMessage] = useState('');
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [isUploading, setIsUploading] = useState(false);
