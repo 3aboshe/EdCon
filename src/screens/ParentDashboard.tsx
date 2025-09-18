@@ -193,7 +193,7 @@ const ParentDashboard: React.FC = () => {
 // Sub-components for better organization
 
 const SelectedStudentCard: React.FC<{ student: Student, otherStudents: Student[], onSelect: (id: string) => void }> = ({ student, otherStudents, onSelect }) => {
-    const { t } = useContext(AppContext);
+    const { t } = useTranslation();
     const showSelector = otherStudents.length > 1;
 
     return (
@@ -224,7 +224,8 @@ const SelectedStudentCard: React.FC<{ student: Student, otherStudents: Student[]
 };
 
 const QuickOverview: React.FC<{student: Student}> = ({student}) => {
-    const { t, grades, homework, attendance } = useContext(AppContext);
+    const { grades, homework, attendance } = useContext(AppContext);
+    const { t } = useTranslation();
     
     const studentGrades = grades.filter(g => g && g.studentId && g.studentId === student.id);
     const studentAttendance = attendance.filter(a => a && a.studentId && a.studentId === student.id);
@@ -263,7 +264,8 @@ const QuickOverview: React.FC<{student: Student}> = ({student}) => {
 };
 
 const PerformanceSummary: React.FC<{ student: Student }> = ({ student }) => {
-    const { t, grades } = useContext(AppContext);
+    const { grades } = useContext(AppContext);
+    const { t } = useTranslation();
     const studentGrades = grades.filter(g => g && g.studentId && g.studentId === student.id);
     
     if (studentGrades.length === 0) {
@@ -298,7 +300,8 @@ const PerformanceSummary: React.FC<{ student: Student }> = ({ student }) => {
 };
 
 const GradesList: React.FC<{ student: Student }> = ({ student }) => {
-    const { t, grades } = useContext(AppContext);
+    const { grades } = useContext(AppContext);
+    const { t } = useTranslation();
     const studentGrades = grades.filter(g => g && g.studentId && g.studentId === student.id);
 
     if (studentGrades.length === 0) {
@@ -334,7 +337,8 @@ const GradesList: React.FC<{ student: Student }> = ({ student }) => {
 };
 
 const HomeworkSummary: React.FC<{ student: Student }> = ({ student }) => {
-    const { t, homework } = useContext(AppContext);
+    const { homework } = useContext(AppContext);
+    const { t } = useTranslation();
     
     if (homework.length === 0) {
         return (
@@ -446,7 +450,8 @@ const HomeworkSummary: React.FC<{ student: Student }> = ({ student }) => {
 };
 
 const AttendanceSummary: React.FC<{ student: Student }> = ({ student }) => {
-    const { t, attendance } = useContext(AppContext);
+    const { attendance } = useContext(AppContext);
+    const { t } = useTranslation();
     const studentAttendance = attendance.filter(a => a && a.studentId && a.studentId === student.id);
 
     if (studentAttendance.length === 0) {
@@ -512,7 +517,8 @@ const AttendanceSummary: React.FC<{ student: Student }> = ({ student }) => {
 };
 
 const RecentAnnouncements: React.FC<{ student: Student }> = ({ student }) => {
-    const { t, announcements } = useContext(AppContext);
+    const { announcements } = useContext(AppContext);
+    const { t } = useTranslation();
     
     // Filter announcements for the selected student's class
     const filteredAnnouncements = announcements.filter(ann => {
@@ -561,7 +567,8 @@ const RecentAnnouncements: React.FC<{ student: Student }> = ({ student }) => {
 };
 
 const AnnouncementsList: React.FC<{ student: Student }> = ({ student }) => {
-    const { t, announcements } = useContext(AppContext);
+    const { announcements } = useContext(AppContext);
+    const { t } = useTranslation();
     
     // Filter announcements for the selected student's class
     const filteredAnnouncements = announcements.filter(ann => {
@@ -608,7 +615,8 @@ const AnnouncementsList: React.FC<{ student: Student }> = ({ student }) => {
 };
 
 const ParentMessaging: React.FC<{ student: Student }> = ({ student }) => {
-    const { t, user, users, messages, setMessages, classes, subjects } = useContext(AppContext);
+    const { user, users, messages, setMessages, classes, subjects } = useContext(AppContext);
+    const { t } = useTranslation();
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [selectedTeacher, setSelectedTeacher] = useState<User | null>(null);
 
@@ -712,7 +720,8 @@ const ParentMessaging: React.FC<{ student: Student }> = ({ student }) => {
 };
 
 const ChatModal: React.FC<{ isOpen: boolean, onClose: () => void, otherParty: User }> = ({ isOpen, onClose, otherParty }) => {
-    const { t, user, messages, setMessages } = useContext(AppContext);
+    const { user, messages, setMessages } = useContext(AppContext);
+    const { t } = useTranslation();
     const [newMessage, setNewMessage] = useState('');
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [isUploading, setIsUploading] = useState(false);

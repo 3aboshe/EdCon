@@ -18,8 +18,13 @@ const LoginScreen: React.FC = () => {
         e.preventDefault();
         try {
             const response = await apiService.login(code);
-            if (response.success && response.user) {
-                login(response.user);
+            if (response.success && (response as any).user) {
+                // Prevent students from logging in
+                if ((response as any).user.role?.toLowerCase() === 'student') {
+                    setError('Students cannot log in directly. Please use your parent\'s account.');
+                    return;
+                }
+                login((response as any).user);
             } else {
                 setError('Invalid code. Please try again.');
             }

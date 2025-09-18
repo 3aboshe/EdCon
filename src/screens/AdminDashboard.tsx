@@ -141,7 +141,8 @@ const StatCard: React.FC<{ title: string; value: number | string; icon: string; 
 };
 
 const OverviewTab: React.FC<TabProps> = ({ selectedClassId }) => {
-    const { t, users, students, grades, homework, announcements, teachers } = useContext(AppContext);
+    const { users, students, grades, homework, announcements, teachers } = useContext(AppContext);
+    const { t } = useTranslation();
 
     const filteredStudents = useMemo(() => 
         selectedClassId === 'all' ? students : students.filter(s => s.classId === selectedClassId),
@@ -303,7 +304,8 @@ const OverviewTab: React.FC<TabProps> = ({ selectedClassId }) => {
 };
 
 const StudentsTab: React.FC<TabProps> = ({ selectedClassId }) => {
-    const { t, users, students: allStudents, classes, setUsers, setStudents } = useContext(AppContext);
+    const { users, students: allStudents, classes, setUsers, setStudents } = useContext(AppContext);
+    const { t } = useTranslation();
     const [searchTerm, setSearchTerm] = useState('');
 
     const handleDeleteStudent = async (studentId: string) => {
@@ -393,7 +395,8 @@ const StudentsTab: React.FC<TabProps> = ({ selectedClassId }) => {
 };
 
 const TeachersTab: React.FC<TabProps> = ({ selectedClassId }) => {
-    const { t, users, classes, setUsers, setTeachers } = useContext(AppContext);
+    const { users, classes, setUsers, setTeachers } = useContext(AppContext);
+    const { t } = useTranslation();
     const [searchTerm, setSearchTerm] = useState('');
 
     const handleDeleteTeacher = async (teacherId: string) => {
@@ -469,7 +472,8 @@ const TeachersTab: React.FC<TabProps> = ({ selectedClassId }) => {
 };
 
 const ManagementTab: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({ setSuccessMessage }) => {
-    const { t, classes, setClasses, users, setUsers, students, setStudents, teachers, setTeachers, subjects, setSubjects } = useContext(AppContext);
+    const { classes, setClasses, users, setUsers, students, setStudents, teachers, setTeachers, subjects, setSubjects } = useContext(AppContext);
+    const { t } = useTranslation();
     
     // Form states
     const [newClassName, setNewClassName] = useState('');
