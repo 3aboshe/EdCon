@@ -1,9 +1,9 @@
-import React, { useState, useEffect, createContext, useCallback, useMemo } from 'react';
-import { BrowserRouter as Router, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import AppRoutes from './routes/AppRoutes';
 import { User, Student, Class, Teacher, Subject, Grade, Homework, Announcement, Attendance, Message, TimetableEntry } from './types';
 import apiService from './services/apiService';
-import { translations } from './constants';
 import { 
   saveUserSession, 
   loadUserSession, 
@@ -13,11 +13,11 @@ import {
 } from './utils/sessionManager';
 import { realTimeManager } from './utils/realTimeManager';
 import NavigationHandler from './components/layout/NavigationHandler';
-import { AppContext, AppContextType } from './contexts/AppContext';
+import { AppContext } from './contexts/AppContext';
 
 const App: React.FC = () => {
+    const { i18n } = useTranslation();
     const [user, setUser] = useState<User | null>(null);
-    const [lang, setLang] = useState<string>('en');
 
     // Lifted state - all initialized as empty arrays
     const [users, setUsers] = useState<User[]>([]);
@@ -271,37 +271,10 @@ const App: React.FC = () => {
         }
     }, [user?.id]);
 
-    const t = useCallback((key: string, replacements?: Record<string, string>): string => {
-        let translation = translations[lang]?.[key] || translations['en'][key] || key;
-        if (replacements) {
-            Object.entries(replacements).forEach(([placeholder, value]) => {
-                translation = translation.replace(`{${placeholder}}`, value);
-            });
-        }
-        return translation;
-    }, [lang]);
-
-    const dir: 'ltr' | 'rtl' = useMemo(() => {
-        if (lang.startsWith('ku') || lang === 'ar' || lang === 'syr') {
-            return 'rtl';
-        }
-        return 'ltr';
-    }, [lang]);
-
-    // Update HTML direction attribute when language changes
-    useEffect(() => {
-        document.documentElement.dir = dir;
-        document.documentElement.lang = lang;
-    }, [dir, lang]);
-
     const appContextValue = useMemo(() => ({
         user,
         login: handleLogin,
         logout: handleLogout,
-        lang,
-        setLang,
-        t,
-        dir,
         users,
         students,
         classes,
@@ -326,22 +299,29 @@ const App: React.FC = () => {
         setTimetable,
         updateUserAvatar: handleUpdateUserAvatar,
         updateUser: handleUpdateUser,
-    }), [user, lang, t, dir, users, students, classes, teachers, subjects, grades, homework, announcements, attendance, messages, timetable, handleUpdateUserAvatar, handleUpdateUser]);
+    }), [user, users, students, classes, teachers, subjects, grades, homework, announcements, attendance, messages, timetable, handleUpdateUserAvatar, handleUpdateUser]);
+
+    useEffect(() => {
+        document.documentElement.lang = i18n.language;
+        document.documentElement.dir = i18n.dir(i18n.language);
+    }, [i18n, i18n.language]);
 
     return (
-        <Router>
-            <AppContext.Provider value={appContextValue}>
-                <NavigationHandler>
-                    <div dir={dir} className="font-sans">
-                        <div className="w-full min-h-screen bg-white lg:bg-gray-50">
-                            <div className="max-w-md mx-auto lg:max-w-none lg:mx-0 min-h-screen bg-white lg:bg-transparent">
-                                <AppRoutes />
+        <Suspense fallback="loading">
+            <Router>
+                <AppContext.Provider value={appContextValue}>
+                    <NavigationHandler>
+                        <div dir={i18n.dir(i18n.language)} className="font-sans">
+                            <div className="w-full min-h-screen bg-white lg:bg-gray-50">
+                                <div className="max-w-md mx-auto lg:max-w-none lg:mx-0 min-h-screen bg-white lg:bg-transparent">
+                                    <AppRoutes />
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </NavigationHandler>
-            </AppContext.Provider>
-        </Router>
+                    </NavigationHandler>
+                </AppContext.Provider>
+            </Router>
+        </Suspense>
     );
 };
 

@@ -1,4 +1,5 @@
 import React, { useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AppContext } from '../../contexts/AppContext';
 import { APP_NAME } from '../../constants';
 
@@ -9,7 +10,8 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onBack }) => {
-    const { t, logout, user } = useContext(AppContext);
+    const { logout, user } = useContext(AppContext);
+    const { t } = useTranslation();
 
     return (
         <header className="bg-slate-800 text-white p-4 shadow-md sticky top-0 z-20">

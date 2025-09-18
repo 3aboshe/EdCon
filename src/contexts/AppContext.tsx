@@ -5,11 +5,6 @@ export interface AppContextType {
     user: User | null;
     login: (user: User) => void;
     logout: () => void;
-    lang: string;
-    setLang: (lang: string) => void;
-    t: (key: string, replacements?: Record<string, string>) => string;
-    dir: 'ltr' | 'rtl';
-    // Data
     users: User[];
     students: Student[];
     classes: Class[];
@@ -21,19 +16,17 @@ export interface AppContextType {
     attendance: Attendance[];
     messages: Message[];
     timetable: TimetableEntry[];
-    // Setters
-    setUsers: (users: User[]) => void;
-    setStudents: (students: Student[]) => void;
-    setClasses: (classes: Class[]) => void;
-    setTeachers: (teachers: Teacher[]) => void;
-    setSubjects: (subjects: Subject[]) => void;
-    setGrades: (grades: Grade[]) => void;
-    setHomework: (homework: Homework[]) => void;
-    setAnnouncements: (announcements: Announcement[]) => void;
-    setAttendance: (attendance: Attendance[]) => void;
-    setMessages: (messages: Message[]) => void;
-    setTimetable: (timetable: TimetableEntry[]) => void;
-    // Utility functions
+    setUsers: React.Dispatch<React.SetStateAction<User[]>>;
+    setStudents: React.Dispatch<React.SetStateAction<Student[]>>;
+    setClasses: React.Dispatch<React.SetStateAction<Class[]>>;
+    setTeachers: React.Dispatch<React.SetStateAction<Teacher[]>>;
+    setSubjects: React.Dispatch<React.SetStateAction<Subject[]>>;
+    setGrades: React.Dispatch<React.SetStateAction<Grade[]>>;
+    setHomework: React.Dispatch<React.SetStateAction<Homework[]>>;
+    setAnnouncements: React.Dispatch<React.SetStateAction<Announcement[]>>;
+    setAttendance: React.Dispatch<React.SetStateAction<Attendance[]>>;
+    setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+    setTimetable: React.Dispatch<React.SetStateAction<TimetableEntry[]>>;
     updateUserAvatar: (userId: string, avatarDataUrl: string) => void;
     updateUser: (userId: string, updates: Partial<User>) => void;
 }
@@ -42,11 +35,6 @@ const defaultContextValue: AppContextType = {
     user: null,
     login: () => {},
     logout: () => {},
-    lang: 'en',
-    setLang: () => {},
-    t: (key: string) => key,
-    dir: 'ltr',
-    // Data
     users: [],
     students: [],
     classes: [],
@@ -58,7 +46,6 @@ const defaultContextValue: AppContextType = {
     attendance: [],
     messages: [],
     timetable: [],
-    // Setters
     setUsers: () => {},
     setStudents: () => {},
     setClasses: () => {},
@@ -70,7 +57,6 @@ const defaultContextValue: AppContextType = {
     setAttendance: () => {},
     setMessages: () => {},
     setTimetable: () => {},
-    // Utility functions
     updateUserAvatar: () => {},
     updateUser: () => {},
 };

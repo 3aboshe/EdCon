@@ -1,5 +1,6 @@
 
 import React, { useContext, useMemo, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AppContext } from '../contexts/AppContext';
 import Header from '../components/ui/Header';
 import Card from '../components/ui/Card';
@@ -35,7 +36,8 @@ const SuccessBanner: React.FC<{ message: string, onClear: () => void }> = ({ mes
 );
 
 const AdminDashboard: React.FC = () => {
-    const { t, classes: classList } = useContext(AppContext);
+    const { classes: classList } = useContext(AppContext);
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<AdminTab>('overview');
     const [selectedClassId, setSelectedClassId] = useState<string>('all');
     const [successMessage, setSuccessMessage] = useState('');

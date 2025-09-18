@@ -1,6 +1,7 @@
 
 
 import React, { useContext, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AppContext } from '../contexts/AppContext';
 import Header from '../components/ui/Header';
 import Card from '../components/ui/Card';
@@ -23,7 +24,8 @@ const getStudentTabIcon = (tab: StudentTab): string => {
 };
 
 const StudentDashboard: React.FC = () => {
-    const { user, t, students } = useContext(AppContext);
+    const { user, students } = useContext(AppContext);
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<StudentTab>('dashboard');
 
     const currentStudent = useMemo(() => {

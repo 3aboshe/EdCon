@@ -1,5 +1,6 @@
 
 import React, { useContext, useRef, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AppContext } from '../contexts/AppContext';
 import Card from '../components/ui/Card';
 import ProfileImage from '../components/ui/ProfileImage';
@@ -9,7 +10,8 @@ import { allAvatars, defaultParentAvatar } from '../data/avatars';
 import apiService from '../services/apiService';
 
 const ProfileScreen: React.FC = () => {
-    const { user, t, updateUserAvatar, updateUser, students, logout } = useContext(AppContext);
+    const { user, updateUserAvatar, updateUser, students, logout } = useContext(AppContext);
+    const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [successMessage, setSuccessMessage] = useState('');
     const [showChildAvatarSelector, setShowChildAvatarSelector] = useState(false);

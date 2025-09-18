@@ -1,12 +1,12 @@
-import React, { useContext } from 'react';
-import { AppContext } from '../../contexts/AppContext';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface LanguageSwitcherProps {
     theme?: 'dark' | 'light';
 }
 
 const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ theme = 'dark' }) => {
-    const { lang, setLang, t } = useContext(AppContext);
+    const { t, i18n } = useTranslation();
 
     const languages = [
         { code: 'en', name: 'english' },
@@ -24,8 +24,8 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ theme = 'dark' }) =
     return (
         <div className="relative">
             <select
-                value={lang}
-                onChange={(e) => setLang(e.target.value)}
+                value={i18n.language}
+                onChange={(e) => i18n.changeLanguage(e.target.value)}
                 className={`${themeClasses[theme]} appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
                 aria-label={t('select_language')}
             >
