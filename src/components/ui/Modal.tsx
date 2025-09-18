@@ -1,5 +1,6 @@
 
 import React, { useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AppContext } from '../../contexts/AppContext';
 
 interface ModalProps {
@@ -10,7 +11,8 @@ interface ModalProps {
 }
 
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
-    const { dir } = useContext(AppContext);
+    const { i18n } = useTranslation();
+    const dir = ['ar', 'ku-sorani', 'ku-badini', 'syr'].includes(i18n.language) ? 'rtl' : 'ltr';
     
     if (!isOpen) return null;
 

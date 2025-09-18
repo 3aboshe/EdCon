@@ -1,5 +1,6 @@
 
 import React, { useState, useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AppContext } from '../contexts/AppContext';
 import apiService from '../services/apiService';
 import { APP_NAME } from '../constants';
@@ -10,7 +11,8 @@ import EdConLogo from '../assets/EdCon_Logo.png';
 const LoginScreen: React.FC = () => {
     const [code, setCode] = useState('');
     const [error, setError] = useState('');
-    const { login, t } = useContext(AppContext);
+    const { login } = useContext(AppContext);
+    const { t } = useTranslation();
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();

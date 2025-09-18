@@ -1,6 +1,6 @@
 
-import React, { useContext } from 'react';
-import { AppContext } from '../../contexts/AppContext';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 type ParentTab = 'dashboard' | 'performance' | 'homework' | 'messages' | 'profile';
 
@@ -10,7 +10,7 @@ interface TabBarProps {
 }
 
 const TabBar: React.FC<TabBarProps> = ({ activeTab, onTabChange }) => {
-    const { t } = useContext(AppContext);
+    const { t } = useTranslation();
 
     const tabs: { id: ParentTab; labelKey: string; icon: string }[] = [
         { id: 'dashboard', labelKey: 'dashboard', icon: 'fa-home' },

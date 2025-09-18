@@ -1,5 +1,6 @@
 
 import React, { useContext, useRef, useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AppContext } from '../contexts/AppContext';
 import Card from '../components/ui/Card';
 import ProfileImage from '../components/ui/ProfileImage';
@@ -27,7 +28,8 @@ const getTabIcon = (tab: ParentTab): string => {
 };
 
 const ParentDashboard: React.FC = () => {
-    const { user, t, students } = useContext(AppContext);
+    const { user, students } = useContext(AppContext);
+    const { t } = useTranslation();
     const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<ParentTab>('dashboard');
 

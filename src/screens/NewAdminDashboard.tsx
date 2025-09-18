@@ -1,4 +1,5 @@
 import React, { useContext, useMemo, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AppContext } from '../contexts/AppContext';
 import Header from '../components/ui/Header';
 import Card from '../components/ui/Card';
@@ -16,7 +17,8 @@ type UserManagementTab = 'students' | 'teachers' | 'parents';
 type AcademicTab = 'classes' | 'subjects';
 
 const AdminDashboard: React.FC = () => {
-    const { t, classes: classList, users, students, teachers, subjects, grades, homework, announcements, attendance, messages } = useContext(AppContext);
+    const { classes: classList, users, students, teachers, subjects, grades, homework, announcements, attendance, messages } = useContext(AppContext);
+    const { t } = useTranslation();
     const [activeSection, setActiveSection] = useState<AdminSection>('dashboard');
     const [selectedClassId, setSelectedClassId] = useState<string>('all');
     const [successMessage, setSuccessMessage] = useState('');
@@ -119,7 +121,8 @@ const AdminDashboard: React.FC = () => {
 
 // Dashboard Overview Section
 const DashboardOverview: React.FC<{ selectedClassId: string }> = ({ selectedClassId }) => {
-    const { t, users, students, grades, homework, announcements, teachers, attendance } = useContext(AppContext);
+    const { users, students, grades, homework, announcements, teachers, attendance } = useContext(AppContext);
+    const { t } = useTranslation();
 
     const filteredStudents = useMemo(() => 
         selectedClassId === 'all' ? students : students.filter(s => s.classId === selectedClassId),

@@ -1,6 +1,7 @@
 
 
 import React, { useState, useContext, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AppContext } from '../contexts/AppContext';
 import Header from '../components/ui/Header';
 import Card from '../components/ui/Card';
@@ -37,7 +38,8 @@ const SuccessBanner: React.FC<{ message: string }> = ({ message }) => (
 );
 
 const TeacherDashboard: React.FC = () => {
-    const { user, t, students: allStudents, classes } = useContext(AppContext);
+    const { user, students: allStudents, classes } = useContext(AppContext);
+    const { t } = useTranslation();
     const [screen, setScreen] = useState<Screen>('dashboard');
     const [successMessage, setSuccessMessage] = useState('');
 
