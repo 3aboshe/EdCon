@@ -438,7 +438,7 @@ const SystemSettings: React.FC<{ setSuccessMessage: (msg: string) => void }> = (
                             >
                                 {isBackupLoading ? (
                                     <>
-                                        <LoadingSpinner size="sm" />
+                                        <LoadingSpinner />
                                         <span>Creating Backup...</span>
                                     </>
                                 ) : (
@@ -506,8 +506,7 @@ const ReportsSection: React.FC<{ selectedClassId: string }> = ({ selectedClassId
                             usersList: users.map(u => ({
                                 id: u.id,
                                 name: u.name,
-                                role: u.role,
-                                createdAt: u.createdAt
+                                role: u.role
                             }))
                         }
                     };
@@ -591,7 +590,7 @@ const ReportsSection: React.FC<{ selectedClassId: string }> = ({ selectedClassId
                             className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition disabled:opacity-50">
                             <i className="fas fa-users text-blue-600 mr-3"></i>
                             User Activity Report
-                            {isGenerating && reportType === 'users' && <LoadingSpinner size="sm" className="ml-2 inline" />}
+                            {isGenerating && reportType === 'users' && <LoadingSpinner />}
                         </button>
                         <button 
                             onClick={() => generateReport('system')}
@@ -599,7 +598,7 @@ const ReportsSection: React.FC<{ selectedClassId: string }> = ({ selectedClassId
                             className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition disabled:opacity-50">
                             <i className="fas fa-chart-line text-green-600 mr-3"></i>
                             System Usage Report
-                            {isGenerating && reportType === 'system' && <LoadingSpinner size="sm" className="ml-2 inline" />}
+                            {isGenerating && reportType === 'system' && <LoadingSpinner />}
                         </button>
                         <button 
                             onClick={() => generateReport('communication')}
@@ -607,7 +606,7 @@ const ReportsSection: React.FC<{ selectedClassId: string }> = ({ selectedClassId
                             className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition disabled:opacity-50">
                             <i className="fas fa-comments text-orange-600 mr-3"></i>
                             Communication Summary
-                            {isGenerating && reportType === 'communication' && <LoadingSpinner size="sm" className="ml-2 inline" />}
+                            {isGenerating && reportType === 'communication' && <LoadingSpinner />}
                         </button>
                     </div>
                 </Card>
@@ -1040,7 +1039,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                             disabled={isLoading || !newStudent.name.trim() || !newStudent.classId}
                             className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
                         >
-                            {isLoading ? <LoadingSpinner size="sm" /> : 'Add Student'}
+                            {isLoading ? <LoadingSpinner /> : 'Add Student'}
                         </button>
                     </div>
                 </form>
@@ -1157,7 +1156,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                             disabled={isLoading || !newStudent.name.trim() || !newStudent.classId}
                             className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
                         >
-                            {isLoading ? <LoadingSpinner size="sm" /> : 'Update Student'}
+                            {isLoading ? <LoadingSpinner /> : 'Update Student'}
                         </button>
                     </div>
                 </form>
@@ -1461,7 +1460,7 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                             disabled={isLoading || !newTeacher.name.trim() || !newTeacher.subjectId}
                             className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
                         >
-                            {isLoading ? <LoadingSpinner size="sm" /> : 'Add Teacher'}
+                            {isLoading ? <LoadingSpinner /> : 'Add Teacher'}
                         </button>
                     </div>
                 </form>
@@ -1536,7 +1535,7 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                             disabled={isLoading || !newTeacher.name.trim() || !newTeacher.subjectId}
                             className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
                         >
-                            {isLoading ? <LoadingSpinner size="sm" /> : 'Update Teacher'}
+                            {isLoading ? <LoadingSpinner /> : 'Update Teacher'}
                         </button>
                     </div>
                 </form>
@@ -1678,7 +1677,6 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
                                                     <div key={child.id} className="flex items-center space-x-2 text-xs">
                                                         <ProfileImage name={child.name} avatarUrl={child.avatar} className="w-6 h-6" />
                                                         <span>{child.name}</span>
-                                                        <span className="text-gray-500">({child.id})</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -1752,7 +1750,7 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
                             disabled={isLoading || !newParentName.trim()}
                             className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
                         >
-                            {isLoading ? <LoadingSpinner size="sm" /> : 'Add Parent'}
+                            {isLoading ? <LoadingSpinner /> : 'Add Parent'}
                         </button>
                     </div>
                 </form>
@@ -1795,7 +1793,7 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
                             disabled={isLoading || !newParentName.trim()}
                             className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
                         >
-                            {isLoading ? <LoadingSpinner size="sm" /> : 'Update Parent'}
+                            {isLoading ? <LoadingSpinner /> : 'Update Parent'}
                         </button>
                     </div>
                 </form>
@@ -2027,7 +2025,7 @@ const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = 
                             disabled={isLoading || !newClassName.trim()}
                             className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
                         >
-                            {isLoading ? <LoadingSpinner size="sm" /> : 'Add Class'}
+                            {isLoading ? <LoadingSpinner /> : 'Add Class'}
                         </button>
                     </div>
                 </form>
@@ -2089,7 +2087,7 @@ const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = 
                             disabled={isLoading || !newClassName.trim()}
                             className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
                         >
-                            {isLoading ? <LoadingSpinner size="sm" /> : 'Update Class'}
+                            {isLoading ? <LoadingSpinner /> : 'Update Class'}
                         </button>
                     </div>
                 </form>
@@ -2260,7 +2258,7 @@ const SubjectManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> 
                             disabled={isLoading || !newSubjectName.trim()}
                             className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
                         >
-                            {isLoading ? <LoadingSpinner size="sm" /> : 'Add Subject'}
+                            {isLoading ? <LoadingSpinner /> : 'Add Subject'}
                         </button>
                     </div>
                 </form>
@@ -2295,7 +2293,7 @@ const SubjectManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> 
                             disabled={isLoading || !newSubjectName.trim()}
                             className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
                         >
-                            {isLoading ? <LoadingSpinner size="sm" /> : 'Update Subject'}
+                            {isLoading ? <LoadingSpinner /> : 'Update Subject'}
                         </button>
                     </div>
                 </form>
