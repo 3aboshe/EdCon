@@ -1,39 +1,50 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { AppContext } from '../../contexts/AppContext';
-import { APP_NAME } from '../../constants';
+import LanguageSelector from './LanguageSelector';
 
 interface HeaderProps {
-    title?: string;
-    showBackButton?: boolean;
-    onBack?: () => void;
+  user?: {
+    name: string;
+    role: string;
+  } | null;
+  onLogout: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ title, showBackButton = false, onBack }) => {
-    const { logout, user } = useContext(AppContext);
-    const { t } = useTranslation();
+const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
+  const { t } = useTranslation();
 
-    return (
-        <header className="bg-slate-800 text-white p-4 shadow-md sticky top-0 z-20">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4 w-1/3">
-                    {showBackButton && (
-                         <button onClick={onBack} className="text-white hover:text-gray-200 transition-colors">
-                            <i className="fa-solid fa-arrow-left"></i>
-                        </button>
-                    )}
-                </div>
-                <h1 className="text-xl font-bold text-center truncate w-1/3">{title || APP_NAME}</h1>
-                <div className="flex items-center justify-end gap-2 w-1/3">
-                    {user && (
-                         <button onClick={logout} title={t('logout')} className="text-white hover:text-gray-200 transition-colors">
-                            <i className="fa-solid fa-sign-out-alt"></i>
-                        </button>
-                    )}
-                </div>
-            </div>
-        </header>
-    );
+  return (
+    <header className="bg-white shadow-sm border-b border-gray-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <div className="flex items-center">
+            <h1 className="text-xl font-semibold text-gray-900">
+              {t('app_name')}
+            </h1>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <LanguageSelector />
+            
+            {user && (
+              <div className="flex items-center space-x-3">
+                <span className="text-sm font-medium text-gray-700">
+                  {t('welcome_user', { user })}
+                </span>
+                
+                <button
+                  onClick={onLogout}
+                  className="text-sm font-medium text-red-600 hover:text-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 rounded-md px-3 py-2"
+                >
+                  {t('logout')}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
 };
 
 export default Header;

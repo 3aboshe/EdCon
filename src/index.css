@@ -1,6 +1,9 @@
 /* FontAwesome CSS Import - must come first */
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css');
 
+/* Import RTL styles - must come before Tailwind */
+@import './styles/rtl.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -368,4 +371,4 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
-} 
+}

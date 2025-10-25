@@ -20,7 +20,7 @@ type UserManagementTab = 'students' | 'teachers' | 'parents';
 type AcademicTab = 'classes' | 'subjects';
 
 const AdminDashboard: React.FC = () => {
-    const { classes: classList, users, students, teachers, subjects, grades, homework, announcements, attendance, messages } = useContext(AppContext);
+    const { classes: classList, users, students, teachers, subjects, grades, homework, announcements, attendance, messages, user, logout } = useContext(AppContext);
     const { t } = useTranslation();
     const [activeSection, setActiveSection] = useState<AdminSection>('dashboard');
     const [selectedClassId, setSelectedClassId] = useState<string>('all');
@@ -35,13 +35,13 @@ const AdminDashboard: React.FC = () => {
     }, [successMessage]);
 
     const sections = [
-        { id: 'dashboard', label: 'Dashboard', icon: 'fa-tachometer-alt', color: 'blue' },
-        { id: 'analytics', label: 'Analytics', icon: 'fa-chart-bar', color: 'purple' },
-        { id: 'users', label: 'User Management', icon: 'fa-users', color: 'green' },
-        { id: 'academic', label: 'Academic', icon: 'fa-graduation-cap', color: 'orange' },
-        { id: 'automation', label: 'Automation', icon: 'fa-robot', color: 'indigo' },
-        { id: 'system', label: 'System', icon: 'fa-cogs', color: 'red' },
-        { id: 'reports', label: 'Reports', icon: 'fa-file-alt', color: 'teal' }
+        { id: 'dashboard', label: t('dashboard'), icon: 'fa-tachometer-alt', color: 'blue' },
+        { id: 'analytics', label: t('analytics'), icon: 'fa-chart-bar', color: 'purple' },
+        { id: 'users', label: t('user_management'), icon: 'fa-users', color: 'green' },
+        { id: 'academic', label: t('academic'), icon: 'fa-graduation-cap', color: 'orange' },
+        { id: 'automation', label: t('automation'), icon: 'fa-robot', color: 'indigo' },
+        { id: 'system', label: t('system'), icon: 'fa-cogs', color: 'red' },
+        { id: 'reports', label: t('reports'), icon: 'fa-file-alt', color: 'teal' }
     ] as const;
 
     const renderContent = () => {
@@ -67,7 +67,7 @@ const AdminDashboard: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <Header title="School Administration" />
+            <Header user={user} onLogout={logout} />
             {successMessage && (
                 <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 m-4 rounded-lg shadow">
                     <p className="font-semibold">{successMessage}</p>
@@ -78,7 +78,7 @@ const AdminDashboard: React.FC = () => {
                 {/* Sidebar Navigation */}
                 <div className="lg:w-64 bg-white shadow-lg">
                     <div className="p-4">
-                        <h2 className="text-lg font-bold text-gray-800 mb-4">Admin Panel</h2>
+                        <h2 className="text-lg font-bold text-gray-800 mb-4">{t('admin_panel')}</h2>
                         <nav className="space-y-2">
                             {sections.map(section => (
                                 <button
@@ -104,13 +104,13 @@ const AdminDashboard: React.FC = () => {
                     {(activeSection === 'dashboard' || activeSection === 'analytics' || activeSection === 'reports') && (
                         <Card className="mb-6">
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                                <h3 className="text-lg font-semibold text-gray-800">Filter by Class</h3>
+                                <h3 className="text-lg font-semibold text-gray-800">{t('filter_by_class')}</h3>
                                 <select
                                     value={selectedClassId}
                                     onChange={(e) => setSelectedClassId(e.target.value)}
                                     className="px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 >
-                                    <option value="all">All Classes</option>
+                                    <option value="all">{t('all_classes')}</option>
                                     {classList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                 </select>
                             </div>
@@ -167,27 +167,27 @@ const DashboardOverview: React.FC<{ selectedClassId: string }> = ({ selectedClas
         <div className="space-y-6">
             {/* Stats Overview */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="Students" value={stats.totalStudents} icon="fa-user-graduate" color="blue" />
-                <StatCard title="Teachers" value={stats.totalTeachers} icon="fa-chalkboard-teacher" color="green" />
-                <StatCard title="Parents" value={stats.totalParents} icon="fa-users" color="purple" />
-                <StatCard title="Homework" value={stats.totalHomework} icon="fa-book" color="orange" />
+                <StatCard title={t('students')} value={stats.totalStudents} icon="fa-user-graduate" color="blue" />
+                <StatCard title={t('teachers')} value={stats.totalTeachers} icon="fa-chalkboard-teacher" color="green" />
+                <StatCard title={t('parents')} value={stats.totalParents} icon="fa-users" color="purple" />
+                <StatCard title={t('homework')} value={stats.totalHomework} icon="fa-book" color="orange" />
             </div>
 
             {/* Performance Metrics */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">Performance Overview</h3>
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">{t('performance_overview')}</h3>
                     <div className="space-y-4">
                         <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Average Grade</span>
+                            <span className="text-gray-600">{t('average_grade')}</span>
                             <span className="text-xl font-bold text-blue-600">{stats.avgGrade}%</span>
                         </div>
                         <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Attendance Rate</span>
+                            <span className="text-gray-600">{t('attendance_rate')}</span>
                             <span className="text-xl font-bold text-green-600">{stats.attendanceRate}%</span>
                         </div>
                         <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Active Homework</span>
+                            <span className="text-gray-600">{t('active_homework')}</span>
                             <span className="text-xl font-bold text-orange-600">{stats.totalHomework}</span>
                         </div>
                     </div>

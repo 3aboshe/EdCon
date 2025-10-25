@@ -35,7 +35,28 @@ i18n
     debug: true,
     interpolation: {
       escapeValue: false, // not needed for react as it escapes by default
+    },
+    // Add RTL language detection and document direction handling
+    detection: {
+      order: ['localStorage', 'navigator', 'htmlTag'],
+      caches: ['localStorage'],
     }
   });
+
+// Set document direction based on language
+const setDocumentDirection = (language: string) => {
+  const rtlLanguages = ['ar', 'ku-sorani', 'ku-badini', 'syr'];
+  const dir = rtlLanguages.includes(language) ? 'rtl' : 'ltr';
+  document.documentElement.dir = dir;
+  document.documentElement.lang = language;
+};
+
+// Initialize document direction
+setDocumentDirection(i18n.language);
+
+// Update document direction when language changes
+i18n.on('languageChanged', (lng) => {
+  setDocumentDirection(lng);
+});
 
 export default i18n;

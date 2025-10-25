@@ -23,7 +23,7 @@ const Alert: React.FC<AlertProps> = ({
   return (
     <div className={`${baseClasses} ${variantClasses[variant]} ${className}`}>
       <div className="flex">
-        <div className="ml-3">
+        <div className="ms-3 ltr:ml-3 rtl:mr-3">
           <div className="text-sm">
             {children}
           </div>

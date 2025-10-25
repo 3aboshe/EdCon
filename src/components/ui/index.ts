@@ -11,3 +11,4 @@ export { default as TabBar } from './TabBar';
 export { default as LanguageSwitcher } from './LanguageSwitcher';
 export { default as ChildAvatarSelector } from './ChildAvatarSelector';
 export { default as Header } from './Header';
+export { default as LanguageSelector } from './LanguageSelector';
