@@ -152,6 +152,17 @@ const TeacherDashboard: React.FC = () => {
                             <div className="flex items-center space-x-4">
                                 <span className="text-sm text-gray-700">Welcome, {user.name}</span>
                                 <ProfileImage name={user.name} avatarUrl={user.avatar} className="h-8 w-8" />
+                                <button
+                                    onClick={() => {
+                                        // Get logout function from context
+                                        const { logout } = useContext(AppContext);
+                                        logout();
+                                    }}
+                                    title={t('logout')}
+                                    className="text-gray-600 hover:text-gray-800 transition-colors p-2 rounded-md hover:bg-gray-100"
+                                >
+                                    <i className="fa-solid fa-sign-out-alt"></i>
+                                </button>
                             </div>
                         )}
                     </div>
@@ -223,7 +234,7 @@ const AttendanceManager: React.FC<{ students: Student[], setSuccessMessage: (msg
         const newAttendanceState: Record<string, 'present' | 'absent' | 'late'> = {};
         students.forEach(s => {
             const record = allAttendance.find(a => a && a.studentId && a.studentId === s.id && a.date === selectedDate);
-            newAttendanceState[s.id] = record?.status || 'present';
+            newAttendanceState[s.id] = (record?.status?.toLowerCase() as 'present' | 'absent' | 'late') || 'present';
         });
         setAttendanceUpdates(newAttendanceState);
     }, [selectedDate, students, allAttendance]);
@@ -985,7 +996,7 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
                             </div>
                             <div className="flex items-center space-x-2">
                                 <input
-                                    ref={el => inputRefs.current[index] = el}
+                                    ref={el => { inputRefs.current[index] = el; }}
                                     type="number"
                                     value={studentGrades[student.id] || ''}
                                     onChange={(e) => handleGradeChange(student.id, e.target.value)}
@@ -1016,7 +1027,7 @@ const GradeEditor: React.FC<{ students: Student[], assignment: AssignmentIdentif
                 >
                     {isSaving ? (
                         <>
-                            <LoadingSpinner size="sm" />
+                            <LoadingSpinner />
                             <span>{t('saving_grades')}</span>
                         </>
                     ) : (
