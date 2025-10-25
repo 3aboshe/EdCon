@@ -163,10 +163,17 @@ export interface TeacherAssignmentWorkflow {
 }
 
 export interface ClassConfigurationWorkflow {
-  classData: Partial<Class>;
+  classData: {
+    name: string;
+    subjectIds: string[];
+    description?: string;
+    maxCapacity?: string;
+    roomNumber?: string;
+  };
   suggestedSubjects?: Subject[];
   recommendedTeachers?: Teacher[];
   assessmentFrameworks?: any[];
+  communicationTemplates?: any[];
 }
 
 // Smart form types
@@ -200,4 +207,5 @@ export interface BulkImportResult {
     field: string;
     message: string;
   }>;
+  operationId?: string;
 }
