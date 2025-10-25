@@ -679,6 +679,39 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
     const [deleteConfirm, setDeleteConfirm] = useState<{isOpen: boolean, student: any | null}>({isOpen: false, student: null});
     const [isDeleting, setIsDeleting] = useState(false);
 
+    // Refresh data function to ensure parent-child relationships are up to date
+    const refreshData = async () => {
+        try {
+            const [allUsers] = await Promise.all([
+                apiService.getAllUsers()
+            ]);
+            
+            // Update users with fresh data
+            setUsers(allUsers);
+            
+            // Update students list with fresh data
+            const updatedStudents = allUsers.filter(u => u.role?.toLowerCase() === 'student').map(u => ({
+                ...u,
+                grade: 1,
+                classId: (u as any).classId || '',
+                parentId: (u as any).parentId || '',
+                avatar: u.avatar || ''
+            }));
+            setStudents(updatedStudents as Student[]);
+            
+            console.log('=== DATA REFRESHED ===');
+            console.log('Students with parentId:', updatedStudents.filter(s => s.parentId).length);
+            console.log('Parents with childrenIds:', allUsers.filter(u => u.role?.toLowerCase() === 'parent' && (u as any).childrenIds && (u as any).childrenIds.length > 0).length);
+        } catch (error) {
+            console.error('Error refreshing data:', error);
+        }
+    };
+
+    // Refresh data when component mounts
+    useEffect(() => {
+        refreshData();
+    }, []);
+
     const filteredStudents = useMemo(() => {
         return students.filter(student => 
             student.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -714,27 +747,28 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
 
             const result = await apiService.createUser(studentData);
             
-            // Update students list
-            const newStudentRecord = {
-                ...result.user,
-                grade: 1,
-                classId: newStudent.classId,
-                parentId: newStudent.parentId || undefined
-            };
-            setStudents([...students, newStudentRecord as any]);
-
-            // Update parent's children if parent assigned
+            // If parent is assigned, use the backend API to establish the relationship
             if (newStudent.parentId) {
-                setUsers(users.map(user => {
-                    if (user.id === newStudent.parentId) {
-                        return {
-                            ...user,
-                            childrenIds: [...(user.childrenIds || []), result.user.id]
-                        };
-                    }
-                    return user;
-                }));
+                await apiService.assignStudentToParent(result.user.id, newStudent.parentId);
             }
+            
+            // Refresh data from backend to ensure consistency
+            const [allUsers] = await Promise.all([
+                apiService.getAllUsers()
+            ]);
+            
+            // Update users with fresh data
+            setUsers(allUsers);
+            
+            // Update students list with fresh data
+            const updatedStudents = allUsers.filter(u => u.role?.toLowerCase() === 'student').map(u => ({
+                ...u,
+                grade: 1,
+                classId: (u as any).classId || '',
+                parentId: (u as any).parentId || '',
+                avatar: u.avatar || ''
+            }));
+            setStudents(updatedStudents as Student[]);
 
             setSuccessMessage(`Student "${newStudent.name}" created successfully! Assigned to class "${selectedClass?.name}" with ${classSubjects.length} subjects.`);
             setNewStudent({ name: '', classId: '', parentId: '' });
@@ -777,44 +811,35 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
 
             await apiService.updateUser(editingStudent.id, updatedStudentData);
             
-            // Update students list
-            setStudents(students.map(s => s.id === editingStudent.id ? {
-                ...s,
-                name: newStudent.name.trim(),
-                classId: newStudent.classId,
-                parentId: newStudent.parentId || undefined
-            } : s));
-
-            // Update users list
-            setUsers(users.map(u => u.id === editingStudent.id ? {
-                ...u,
-                name: newStudent.name.trim(),
-                classId: newStudent.classId,
-                parentId: newStudent.parentId || undefined
-            } : u));
-
-            // Update parent's children if parent changed
-            if (newStudent.parentId && newStudent.parentId !== editingStudent.parentId) {
-                setUsers(users.map(user => {
-                    if (user.id === newStudent.parentId) {
-                        const currentChildren = user.childrenIds || [];
-                        if (!currentChildren.includes(editingStudent.id)) {
-                            return {
-                                ...user,
-                                childrenIds: [...currentChildren, editingStudent.id]
-                            };
-                        }
-                    }
-                    // Remove from old parent if changed
-                    if (user.id === editingStudent.parentId && newStudent.parentId !== editingStudent.parentId) {
-                        return {
-                            ...user,
-                            childrenIds: (user.childrenIds || []).filter(id => id !== editingStudent.id)
-                        };
-                    }
-                    return user;
-                }));
+            // If parent assignment changed, use backend API to update relationship
+            if (newStudent.parentId !== editingStudent.parentId) {
+                // Unassign from old parent if there was one
+                if (editingStudent.parentId) {
+                    await apiService.unassignStudentFromParent(editingStudent.id);
+                }
+                // Assign to new parent if there is one
+                if (newStudent.parentId) {
+                    await apiService.assignStudentToParent(editingStudent.id, newStudent.parentId);
+                }
             }
+            
+            // Refresh data from backend to ensure consistency
+            const [allUsers] = await Promise.all([
+                apiService.getAllUsers()
+            ]);
+            
+            // Update users with fresh data
+            setUsers(allUsers);
+            
+            // Update students list with fresh data
+            const updatedStudents = allUsers.filter(u => u.role?.toLowerCase() === 'student').map(u => ({
+                ...u,
+                grade: 1,
+                classId: (u as any).classId || '',
+                parentId: (u as any).parentId || '',
+                avatar: u.avatar || ''
+            }));
+            setStudents(updatedStudents as Student[]);
 
             setSuccessMessage(`Student "${newStudent.name}" updated successfully! Assigned to class "${selectedClass?.name}" with ${classSubjects.length} subjects.`);
             setNewStudent({ name: '', classId: '', parentId: '' });
@@ -856,12 +881,21 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
             <Card>
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-gray-800">Students ({filteredStudents.length})</h3>
-                    <button 
-                        onClick={() => setShowAddModal(true)}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center"
-                    >
-                        <i className="fas fa-plus mr-2"></i>Add Student
-                    </button>
+                    <div className="flex space-x-2">
+                        <button
+                            onClick={refreshData}
+                            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center"
+                            title="Refresh data to sync parent-child relationships"
+                        >
+                            <i className="fas fa-sync-alt mr-2"></i>Refresh
+                        </button>
+                        <button
+                            onClick={() => setShowAddModal(true)}
+                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center"
+                        >
+                            <i className="fas fa-plus mr-2"></i>Add Student
+                        </button>
+                    </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredStudents.map(student => {
