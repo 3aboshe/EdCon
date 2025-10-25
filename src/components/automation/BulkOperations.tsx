@@ -49,10 +49,11 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
     const fileName = uploadedFile.name.toLowerCase();
     const fileExtension = fileName.split('.').pop();
 
-    if (!supportedFormats.includes(fileExtension)) {
+    if (!supportedFormats.includes(fileExtension || '')) {
       setValidation({
         isValid: false,
-        errors: [{ row: 0, field: 'file', message: `Unsupported file format: ${fileExtension}. Supported formats: ${supportedFormats.join(', ')` }]
+        errors: [{ row: 0, field: 'file', message: `Unsupported file format: ${fileExtension}. Supported formats: ${supportedFormats.join(', ')}` }],
+        warnings: []
       });
       return;
     }
@@ -64,27 +65,29 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
   const parseFile = async (file: File): Promise<any[]> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      
+
       reader.onload = (e) => {
         try {
           const content = e.target?.result as string;
           let parsedData: any[] = [];
 
           if (file.name.toLowerCase().endsWith('.csv')) {
-            parsedData = this.parseCSV(content);
+            parsedData = parseCSV(content);
           } else if (file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')) {
             // For Excel files, we'd need a library like xlsx
             // For now, we'll show an error
             setValidation({
               isValid: false,
-              errors: [{ row: 0, field: 'file', message: 'Excel file parsing requires additional library. Please use CSV format.' }]
+              errors: [{ row: 0, field: 'file', message: 'Excel file parsing requires additional library. Please use CSV format.' }],
+              warnings: []
             });
             reject(new Error('Excel parsing not implemented'));
             return;
           } else {
             setValidation({
               isValid: false,
-              errors: [{ row: 0, field: 'file', message: 'Unsupported file format. Please use CSV or Excel format.' }]
+              errors: [{ row: 0, field: 'file', message: 'Unsupported file format. Please use CSV or Excel format.' }],
+              warnings: []
             });
             reject(new Error('Unsupported file format'));
             return;
@@ -100,7 +103,8 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
         } catch (error) {
           setValidation({
             isValid: false,
-            errors: [{ row: 0, field: 'file', message: `Error parsing file: ${error.message}` }]
+            errors: [{ row: 0, field: 'file', message: `Error parsing file: ${(error as Error).message}` }],
+            warnings: []
           });
           reject(error);
         }
@@ -109,7 +113,8 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
       reader.onerror = () => {
         setValidation({
           isValid: false,
-          errors: [{ row: 0, field: 'file', message: 'Error reading file' }]
+          errors: [{ row: 0, field: 'file', message: 'Error reading file' }],
+          warnings: []
         });
         reject(new Error('Error reading file'));
       };
@@ -160,7 +165,7 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
       let bestScore = 0;
 
       for (const field of entityFields) {
-        const score = this.calculateFieldMatchScore(column, field);
+        const score = calculateFieldMatchScore(column, field);
         if (score > bestScore) {
           bestScore = score;
           bestMatch = field;
@@ -172,7 +177,7 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
           sourceField: column,
           targetField: bestMatch,
           confidence: bestScore,
-          transformation: this.suggestTransformation(column, bestMatch)
+          transformation: suggestTransformation(column, bestMatch)
         });
       }
     }
@@ -194,7 +199,7 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
     const sourceWords = source.split(/[_\s-]/).filter(Boolean);
     const targetWords = target.split(/[_\s-]/).filter(Boolean);
     const commonWords = sourceWords.filter(word => targetWords.includes(word));
-    
+
     return commonWords.length / Math.max(sourceWords.length, targetWords.length) * 0.5;
   };
 
@@ -226,9 +231,9 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
   const handleAutoMapping = () => {
     const detectedColumns = detectColumns(dataPreview);
     const entityType = 'student'; // Default to student, could be made dynamic
-    
+
     const intelligentMappings = generateIntelligentMapping(detectedColumns, entityType);
-    
+
     if (intelligentMappings.length > 0) {
       setDataMapping(intelligentMappings);
       setValidation({
@@ -239,7 +244,8 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
     } else {
       setValidation({
         isValid: false,
-        errors: [{ row: 0, field: 'mapping', message: 'Could not generate intelligent mappings for detected columns' }]
+        errors: [{ row: 0, field: 'mapping', message: 'Could not generate intelligent mappings for detected columns' }],
+        warnings: []
       });
     }
   };
@@ -247,9 +253,9 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
   const validateMapping = (): boolean => {
     const requiredFields = ['name'];
     const mappedFields = dataMapping.map(m => m.targetField);
-    
+
     const missingRequired = requiredFields.filter(field => !mappedFields.includes(field));
-    
+
     if (missingRequired.length > 0) {
       setValidation({
         isValid: false,
@@ -257,14 +263,16 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
           row: 0,
           field,
           message: `Required field "${field}" is not mapped`
-        }))
+        })),
+        warnings: []
       });
       return false;
     }
 
     setValidation({
       isValid: true,
-      errors: []
+      errors: [],
+      warnings: []
     });
     return true;
   };
@@ -277,7 +285,7 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
 
     try {
       // Create bulk operation record
-      const operationResponse = await fetch(`${'https://edcon-production.up.railway.app'}/api/workflows/bulk-operations`, {
+      const operationResponse = await fetch(`https://edcon-production.up.railway.app/api/workflows/bulk-operations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -292,14 +300,14 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
       });
 
       const operationData = await operationResponse.json();
-      
+
       if (operationData.success) {
         setOperation(operationData.operation);
-        
+
         // Process data in chunks
         const chunkSize = 50;
         const chunks = [];
-        
+
         for (let i = 0; i < dataPreview.length; i += chunkSize) {
           chunks.push(dataPreview.slice(i, i + chunkSize));
         }
@@ -342,7 +350,7 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
           }
 
           // Send chunk for processing
-          const chunkResponse = await fetch(`${'https://edcon-production.up.railway.app'}/api/workflows/bulk-operations/${operationData.operation.id}`, {
+          const chunkResponse = await fetch(`https://edcon-production.up.railway.app/api/workflows/bulk-operations/${operationData.operation?.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -355,7 +363,7 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
           });
 
           const chunkResult = await chunkResponse.json();
-          
+
           if (chunkResult.success) {
             successfulRecords += processedChunk.length;
             setProgress(Math.round(((chunkIndex + 1) / chunks.length) * 100));
@@ -370,7 +378,7 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
         }
 
         // Update operation status
-        await fetch(`${'https://edcon-production.up.railway.app'}/api/workflows/bulk-operations/${operationData.operation.id}`, {
+        await fetch(`https://edcon-production.up.railway.app/api/workflows/bulk-operations/${operationData.operation?.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -388,7 +396,7 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
           successfulRecords,
           failedRecords,
           errors,
-          operationId: operationData.operation.id
+          operationId: operationData.operation?.id
         };
 
         onOperationComplete?.(result);
@@ -397,7 +405,8 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
       console.error('Bulk operation failed:', error);
       setValidation({
         isValid: false,
-        errors: [{ row: 0, field: 'processing', message: `Operation failed: ${error.message}` }]
+        errors: [{ row: 0, field: 'processing', message: `Operation failed: ${(error as Error).message}` }],
+        warnings: []
       });
     } finally {
       setProcessing(false);
@@ -444,7 +453,7 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
       <div>
         <h3 className="text-lg font-medium text-gray-900 mb-4">Data Mapping</h3>
         <p className="text-sm text-gray-600 mb-4">
-          Map your file columns to the appropriate database fields. We've detected {detectColumns(dataPreview).length} columns.
+          Map your file columns to appropriate database fields. We've detected {detectColumns(dataPreview).length} columns.
         </p>
       </div>
 
@@ -563,7 +572,7 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
       </div>
 
       <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
-        <div 
+        <div
           className="bg-blue-500 h-2 rounded-full transition-all duration-300"
           style={{ width: `${progress}%` }}
         />
@@ -582,7 +591,7 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
       <div>
         <h3 className="text-lg font-medium text-gray-900 mb-4">Import Complete</h3>
         <p className="text-sm text-gray-600 mb-4">
-          Your data has been processed. Please review the results below.
+          Your data has been processed. Please review results below.
         </p>
       </div>
 
@@ -604,25 +613,25 @@ const BulkOperations: React.FC<BulkOperationsProps> = ({
             </div>
           </div>
 
-          {operation.errors && operation.errors.length > 0 && (
+          {operation && 'errors' in operation && (operation as any).errors && (operation as any).errors.length > 0 && (
             <div className="col-span-2 mt-4">
               <strong>Errors:</strong>
               <div className="max-h-32 overflow-y-auto bg-red-50 rounded p-2 text-sm">
-                {operation.errors.slice(0, 10).map((error, index) => (
+                {(operation as any).errors.slice(0, 10).map((error: any, index: number) => (
                   <div key={index} className="mb-1">
                     <strong>Row {error.row}:</strong> {error.field} - {error.message}
                   </div>
                 ))}
-                {operation.errors.length > 10 && (
+                {(operation as any).errors.length > 10 && (
                   <div className="text-sm text-gray-500 mt-2">
-                    ... and {operation.errors.length - 10} more errors
+                    ... and {(operation as any).errors.length - 10} more errors
                   </div>
                 )}
               </div>
             </div>
           )}
         </div>
-      </div>
+      )}
 
       <div className="flex justify-end space-x-3">
         <Button
