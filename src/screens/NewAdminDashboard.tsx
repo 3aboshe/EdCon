@@ -1334,7 +1334,6 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {teacherUsers.map(teacher => {
-                        const teacherSubject = subjects.find(s => s.name === teacher.subject);
                         const teacherClasses = classes.filter(c => teacher.classIds?.includes(c.id));
                         
                         return (
@@ -1343,11 +1342,9 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                                     <ProfileImage name={teacher.name} avatarUrl={teacher.avatar} className="w-12 h-12" />
                                     <div>
                                         <h4 className="font-bold text-gray-800">{teacher.name}</h4>
-                                        <p className="text-sm text-gray-600">ID: {teacher.id}</p>
                                     </div>
                                 </div>
                                 <div className="space-y-2 text-sm">
-                                    <p><span className="font-medium">Subject:</span> {teacher.subject || 'Not assigned'}</p>
                                     <div>
                                         <p className="font-medium">Classes ({teacherClasses.length}):</p>
                                         {teacherClasses.length > 0 ? (
