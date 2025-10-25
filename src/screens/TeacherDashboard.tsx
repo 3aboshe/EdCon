@@ -38,7 +38,7 @@ const SuccessBanner: React.FC<{ message: string }> = ({ message }) => (
 );
 
 const TeacherDashboard: React.FC = () => {
-    const { user, students: allStudents, classes } = useContext(AppContext);
+    const { user, students: allStudents, classes, logout } = useContext(AppContext);
     const { t } = useTranslation();
     const [screen, setScreen] = useState<Screen>('dashboard');
     const [successMessage, setSuccessMessage] = useState('');
@@ -153,11 +153,7 @@ const TeacherDashboard: React.FC = () => {
                                 <span className="text-sm text-gray-700">Welcome, {user.name}</span>
                                 <ProfileImage name={user.name} avatarUrl={user.avatar} className="h-8 w-8" />
                                 <button
-                                    onClick={() => {
-                                        // Get logout function from context
-                                        const { logout } = useContext(AppContext);
-                                        logout();
-                                    }}
+                                    onClick={logout}
                                     title={t('logout')}
                                     className="text-gray-600 hover:text-gray-800 transition-colors p-2 rounded-md hover:bg-gray-100"
                                 >
