@@ -181,3 +181,61 @@ enum MessageType {
   VOICE
   FILE
 }
+
+// Automation tables for Phase 1
+model AutomationSuggestion {
+  id             Int      @id @default(autoincrement())
+  entityType     String
+  entityId       String?
+  suggestionType String
+  suggestionData Json
+  confidenceScore Float   @default(0.0)
+  accepted       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  appliedAt      DateTime?
+
+  @@map("automation_suggestions")
+}
+
+model WorkflowExecution {
+  id              Int      @id @default(autoincrement())
+  workflowType    String
+  triggerData     Json
+  executionStatus String   @default("pending")
+  stepsCompleted  Json     @default("[]")
+  resultData      Json?
+  errorMessage    String?
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+
+  @@map("workflow_executions")
+}
+
+model LearnedPattern {
+  id             Int      @id @default(autoincrement())
+  patternType    String
+  patternData    Json
+  successCount   Int      @default(0)
+  failureCount   Int      @default(0)
+  confidenceScore Float   @default(0.0)
+  lastApplied    DateTime?
+  createdAt      DateTime @default(now())
+
+  @@map("learned_patterns")
+}
+
+model BulkOperation {
+  id                Int      @id @default(autoincrement())
+  operationType     String
+  entityType        String
+  totalRecords      Int      @default(0)
+  successfulRecords Int      @default(0)
+  failedRecords     Int      @default(0)
+  operationData     Json?
+  status            String   @default("pending")
+  createdBy         String?
+  createdAt         DateTime @default(now())
+  completedAt       DateTime?
+
+  @@map("bulk_operations")
+}

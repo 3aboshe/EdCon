@@ -28,6 +28,7 @@ export interface Teacher {
   name: string;
   subject: string;
   classIds?: string[];
+  currentWorkload?: number;
 }
 
 export interface Grade {
@@ -94,4 +95,109 @@ export interface TimetableEntry {
   day: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday';
   time: string; // e.g., '09:00 - 10:00'
   subject: string;
+}
+
+// Automation types for Phase 1
+export interface AutomationSuggestion {
+  id: number;
+  entityType: string;
+  entityId?: string;
+  suggestionType: string;
+  suggestionData: any;
+  confidenceScore: number;
+  accepted: boolean;
+  createdAt: string;
+  appliedAt?: string;
+}
+
+export interface WorkflowExecution {
+  id: number;
+  workflowType: string;
+  triggerData: any;
+  executionStatus: string;
+  stepsCompleted: any[];
+  resultData?: any;
+  errorMessage?: string;
+  startedAt: string;
+  completedAt?: string;
+}
+
+export interface LearnedPattern {
+  id: number;
+  patternType: string;
+  patternData: any;
+  successCount: number;
+  failureCount: number;
+  confidenceScore: number;
+  lastApplied?: string;
+  createdAt: string;
+}
+
+export interface BulkOperation {
+  id: number;
+  operationType: string;
+  entityType: string;
+  totalRecords: number;
+  successfulRecords: number;
+  failedRecords: number;
+  operationData?: any;
+  status: string;
+  createdBy?: string;
+  createdAt: string;
+  completedAt?: string;
+}
+
+// Workflow types
+export interface StudentCreationWorkflow {
+  studentData: Partial<Student>;
+  suggestedClass?: Class;
+  potentialParents?: User[];
+  recommendedSubjects?: Subject[];
+}
+
+export interface TeacherAssignmentWorkflow {
+  teacherData: Partial<Teacher>;
+  relevantClasses?: Class[];
+  workloadBalance?: any;
+  scheduleConflicts?: any[];
+}
+
+export interface ClassConfigurationWorkflow {
+  classData: Partial<Class>;
+  suggestedSubjects?: Subject[];
+  recommendedTeachers?: Teacher[];
+  assessmentFrameworks?: any[];
+}
+
+// Smart form types
+export type SmartFormMode = 'simple' | 'advanced' | 'wizard' | 'bulk';
+
+export interface SmartFormConfig {
+  mode: SmartFormMode;
+  currentStep?: number;
+  totalSteps?: number;
+}
+
+export interface FormValidation {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+export interface DataMapping {
+  sourceField: string;
+  targetField: string;
+  confidence: number;
+  transformation?: string;
+}
+
+export interface BulkImportResult {
+  totalRecords: number;
+  successfulRecords: number;
+  failedRecords: number;
+  errors: Array<{
+    row: number;
+    field: string;
+    message: string;
+  }>;
 }
