@@ -219,6 +219,7 @@ const DashboardOverview: React.FC<{ selectedClassId: string }> = ({ selectedClas
 // Analytics Section
 const AnalyticsSection: React.FC<{ selectedClassId: string }> = ({ selectedClassId }) => {
     const { grades, attendance, students, homework } = useContext(AppContext);
+    const { t } = useTranslation();
 
     const gradeDistribution = useMemo(() => {
         const distribution = { A: 0, B: 0, C: 0, D: 0, F: 0 };
@@ -254,12 +255,12 @@ const AnalyticsSection: React.FC<{ selectedClassId: string }> = ({ selectedClass
 
     return (
         <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-800">Analytics Dashboard</h2>
+            <h2 className="text-2xl font-bold text-gray-800">{t('analytics_dashboard')}</h2>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Grade Distribution */}
                 <Card>
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">Grade Distribution</h3>
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">{t('grade_distribution_chart')}</h3>
                     {gradeDistribution.some(g => g.value > 0) ? (
                         <ResponsiveContainer width="100%" height={300}>
                             <PieChart>
@@ -281,13 +282,13 @@ const AnalyticsSection: React.FC<{ selectedClassId: string }> = ({ selectedClass
                             </PieChart>
                         </ResponsiveContainer>
                     ) : (
-                        <div className="text-center text-gray-500 py-8">No grade data available</div>
+                        <div className="text-center text-gray-500 py-8">{t('no_grade_data_available')}</div>
                     )}
                 </Card>
 
                 {/* Attendance Trend */}
                 <Card>
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">Attendance Trend (Last 7 Days)</h3>
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">{t('attendance_trend_chart')}</h3>
                     <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={attendanceTrend}>
                             <CartesianGrid strokeDasharray="3 3" />
@@ -357,6 +358,7 @@ const UserManagementSection: React.FC<{ setSuccessMessage: (msg: string) => void
 
 // Academic Management Section
 const AcademicManagement: React.FC<{ selectedClassId: string, setSuccessMessage: (msg: string) => void }> = ({ selectedClassId, setSuccessMessage }) => {
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<AcademicTab>('classes');
 
     const tabs = [
@@ -366,7 +368,7 @@ const AcademicManagement: React.FC<{ selectedClassId: string, setSuccessMessage:
 
     return (
         <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-800">Academic Management</h2>
+            <h2 className="text-2xl font-bold text-gray-800">{t('academic_management')}</h2>
 
             {/* Tab Navigation */}
             <div className="bg-gray-100 rounded-lg p-1">
@@ -398,6 +400,7 @@ const AcademicManagement: React.FC<{ selectedClassId: string, setSuccessMessage:
 
 // System Settings
 const SystemSettings: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({ setSuccessMessage }) => {
+    const { t } = useTranslation();
     const [isBackupLoading, setIsBackupLoading] = useState(false);
 
     const handleBackup = async () => {
@@ -416,10 +419,10 @@ const SystemSettings: React.FC<{ setSuccessMessage: (msg: string) => void }> = (
             document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
             
-            setSuccessMessage('System backup downloaded successfully');
+            setSuccessMessage(t('backup_downloaded_success'));
         } catch (error) {
             console.error('Backup error:', error);
-            setSuccessMessage('Backup failed. Please try again.');
+            setSuccessMessage(t('backup_failed'));
         } finally {
             setIsBackupLoading(false);
         }
@@ -428,14 +431,14 @@ const SystemSettings: React.FC<{ setSuccessMessage: (msg: string) => void }> = (
 
     return (
         <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-800">System Settings</h2>
+            <h2 className="text-2xl font-bold text-gray-800">{t('system_settings')}</h2>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                     <h3 className="text-lg font-bold text-gray-800 mb-4">Data Management</h3>
                     <div className="space-y-4">
                         <div>
-                            <h4 className="font-medium text-gray-800 mb-2">Backup & Recovery</h4>
+                            <h4 className="font-medium text-gray-800 mb-2">{t('backup_recovery')}</h4>
                             <p className="text-gray-600 mb-3 text-sm">Create a backup of all system data including users, grades, and messages.</p>
                             <button
                                 onClick={handleBackup}
@@ -450,7 +453,7 @@ const SystemSettings: React.FC<{ setSuccessMessage: (msg: string) => void }> = (
                                 ) : (
                                     <>
                                         <i className="fas fa-download"></i>
-                                        <span>Create Backup</span>
+                                        <span>{t('create_backup')}</span>
                                     </>
                                 )}
                             </button>
@@ -484,7 +487,8 @@ const SystemSettings: React.FC<{ setSuccessMessage: (msg: string) => void }> = (
 
 // Reports Section
 const ReportsSection: React.FC<{ selectedClassId: string }> = ({ selectedClassId }) => {
-    const { users, messages, announcements, classes, subjects } = useContext(AppContext);
+    const { users, messages, announcements, classes: classList, subjects } = useContext(AppContext);
+    const { t } = useTranslation();
     const [reportType, setReportType] = useState<string>('');
     const [isGenerating, setIsGenerating] = useState(false);
 
@@ -524,11 +528,11 @@ const ReportsSection: React.FC<{ selectedClassId: string }> = ({ selectedClassId
                         title: 'System Usage Report',
                         generated: new Date().toISOString(),
                         data: {
-                            totalClasses: classes.length,
+                            totalClasses: classList.length,
                             totalSubjects: subjects.length,
                             totalAnnouncements: announcements.length,
                             systemHealth: 'Good',
-                            classesList: classes,
+                            classesList: classList,
                             subjectsList: subjects
                         }
                     };
@@ -584,18 +588,18 @@ const ReportsSection: React.FC<{ selectedClassId: string }> = ({ selectedClassId
 
     return (
         <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-800">Reports & Analytics</h2>
+            <h2 className="text-2xl font-bold text-gray-800">{t('reports_analytics')}</h2>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">Generate Reports</h3>
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">{t('generate_reports')}</h3>
                     <div className="space-y-3">
                         <button 
                             onClick={() => generateReport('users')}
                             disabled={isGenerating}
                             className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition disabled:opacity-50">
                             <i className="fas fa-users text-blue-600 mr-3"></i>
-                            User Activity Report
+                            {t('user_activity_report')}
                             {isGenerating && reportType === 'users' && <LoadingSpinner />}
                         </button>
                         <button 
@@ -603,7 +607,7 @@ const ReportsSection: React.FC<{ selectedClassId: string }> = ({ selectedClassId
                             disabled={isGenerating}
                             className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition disabled:opacity-50">
                             <i className="fas fa-chart-line text-green-600 mr-3"></i>
-                            System Usage Report
+                            {t('system_usage_report')}
                             {isGenerating && reportType === 'system' && <LoadingSpinner />}
                         </button>
                         <button 
@@ -611,14 +615,14 @@ const ReportsSection: React.FC<{ selectedClassId: string }> = ({ selectedClassId
                             disabled={isGenerating}
                             className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition disabled:opacity-50">
                             <i className="fas fa-comments text-orange-600 mr-3"></i>
-                            Communication Summary
+                            {t('communication_summary')}
                             {isGenerating && reportType === 'communication' && <LoadingSpinner />}
                         </button>
                     </div>
                 </Card>
 
                 <Card>
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">Live Stats</h3>
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">{t('live_stats')}</h3>
                     <div className="space-y-3">
                         <div className="flex justify-between items-center">
                             <span className="text-gray-600">Total Users</span>
@@ -626,7 +630,7 @@ const ReportsSection: React.FC<{ selectedClassId: string }> = ({ selectedClassId
                         </div>
                         <div className="flex justify-between items-center">
                             <span className="text-gray-600">Total Classes</span>
-                            <span className="text-xl font-bold text-green-600">{classes.length}</span>
+                            <span className="text-xl font-bold text-green-600">{classList.length}</span>
                         </div>
                         <div className="flex justify-between items-center">
                             <span className="text-gray-600">Messages Today</span>
@@ -672,6 +676,7 @@ const StatCard: React.FC<{ title: string; value: number; icon: string; color: st
 // Placeholder components for detailed management sections
 const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg: string) => void }> = ({ searchTerm, setSuccessMessage }) => {
     const { students, users, classes, subjects, setUsers, setStudents } = useContext(AppContext);
+    const { t } = useTranslation();
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [newStudent, setNewStudent] = useState({
@@ -899,7 +904,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                             onClick={() => setShowAddModal(true)}
                             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center"
                         >
-                            <i className="fas fa-plus mr-2"></i>Add Student
+                            <i className="fas fa-plus mr-2"></i>{t('add_new_student')}
                         </button>
                     </div>
                 </div>
@@ -962,7 +967,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                     {filteredStudents.length === 0 && (
                         <div className="col-span-full text-center text-gray-500 py-8">
                             <i className="fas fa-user-graduate text-4xl mb-4"></i>
-                            <p>No students found. Add your first student!</p>
+                            <p>{t('no_students_found')}</p>
                         </div>
                     )}
                 </div>
@@ -973,13 +978,13 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                 <form onSubmit={handleAddStudent} className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Student Name
+                            {t('student_name_label')}
                         </label>
                         <input
                             type="text"
                             value={newStudent.name}
                             onChange={(e) => setNewStudent({...newStudent, name: e.target.value})}
-                            placeholder="Enter student name"
+                            placeholder={t('enter_student_name')}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             required
                         />
@@ -987,7 +992,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                     
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Assign to Class (Required)
+                            {t('assign_to_class_required')}
                         </label>
                         <select
                             value={newStudent.classId}
@@ -995,7 +1000,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             required
                         >
-                            <option value="">Select a class</option>
+                            <option value="">{t('select_a_class')}</option>
                             {classes.map(classItem => (
                                 <option key={classItem.id} value={classItem.id}>
                                     {classItem.name} 
@@ -1005,8 +1010,8 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                         </select>
                         {newStudent.classId && (
                             <div className="mt-2 p-2 bg-green-50 rounded-lg">
-                                <p className="text-xs text-green-700 font-medium">Auto-Enrollment Preview:</p>
-                                <p className="text-xs text-green-600">Student will be enrolled in all class subjects:</p>
+                                <p className="text-xs text-green-700 font-medium">{t('auto_enrollment_preview')}</p>
+                                <p className="text-xs text-green-600">{t('student_will_be_enrolled')}</p>
                                 <div className="flex flex-wrap gap-1 mt-1">
                                     {classes.find(c => c.id === newStudent.classId) && 
                                         ((classes.find(c => c.id === newStudent.classId) as any).subjectIds || []).map((subjectId: string) => {
@@ -1025,14 +1030,14 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Assign to Parent (Optional)
+                            {t('assign_to_parent_optional')}
                         </label>
                         <div className="space-y-2">
                             <input
                                 type="text"
                                 value={parentSearch}
                                 onChange={(e) => setParentSearch(e.target.value)}
-                                placeholder="Search parents..."
+                                placeholder={t('search_parents')}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                             {parentSearch && (
@@ -1054,7 +1059,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                                         </button>
                                     ))}
                                     {filteredParents.length === 0 && (
-                                        <p className="text-gray-500 text-sm p-3">No parents found</p>
+                                        <p className="text-gray-500 text-sm p-3">{t('no_parents_found')}</p>
                                     )}
                                 </div>
                             )}
@@ -1079,7 +1084,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                             disabled={isLoading || !newStudent.name.trim() || !newStudent.classId}
                             className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
                         >
-                            {isLoading ? <LoadingSpinner /> : 'Add Student'}
+                            {isLoading ? <LoadingSpinner /> : t('add_new_student')}
                         </button>
                     </div>
                 </form>
@@ -1090,13 +1095,13 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                 <form onSubmit={handleEditStudent} className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Student Name
+                            {t('student_name_label')}
                         </label>
                         <input
                             type="text"
                             value={newStudent.name}
                             onChange={(e) => setNewStudent({...newStudent, name: e.target.value})}
-                            placeholder="Enter student name"
+                            placeholder={t('enter_student_name')}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             required
                         />
@@ -1104,7 +1109,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                     
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Assign to Class (Required)
+                            {t('assign_to_class_required')}
                         </label>
                         <select
                             value={newStudent.classId}
@@ -1112,7 +1117,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             required
                         >
-                            <option value="">Select a class</option>
+                            <option value="">{t('select_a_class')}</option>
                             {classes.map(classItem => (
                                 <option key={classItem.id} value={classItem.id}>
                                     {classItem.name} 
@@ -1122,8 +1127,8 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                         </select>
                         {newStudent.classId && (
                             <div className="mt-2 p-2 bg-green-50 rounded-lg">
-                                <p className="text-xs text-green-700 font-medium">Auto-Enrollment Preview:</p>
-                                <p className="text-xs text-green-600">Student will be enrolled in all class subjects:</p>
+                                <p className="text-xs text-green-700 font-medium">{t('auto_enrollment_preview')}</p>
+                                <p className="text-xs text-green-600">{t('student_will_be_enrolled')}</p>
                                 <div className="flex flex-wrap gap-1 mt-1">
                                     {classes.find(c => c.id === newStudent.classId) && 
                                         ((classes.find(c => c.id === newStudent.classId) as any).subjectIds || []).map((subjectId: string) => {
@@ -1142,14 +1147,14 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Assign to Parent (Optional)
+                            {t('assign_to_parent_optional')}
                         </label>
                         <div className="space-y-2">
                             <input
                                 type="text"
                                 value={parentSearch}
                                 onChange={(e) => setParentSearch(e.target.value)}
-                                placeholder="Search parents..."
+                                placeholder={t('search_parents')}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                             {parentSearch && (
@@ -1171,7 +1176,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                                         </button>
                                     ))}
                                     {filteredParents.length === 0 && (
-                                        <p className="text-gray-500 text-sm p-3">No parents found</p>
+                                        <p className="text-gray-500 text-sm p-3">{t('no_parents_found')}</p>
                                     )}
                                 </div>
                             )}
@@ -1196,7 +1201,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                             disabled={isLoading || !newStudent.name.trim() || !newStudent.classId}
                             className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
                         >
-                            {isLoading ? <LoadingSpinner /> : 'Update Student'}
+                            {isLoading ? <LoadingSpinner /> : t('update_student')}
                         </button>
                     </div>
                 </form>
@@ -1207,9 +1212,9 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                 isOpen={deleteConfirm.isOpen}
                 onClose={() => setDeleteConfirm({ isOpen: false, student: null })}
                 onConfirm={handleDeleteStudent}
-                title="Delete Student"
-                message={`Are you sure you want to delete "${deleteConfirm.student?.name}"? This will remove them from their class and parent.`}
-                confirmText="Delete Student"
+                title={t('delete_student')}
+                message={t('are_you_sure_delete_student').replace('{{deleteConfirm.student?.name}}', deleteConfirm.student?.name || '')}
+                confirmText={t('delete_student')}
                 type="danger"
                 isLoading={isDeleting}
             />
@@ -1219,6 +1224,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
 
 const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg: string) => void }> = ({ searchTerm, setSuccessMessage }) => {
     const { teachers, users, subjects, classes, setUsers, setTeachers } = useContext(AppContext);
+    const { t } = useTranslation();
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [newTeacher, setNewTeacher] = useState({
@@ -1369,7 +1375,7 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                         onClick={() => setShowAddModal(true)}
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center"
                     >
-                        <i className="fas fa-plus mr-2"></i>Add Teacher
+                        <i className="fas fa-plus mr-2"></i>{t('add_new_teacher')}
                     </button>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1422,7 +1428,7 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                     {teacherUsers.length === 0 && (
                         <div className="col-span-full text-center text-gray-500 py-8">
                             <i className="fas fa-chalkboard-teacher text-4xl mb-4"></i>
-                            <p>No teachers found. Add your first teacher!</p>
+                            <p>{t('no_teachers_found')}</p>
                         </div>
                     )}
                 </div>
@@ -1433,13 +1439,13 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                 <form onSubmit={handleAddTeacher} className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Teacher Name
+                            {t('teacher_name_label')}
                         </label>
                         <input
                             type="text"
                             value={newTeacher.name}
                             onChange={(e) => setNewTeacher({...newTeacher, name: e.target.value})}
-                            placeholder="Enter teacher name"
+                            placeholder={t('enter_teacher_name')}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             required
                         />
@@ -1447,7 +1453,7 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                     
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Assign to Subject (Required)
+                            {t('assign_to_subject_required')}
                         </label>
                         <select
                             value={newTeacher.subjectId}
@@ -1455,7 +1461,7 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             required
                         >
-                            <option value="">Select a subject</option>
+                            <option value="">{t('select_a_subject')}</option>
                             {subjects.map(subject => {
                                 const classesWithSubject = classes.filter(c => 
                                     (c as any).subjectIds?.includes(subject.id)
@@ -1469,9 +1475,9 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                         </select>
                         {newTeacher.subjectId && (
                             <div className="mt-2 p-2 bg-green-50 rounded-lg">
-                                <p className="text-xs text-green-700 font-medium">Auto-Assignment Preview:</p>
+                                <p className="text-xs text-green-700 font-medium">{t('auto_assignment_preview')}</p>
                                 <p className="text-xs text-green-600">
-                                    Will be assigned to all classes teaching {subjects.find(s => s.id === newTeacher.subjectId)?.name}:
+                                    {t('will_be_assigned_to_all_classes').replace('{{subjects.find(s => s.id === newTeacher.subjectId)?.name}}', subjects.find(s => s.id === newTeacher.subjectId)?.name || '')}
                                 </p>
                                 <div className="flex flex-wrap gap-1 mt-1">
                                     {classes.filter(c => (c as any).subjectIds?.includes(newTeacher.subjectId)).map(classItem => (
@@ -1497,7 +1503,7 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                             disabled={isLoading || !newTeacher.name.trim() || !newTeacher.subjectId}
                             className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
                         >
-                            {isLoading ? <LoadingSpinner /> : 'Add Teacher'}
+                            {isLoading ? <LoadingSpinner /> : t('add_new_teacher')}
                         </button>
                     </div>
                 </form>
@@ -1583,9 +1589,9 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                 isOpen={deleteConfirm.isOpen}
                 onClose={() => setDeleteConfirm({ isOpen: false, teacher: null })}
                 onConfirm={handleDeleteTeacher}
-                title="Delete Teacher"
-                message={`Are you sure you want to delete "${deleteConfirm.teacher?.name}"? This will remove them from all assigned classes.`}
-                confirmText="Delete Teacher"
+                title={t('delete_teacher')}
+                message={t('are_you_sure_delete_teacher').replace('{{deleteConfirm.teacher?.name}}', deleteConfirm.teacher?.name || '')}
+                confirmText={t('delete_teacher')}
                 type="danger"
                 isLoading={isDeleting}
             />
@@ -1595,6 +1601,7 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
 
 const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg: string) => void }> = ({ searchTerm, setSuccessMessage }) => {
     const { users, students, setUsers } = useContext(AppContext);
+    const { t } = useTranslation();
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [newParentName, setNewParentName] = useState('');
@@ -1689,7 +1696,7 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
                         onClick={() => setShowAddModal(true)}
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center"
                     >
-                        <i className="fas fa-plus mr-2"></i>Add Parent
+                        <i className="fas fa-plus mr-2"></i>{t('add_new_parent')}
                     </button>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1744,7 +1751,7 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
                     {parentUsers.length === 0 && (
                         <div className="col-span-full text-center text-gray-500 py-8">
                             <i className="fas fa-users text-4xl mb-4"></i>
-                            <p>No parents found. Add your first parent!</p>
+                            <p>{t('no_parents_found_add_first')}</p>
                         </div>
                     )}
                 </div>
@@ -1755,13 +1762,13 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
                 <form onSubmit={handleAddParent} className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Parent Name
+                            {t('parent_name')}
                         </label>
                         <input
                             type="text"
                             value={newParentName}
                             onChange={(e) => setNewParentName(e.target.value)}
-                            placeholder="Enter parent name"
+                            placeholder={t('enter_parent_name')}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             required
                         />
@@ -1787,7 +1794,7 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
                             disabled={isLoading || !newParentName.trim()}
                             className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
                         >
-                            {isLoading ? <LoadingSpinner /> : 'Add Parent'}
+                            {isLoading ? <LoadingSpinner /> : t('add_new_parent')}
                         </button>
                     </div>
                 </form>
@@ -1830,7 +1837,7 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
                             disabled={isLoading || !newParentName.trim()}
                             className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
                         >
-                            {isLoading ? <LoadingSpinner /> : 'Update Parent'}
+                            {isLoading ? <LoadingSpinner /> : t('update_parent')}
                         </button>
                     </div>
                 </form>
@@ -1841,9 +1848,9 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
                 isOpen={deleteConfirm.isOpen}
                 onClose={() => setDeleteConfirm({ isOpen: false, parent: null })}
                 onConfirm={handleDeleteParent}
-                title="Delete Parent"
-                message={`Are you sure you want to delete "${deleteConfirm.parent?.name}"? This will also affect their children's records.`}
-                confirmText="Delete Parent"
+                title={t('delete_parent')}
+                message={t('are_you_sure_delete_parent').replace('{{deleteConfirm.parent?.name}}', deleteConfirm.parent?.name || '')}
+                confirmText={t('delete_parent')}
                 type="danger"
                 isLoading={isDeleting}
             />
@@ -1854,13 +1861,14 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
 // More placeholder components for academic management
 const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({ setSuccessMessage }) => {
     const { classes, setClasses, subjects } = useContext(AppContext);
+    const { t } = useTranslation();
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [newClassName, setNewClassName] = useState('');
     const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
     const [editingClass, setEditingClass] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [deleteConfirm, setDeleteConfirm] = useState<{isOpen: boolean, class: any | null}>({isOpen: false, class: null});
+    const [deleteConfirm, setDeleteConfirm] = useState<{isOpen: boolean, classItem: any | null}>({isOpen: false, classItem: null});
     const [isDeleting, setIsDeleting] = useState(false);
 
     const handleAddClass = async (e: React.FormEvent) => {
@@ -1915,18 +1923,18 @@ const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = 
     };
 
     const confirmDeleteClass = (classItem: any) => {
-        setDeleteConfirm({ isOpen: true, class: classItem });
+        setDeleteConfirm({ isOpen: true, classItem: classItem });
     };
 
     const handleDeleteClass = async () => {
-        if (!deleteConfirm.class) return;
+        if (!deleteConfirm.classItem) return;
 
         setIsDeleting(true);
         try {
-            await apiService.deleteClass(deleteConfirm.class.id);
-            setClasses(classes.filter(c => c.id !== deleteConfirm.class!.id));
-            setSuccessMessage(`Class "${deleteConfirm.class.name}" deleted successfully!`);
-            setDeleteConfirm({ isOpen: false, class: null });
+            await apiService.deleteClass(deleteConfirm.classItem.id);
+            setClasses(classes.filter(c => c.id !== deleteConfirm.classItem!.id));
+            setSuccessMessage(`Class "${deleteConfirm.classItem.name}" deleted successfully!`);
+            setDeleteConfirm({ isOpen: false, classItem: null });
         } catch (error) {
             console.error('Error deleting class:', error);
             setSuccessMessage('Failed to delete class. Please try again.');
@@ -1952,7 +1960,7 @@ const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = 
                         onClick={() => setShowAddModal(true)}
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center"
                     >
-                        <i className="fas fa-plus mr-2"></i>Add Class
+                        <i className="fas fa-plus mr-2"></i>{t('add_new_class')}
                     </button>
                 </div>
                 <div className="space-y-4">
@@ -2000,7 +2008,7 @@ const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = 
                     {classes.length === 0 && (
                         <div className="text-center text-gray-500 py-8">
                             <i className="fas fa-school text-4xl mb-4"></i>
-                            <p>No classes yet. Add your first class to get started!</p>
+                            <p>{t('no_classes_yet')}</p>
                         </div>
                     )}
                 </div>
@@ -2011,13 +2019,13 @@ const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = 
                 <form onSubmit={handleAddClass} className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Class Name
+                            {t('class_name')}
                         </label>
                         <input
                             type="text"
                             value={newClassName}
                             onChange={(e) => setNewClassName(e.target.value)}
-                            placeholder="e.g., Grade 5A, Class 10B"
+                            placeholder={t('class_name_placeholder')}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             required
                         />
@@ -2025,10 +2033,10 @@ const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = 
                     
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Assign Subjects to Class
+                            {t('assign_subjects_to_class')}
                         </label>
                         {subjects.length === 0 ? (
-                            <p className="text-gray-500 text-sm">No subjects available. Create subjects first.</p>
+                            <p className="text-gray-500 text-sm">{t('no_subjects_available')}</p>
                         ) : (
                             <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-2">
                                 {subjects.map(subject => (
@@ -2062,7 +2070,7 @@ const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = 
                             disabled={isLoading || !newClassName.trim()}
                             className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
                         >
-                            {isLoading ? <LoadingSpinner /> : 'Add Class'}
+                            {isLoading ? <LoadingSpinner /> : t('add_new_class')}
                         </button>
                     </div>
                 </form>
@@ -2133,11 +2141,11 @@ const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = 
             {/* Delete Confirmation Dialog */}
             <ConfirmDialog
                 isOpen={deleteConfirm.isOpen}
-                onClose={() => setDeleteConfirm({ isOpen: false, class: null })}
+                onClose={() => setDeleteConfirm({ isOpen: false, classItem: null })}
                 onConfirm={handleDeleteClass}
-                title="Delete Class"
-                message={`Are you sure you want to delete "${deleteConfirm.class?.name}"? This will affect all students and teachers in this class.`}
-                confirmText="Delete Class"
+                title={t('delete_class_confirm')}
+                message={t('are_you_sure_delete_class').replace('{{deleteConfirm.class?.name}}', deleteConfirm.classItem?.name || '')}
+                confirmText={t('delete_class')}
                 type="danger"
                 isLoading={isDeleting}
             />
@@ -2152,7 +2160,7 @@ const SubjectManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> 
     const [newSubjectName, setNewSubjectName] = useState('');
     const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [deleteConfirm, setDeleteConfirm] = useState<{isOpen: boolean, subject: Subject | null}>({isOpen: false, subject: null});
+    const [deleteConfirm, setDeleteConfirm] = useState<{isOpen: boolean, subjectItem: Subject | null}>({isOpen: false, subjectItem: null});
     const [isDeleting, setIsDeleting] = useState(false);
 
     const handleAddSubject = async (e: React.FormEvent) => {
@@ -2203,18 +2211,18 @@ const SubjectManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> 
     };
 
     const confirmDelete = (subject: Subject) => {
-        setDeleteConfirm({ isOpen: true, subject });
+        setDeleteConfirm({ isOpen: true, subjectItem: subject });
     };
 
     const handleDeleteSubject = async () => {
-        if (!deleteConfirm.subject) return;
+        if (!deleteConfirm.subjectItem) return;
 
         setIsDeleting(true);
         try {
-            await apiService.deleteSubject(deleteConfirm.subject.id);
-            setSubjects(subjects.filter(s => s.id !== deleteConfirm.subject!.id));
-            setSuccessMessage(`Subject "${deleteConfirm.subject.name}" deleted successfully!`);
-            setDeleteConfirm({ isOpen: false, subject: null });
+            await apiService.deleteSubject(deleteConfirm.subjectItem.id);
+            setSubjects(subjects.filter(s => s.id !== deleteConfirm.subjectItem!.id));
+            setSuccessMessage(`Subject "${deleteConfirm.subjectItem.name}" deleted successfully!`);
+            setDeleteConfirm({ isOpen: false, subjectItem: null });
         } catch (error) {
             console.error('Error deleting subject:', error);
             setSuccessMessage('Failed to delete subject. Please try again.');
@@ -2232,7 +2240,7 @@ const SubjectManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> 
                         onClick={() => setShowAddModal(true)}
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center"
                     >
-                        <i className="fas fa-plus mr-2"></i>Add Subject
+                        <i className="fas fa-plus mr-2"></i>{t('add_new_subject')}
                     </button>
                 </div>
                             <div className="space-y-2">
@@ -2260,7 +2268,7 @@ const SubjectManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> 
                     {subjects.length === 0 && (
                         <div className="text-center text-gray-500 py-8">
                             <i className="fas fa-book text-4xl mb-4"></i>
-                            <p>No subjects yet. Add your first subject to get started!</p>
+                            <p>{t('no_subjects_available')}</p>
                         </div>
                     )}
                 </div>
@@ -2271,13 +2279,13 @@ const SubjectManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> 
                 <form onSubmit={handleAddSubject} className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Subject Name
+                            {t('subject_name')}
                         </label>
                         <input
                             type="text"
                             value={newSubjectName}
                             onChange={(e) => setNewSubjectName(e.target.value)}
-                            placeholder="e.g., Mathematics, English, History"
+                            placeholder={t('subject_name_placeholder')}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             required
                         />
@@ -2295,7 +2303,7 @@ const SubjectManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> 
                             disabled={isLoading || !newSubjectName.trim()}
                             className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
                         >
-                            {isLoading ? <LoadingSpinner /> : 'Add Subject'}
+                            {isLoading ? <LoadingSpinner /> : t('add_new_subject')}
                         </button>
                     </div>
                 </form>
@@ -2330,7 +2338,7 @@ const SubjectManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> 
                             disabled={isLoading || !newSubjectName.trim()}
                             className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
                         >
-                            {isLoading ? <LoadingSpinner /> : 'Update Subject'}
+                            {isLoading ? <LoadingSpinner /> : t('update_subject')}
                         </button>
                     </div>
                 </form>
@@ -2339,11 +2347,11 @@ const SubjectManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> 
             {/* Delete Confirmation Dialog */}
             <ConfirmDialog
                 isOpen={deleteConfirm.isOpen}
-                onClose={() => setDeleteConfirm({ isOpen: false, subject: null })}
+                onClose={() => setDeleteConfirm({ isOpen: false, subjectItem: null })}
                 onConfirm={handleDeleteSubject}
-                title="Delete Subject"
-                message={`Are you sure you want to delete "${deleteConfirm.subject?.name}"? This action cannot be undone and may affect classes and teachers.`}
-                confirmText="Delete Subject"
+                title={t('delete_subject')}
+                message={t('are_you_sure_delete_subject').replace('{{deleteConfirm.subject?.name}}', deleteConfirm.subjectItem?.name || '')}
+                confirmText={t('delete_subject')}
                 type="danger"
                 isLoading={isDeleting}
             />
@@ -2386,6 +2394,7 @@ const AttendanceManagement: React.FC<{ selectedClassId: string }> = ({ selectedC
 
 // Automation Section
 const AutomationSection: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({ setSuccessMessage }) => {
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<'students' | 'teachers' | 'classes'>('students');
     const [showStudentModal, setShowStudentModal] = useState(false);
     const [showTeacherModal, setShowTeacherModal] = useState(false);
@@ -2415,7 +2424,7 @@ const AutomationSection: React.FC<{ setSuccessMessage: (msg: string) => void }> 
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h2 className="text-2xl font-bold text-gray-800">Automation Hub</h2>
+                <h2 className="text-2xl font-bold text-gray-800">{t('automation')}</h2>
             </div>
 
             {/* Tab Navigation */}
@@ -2443,9 +2452,9 @@ const AutomationSection: React.FC<{ setSuccessMessage: (msg: string) => void }> 
                 {activeTab === 'students' && (
                     <div>
                         <div className="mb-6">
-                            <h3 className="text-xl font-semibold text-gray-800 mb-2">Smart Student Creation</h3>
+                            <h3 className="text-xl font-semibold text-gray-800 mb-2">{t('smart_student_creation')}</h3>
                             <p className="text-gray-600">
-                                Create students with intelligent suggestions for class assignments, parent links, and subject enrollments based on age and grade.
+                                {t('student_creation_description')}
                             </p>
                         </div>
                         <button
@@ -2453,7 +2462,7 @@ const AutomationSection: React.FC<{ setSuccessMessage: (msg: string) => void }> 
                             className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition flex items-center space-x-2"
                         >
                             <i className="fas fa-plus"></i>
-                            <span>Create Smart Student</span>
+                            <span>{t('create_smart_student')}</span>
                         </button>
                     </div>
                 )}
@@ -2461,9 +2470,9 @@ const AutomationSection: React.FC<{ setSuccessMessage: (msg: string) => void }> 
                 {activeTab === 'teachers' && (
                     <div>
                         <div className="mb-6">
-                            <h3 className="text-xl font-semibold text-gray-800 mb-2">Smart Teacher Creation</h3>
+                            <h3 className="text-xl font-semibold text-gray-800 mb-2">{t('smart_teacher_creation')}</h3>
                             <p className="text-gray-600">
-                                Create teachers with automatic class assignments based on subject specialization and workload balancing.
+                                {t('teacher_creation_description')}
                             </p>
                         </div>
                         <button
@@ -2471,7 +2480,7 @@ const AutomationSection: React.FC<{ setSuccessMessage: (msg: string) => void }> 
                             className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition flex items-center space-x-2"
                         >
                             <i className="fas fa-plus"></i>
-                            <span>Create Smart Teacher</span>
+                            <span>{t('create_smart_teacher')}</span>
                         </button>
                     </div>
                 )}
@@ -2479,9 +2488,9 @@ const AutomationSection: React.FC<{ setSuccessMessage: (msg: string) => void }> 
                 {activeTab === 'classes' && (
                     <div>
                         <div className="mb-6">
-                            <h3 className="text-xl font-semibold text-gray-800 mb-2">Smart Class Creation</h3>
+                            <h3 className="text-xl font-semibold text-gray-800 mb-2">{t('smart_class_creation')}</h3>
                             <p className="text-gray-600">
-                                Create classes with intelligent subject suggestions and teacher recommendations based on class name and requirements.
+                                {t('class_creation_description')}
                             </p>
                         </div>
                         <button
@@ -2489,7 +2498,7 @@ const AutomationSection: React.FC<{ setSuccessMessage: (msg: string) => void }> 
                             className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition flex items-center space-x-2"
                         >
                             <i className="fas fa-plus"></i>
-                            <span>Create Smart Class</span>
+                            <span>{t('create_smart_class')}</span>
                         </button>
                     </div>
                 )}
