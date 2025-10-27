@@ -55,7 +55,7 @@ const TUTORIALS: Record<string, TutorialConfig> = {
         id: 'sidebar',
         title: 'tutorial_sidebar_title',
         content: 'tutorial_sidebar_content',
-        target: '.lg\\:w-64',
+        target: '.lg\\:w-64, [class*="lg:w-64"]',
         position: 'right'
       },
       {
