@@ -65,28 +65,28 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
       switch (currentStep.position) {
         case 'top':
           top = rect.top + scrollY - 120;
-          left = rect.left + scrollX + (rect.width / 2) - 200;
-          width = 400;
+          left = rect.left + scrollX + (rect.width / 2) - 250;
+          width = 500;
           break;
         case 'bottom':
           top = rect.bottom + scrollY + 20;
-          left = rect.left + scrollX + (rect.width / 2) - 200;
-          width = 400;
+          left = rect.left + scrollX + (rect.width / 2) - 250;
+          width = 500;
           break;
         case 'left':
           top = rect.top + scrollY + (rect.height / 2) - 100;
-          left = rect.left + scrollX - 420;
-          width = 400;
+          left = rect.left + scrollX - 520;
+          width = 500;
           break;
         case 'right':
           top = rect.top + scrollY + (rect.height / 2) - 100;
           left = rect.right + scrollX + 20;
-          width = 400;
+          width = 500;
           break;
         case 'center':
           top = window.innerHeight / 2 - 150;
-          left = window.innerWidth / 2 - 200;
-          width = 400;
+          left = window.innerWidth / 2 - 250;
+          width = 500;
           break;
       }
 
@@ -164,11 +164,13 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
       {/* Tooltip */}
       <div
         ref={tooltipRef}
-        className={`fixed z-[9999] bg-white rounded-lg shadow-2xl p-6 max-w-md ${isRtl ? 'rtl' : 'ltr'}`}
+        className={`fixed z-[9999] bg-white rounded-lg shadow-2xl p-6 ${isRtl ? 'rtl' : 'ltr'}`}
         style={{
           top: `${tooltipPosition.top}px`,
           left: `${tooltipPosition.left}px`,
-          width: `${tooltipPosition.width}px`
+          width: `${tooltipPosition.width}px`,
+          minWidth: '450px',
+          maxWidth: '600px'
         }}
       >
         {/* Progress Bar */}
