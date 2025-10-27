@@ -46,22 +46,22 @@ const TUTORIALS: Record<string, TutorialConfig> = {
    steps: [
      {
        id: 'welcome',
-       title: 'Welcome to EdCon Admin Dashboard',
-       content: 'This tutorial will guide you through admin dashboard and show you how to manage your educational institution efficiently. Let\'s start with the main navigation.',
+       title: 'tutorial_welcome_title',
+       content: 'tutorial_welcome_content',
        position: 'center',
        requireInteraction: true
      },
       {
         id: 'sidebar',
-        title: 'Navigation Sidebar',
-        content: 'This is your main navigation menu. You can access different sections like Dashboard, Analytics, User Management, Academic settings, System settings, and Reports.',
+        title: 'tutorial_sidebar_title',
+        content: 'tutorial_sidebar_content',
         target: '.lg\\:w-64',
         position: 'right'
       },
       {
         id: 'dashboard',
-        title: 'Dashboard Overview',
-        content: 'The dashboard gives you a quick overview of your institution with key metrics, statistics, and recent activities.',
+        title: 'tutorial_dashboard_title',
+        content: 'tutorial_dashboard_content',
         target: '[data-section="dashboard"]',
         position: 'bottom',
         action: () => {
@@ -71,8 +71,8 @@ const TUTORIALS: Record<string, TutorialConfig> = {
       },
       {
         id: 'analytics',
-        title: 'Analytics Section',
-        content: 'View detailed analytics including grade distributions, attendance trends, and performance metrics to make data-driven decisions.',
+        title: 'tutorial_analytics_title',
+        content: 'tutorial_analytics_content',
         target: '[data-section="analytics"]',
         position: 'bottom',
         action: () => {
@@ -82,8 +82,8 @@ const TUTORIALS: Record<string, TutorialConfig> = {
       },
       {
         id: 'users',
-        title: 'User Management',
-        content: 'Manage all users in your system - students, teachers, and parents. You can add, edit, or delete users from here.',
+        title: 'tutorial_users_title',
+        content: 'tutorial_users_content',
         target: '[data-section="users"]',
         position: 'bottom',
         action: () => {
@@ -93,8 +93,8 @@ const TUTORIALS: Record<string, TutorialConfig> = {
       },
       {
         id: 'students-tab',
-        title: 'Managing Students',
-        content: 'In the Students tab, you can add new students, assign them to classes, link them with parents, and manage their information.',
+        title: 'tutorial_students_tab_title',
+        content: 'tutorial_students_tab_content',
         target: '[data-tab="students"]',
         position: 'bottom',
         action: () => {
@@ -104,8 +104,8 @@ const TUTORIALS: Record<string, TutorialConfig> = {
       },
       {
         id: 'teachers-tab',
-        title: 'Managing Teachers',
-        content: 'Add teachers, assign them subjects, and automatically link them to classes that teach those subjects.',
+        title: 'tutorial_teachers_tab_title',
+        content: 'tutorial_teachers_tab_content',
         target: '[data-tab="teachers"]',
         position: 'bottom',
         action: () => {
@@ -115,8 +115,8 @@ const TUTORIALS: Record<string, TutorialConfig> = {
       },
       {
         id: 'parents-tab',
-        title: 'Managing Parents',
-        content: 'Create parent accounts and link them to their children for seamless communication and monitoring.',
+        title: 'tutorial_parents_tab_title',
+        content: 'tutorial_parents_tab_content',
         target: '[data-tab="parents"]',
         position: 'bottom',
         action: () => {
@@ -126,8 +126,8 @@ const TUTORIALS: Record<string, TutorialConfig> = {
       },
       {
         id: 'academic',
-        title: 'Academic Management',
-        content: 'Manage classes and subjects. Create classes, assign subjects to them, and organize your academic structure.',
+        title: 'tutorial_academic_title',
+        content: 'tutorial_academic_content',
         target: '[data-section="academic"]',
         position: 'bottom',
         action: () => {
@@ -137,8 +137,8 @@ const TUTORIALS: Record<string, TutorialConfig> = {
       },
       {
         id: 'classes-management',
-        title: 'Class Management',
-        content: 'Create and manage classes. Each class can have multiple subjects assigned to it.',
+        title: 'tutorial_classes_management_title',
+        content: 'tutorial_classes_management_content',
         target: '[data-tab="classes"]',
         position: 'bottom',
         action: () => {
@@ -148,8 +148,8 @@ const TUTORIALS: Record<string, TutorialConfig> = {
       },
       {
         id: 'subjects-management',
-        title: 'Subject Management',
-        content: 'Create and manage subjects that will be taught in your classes.',
+        title: 'tutorial_subjects_management_title',
+        content: 'tutorial_subjects_management_content',
         target: '[data-tab="subjects"]',
         position: 'bottom',
         action: () => {
@@ -159,8 +159,8 @@ const TUTORIALS: Record<string, TutorialConfig> = {
       },
       {
         id: 'system',
-        title: 'System Settings',
-        content: 'Access system-wide settings including data backup, system information, and administrative tools.',
+        title: 'tutorial_system_title',
+        content: 'tutorial_system_content',
         target: '[data-section="system"]',
         position: 'bottom',
         action: () => {
@@ -170,8 +170,8 @@ const TUTORIALS: Record<string, TutorialConfig> = {
       },
       {
         id: 'reports',
-        title: 'Reports',
-        content: 'Generate comprehensive reports about user activity, system usage, and communication summaries.',
+        title: 'tutorial_reports_title',
+        content: 'tutorial_reports_content',
         target: '[data-section="reports"]',
         position: 'bottom',
         action: () => {
@@ -181,15 +181,15 @@ const TUTORIALS: Record<string, TutorialConfig> = {
       },
       {
         id: 'relationships',
-        title: 'Understanding Relationships',
-        content: 'EdCon automatically manages relationships between entities. When you assign a subject to a class, teachers teaching that subject are automatically linked. When you create a student, they get enrolled in all subjects of their class.',
+        title: 'tutorial_relationships_title',
+        content: 'tutorial_relationships_content',
         position: 'center',
         requireInteraction: true
       },
       {
         id: 'completion',
-        title: 'Tutorial Complete!',
-        content: 'You\'ve completed the admin dashboard tutorial! You now have a good understanding of how to manage your educational institution using EdCon. Remember, you can always restart this tutorial from the help menu.',
+        title: 'tutorial_completion_title',
+        content: 'tutorial_completion_content',
         position: 'center',
         requireInteraction: true
       }
