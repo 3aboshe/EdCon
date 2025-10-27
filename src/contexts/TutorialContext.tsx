@@ -382,6 +382,14 @@ export const TutorialProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const completeTutorial = () => {
+    // Check if this is the adminDashboard tutorial completing
+    if (currentTutorial?.id === 'adminDashboard') {
+      // Start the school digitization tutorial after a short delay
+      setTimeout(() => {
+        startTutorial('schoolDigitization');
+      }, 1000);
+    }
+    
     setIsActive(false);
     setCurrentTutorial(null);
     setCurrentStepIndex(0);
