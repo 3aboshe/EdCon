@@ -195,7 +195,7 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
     setIsVisible(false);
     
     setTimeout(() => {
-      if (currentStep.requireInteraction) {
+      if (currentStep?.requireInteraction) {
         // For steps requiring interaction, just move to next step
         nextStep();
       } else {
@@ -204,7 +204,7 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
       setIsTransitioning(false);
       setIsVisible(true);
     }, 300);
-  }, [currentStep.requireInteraction, nextStep]);
+  }, [currentStep?.requireInteraction, nextStep]);
 
   const handlePrevious = useCallback(() => {
     setIsTransitioning(true);
