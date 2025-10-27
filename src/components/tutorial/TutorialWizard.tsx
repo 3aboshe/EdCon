@@ -171,7 +171,7 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
         }, 500);
       }
     }
-  }, [isActive, currentStep]);
+  }, [isActive, currentStep?.id, currentStep?.target, currentStep?.position, currentStep?.action]);
 
   // Scroll to highlighted element
   useEffect(() => {
@@ -195,16 +195,11 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
     setIsVisible(false);
     
     setTimeout(() => {
-      if (currentStep?.requireInteraction) {
-        // For steps requiring interaction, just move to next step
-        nextStep();
-      } else {
-        nextStep();
-      }
+      nextStep();
       setIsTransitioning(false);
       setIsVisible(true);
     }, 300);
-  }, [currentStep?.requireInteraction, nextStep]);
+  }, [nextStep]);
 
   const handlePrevious = useCallback(() => {
     setIsTransitioning(true);
@@ -244,28 +239,28 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
         case 'ArrowRight':
         case 'ArrowDown':
           e.preventDefault();
-          if (!isLastStep) handleNext();
+          if (!isLastStep) nextStep();
           break;
         case 'ArrowLeft':
         case 'ArrowUp':
           e.preventDefault();
-          if (!isFirstStep) handlePrevious();
+          if (!isFirstStep) previousStep();
           break;
         case 'Escape':
           e.preventDefault();
-          handleSkip();
+          skipTutorial();
           break;
         case 'Enter':
           e.preventDefault();
-          if (isLastStep) handleComplete();
-          else handleNext();
+          if (isLastStep) completeTutorial();
+          else nextStep();
           break;
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isActive, isTransitioning, isLastStep, isFirstStep, handleNext, handlePrevious, handleSkip, handleComplete]);
+  }, [isActive, isTransitioning, isLastStep, isFirstStep, nextStep, previousStep, skipTutorial, completeTutorial]);
 
   // Trigger visibility animation when component mounts or step changes
   useEffect(() => {
@@ -273,7 +268,7 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
       const timer = setTimeout(() => setIsVisible(true), 50);
       return () => clearTimeout(timer);
     }
-  }, [isActive, currentStep]);
+  }, [isActive, currentStep?.id]);
 
   return (
     <>
