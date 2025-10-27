@@ -382,10 +382,16 @@ export const TutorialProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const completeTutorial = () => {
-    // Check if this is the adminDashboard tutorial completing
+    console.log('=== TUTORIAL COMPLETION DEBUG ===');
+    console.log('Current tutorial:', currentTutorial?.id);
+    console.log('Current step index:', currentStepIndex);
+    
+    // Check if this is adminDashboard tutorial completing
     if (currentTutorial?.id === 'adminDashboard') {
+      console.log('Admin dashboard tutorial completed, starting school digitization tutorial...');
       // Start the school digitization tutorial after a short delay
       setTimeout(() => {
+        console.log('Attempting to start school digitization tutorial...');
         startTutorial('schoolDigitization');
       }, 1000);
     }
@@ -393,6 +399,9 @@ export const TutorialProvider: React.FC<{ children: ReactNode }> = ({ children }
     setIsActive(false);
     setCurrentTutorial(null);
     setCurrentStepIndex(0);
+    
+    console.log('Tutorial state cleared');
+    console.log('=== END TUTORIAL COMPLETION DEBUG ===');
   };
 
   const pauseTutorial = () => {
