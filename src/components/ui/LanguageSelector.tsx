@@ -5,16 +5,15 @@ interface Language {
   code: string;
   name: string;
   nativeName: string;
-  flag: string;
   isRTL: boolean;
 }
 
 const languages: Language[] = [
-  { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸', isRTL: false },
-  { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇸🇦', isRTL: true },
-  { code: 'ku-sorani', name: 'Kurdish (Sorani)', nativeName: 'کوردی (سۆرانی)', flag: '🏴', isRTL: true },
-  { code: 'ku-badini', name: 'Kurdish (Bahdini)', nativeName: 'کوردی (بادینی)', flag: '🏴', isRTL: true },
-  { code: 'syr', name: 'Modern Assyrian', nativeName: 'ܐܬܘܪܝܐ ܚܕܬܐ', flag: '🏴', isRTL: true }
+  { code: 'en', name: 'English', nativeName: 'English', isRTL: false },
+  { code: 'ar', name: 'Arabic', nativeName: 'العربية', isRTL: true },
+  { code: 'ku-sorani', name: 'Kurdish (Sorani)', nativeName: 'کوردی (سۆرانی)', isRTL: true },
+  { code: 'ku-badini', name: 'Kurdish (Bahdini)', nativeName: 'کوردی (بادینی)', isRTL: true },
+  { code: 'syr', name: 'Modern Assyrian', nativeName: 'ܐܬܘܪܝܐ ܚܕܬܐ', isRTL: true }
 ];
 
 const LanguageSelector: React.FC = () => {
@@ -53,7 +52,6 @@ const LanguageSelector: React.FC = () => {
         <span className="text-sm font-medium text-gray-700">
           {currentLanguage.nativeName}
         </span>
-        <span className="text-lg">{currentLanguage.flag}</span>
         <span className={`text-gray-600 transition-transform ${isOpen ? 'rotate-180' : ''}`}>▼</span>
       </button>
       
@@ -69,7 +67,6 @@ const LanguageSelector: React.FC = () => {
                 }`}
                 role="menuitem"
               >
-                <span className="text-lg mr-3">{language.flag}</span>
                 <div className="flex flex-col items-start">
                   <span className="font-medium">{language.nativeName}</span>
                   <span className="text-xs text-gray-500">{language.name}</span>
