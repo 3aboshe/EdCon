@@ -389,6 +389,7 @@ export const TutorialProvider: React.FC<{ children: ReactNode }> = ({ children }
     // Check if this is adminDashboard tutorial completing
     if (currentTutorial?.id === 'adminDashboard') {
       console.log('Admin dashboard tutorial completed, starting school digitization tutorial...');
+      
       // Start the school digitization tutorial after a short delay
       setTimeout(() => {
         console.log('Attempting to start school digitization tutorial...');
@@ -396,12 +397,16 @@ export const TutorialProvider: React.FC<{ children: ReactNode }> = ({ children }
       }, 1000);
     }
     
-    setIsActive(false);
-    setCurrentTutorial(null);
-    setCurrentStepIndex(0);
-    
-    console.log('Tutorial state cleared');
-    console.log('=== END TUTORIAL COMPLETION DEBUG ===');
+    // Clear tutorial state AFTER starting the next tutorial
+    // This ensures the currentTutorial is still available when startTutorial is called
+    setTimeout(() => {
+      setIsActive(false);
+      setCurrentTutorial(null);
+      setCurrentStepIndex(0);
+      
+      console.log('Tutorial state cleared after starting next tutorial');
+      console.log('=== END TUTORIAL COMPLETION DEBUG ===');
+    }, 500);
   };
 
   const pauseTutorial = () => {
