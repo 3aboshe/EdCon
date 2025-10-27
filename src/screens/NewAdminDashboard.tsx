@@ -11,11 +11,8 @@ import LoadingSpinner from '../components/ui/LoadingSpinner';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import apiService from '../services/apiService';
 import { allAvatars } from '../data/avatars';
-import SmartStudentCreation from '../components/automation/SmartStudentCreation';
-import SmartTeacherCreation from '../components/automation/SmartTeacherCreation';
-import SmartClassCreation from '../components/automation/SmartClassCreation';
 
-type AdminSection = 'dashboard' | 'analytics' | 'users' | 'academic' | 'automation' | 'system' | 'reports';
+type AdminSection = 'dashboard' | 'analytics' | 'users' | 'academic' | 'system' | 'reports';
 type UserManagementTab = 'students' | 'teachers' | 'parents';
 type AcademicTab = 'classes' | 'subjects';
 
@@ -39,7 +36,6 @@ const AdminDashboard: React.FC = () => {
         { id: 'analytics', label: t('analytics'), icon: 'fa-chart-bar', color: 'purple' },
         { id: 'users', label: t('user_management'), icon: 'fa-users', color: 'green' },
         { id: 'academic', label: t('academic'), icon: 'fa-graduation-cap', color: 'orange' },
-        { id: 'automation', label: t('automation'), icon: 'fa-robot', color: 'indigo' },
         { id: 'system', label: t('system'), icon: 'fa-cogs', color: 'red' },
         { id: 'reports', label: t('reports'), icon: 'fa-file-alt', color: 'teal' }
     ] as const;
@@ -54,8 +50,6 @@ const AdminDashboard: React.FC = () => {
                 return <UserManagementSection setSuccessMessage={setSuccessMessage} />;
             case 'academic':
                 return <AcademicManagement selectedClassId={selectedClassId} setSuccessMessage={setSuccessMessage} />;
-            case 'automation':
-                return <AutomationSection setSuccessMessage={setSuccessMessage} />;
             case 'system':
                 return <SystemSettings setSuccessMessage={setSuccessMessage} />;
             case 'reports':
@@ -2155,6 +2149,7 @@ const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = 
 
 const SubjectManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({ setSuccessMessage }) => {
     const { subjects, setSubjects } = useContext(AppContext);
+    const { t } = useTranslation();
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [newSubjectName, setNewSubjectName] = useState('');
@@ -2392,153 +2387,5 @@ const AttendanceManagement: React.FC<{ selectedClassId: string }> = ({ selectedC
     );
 };
 
-// Automation Section
-const AutomationSection: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({ setSuccessMessage }) => {
-    const { t } = useTranslation();
-    const [activeTab, setActiveTab] = useState<'students' | 'teachers' | 'classes'>('students');
-    const [showStudentModal, setShowStudentModal] = useState(false);
-    const [showTeacherModal, setShowTeacherModal] = useState(false);
-    const [showClassModal, setShowClassModal] = useState(false);
-
-    const tabs = [
-        { id: 'students', label: 'Smart Student Creation', icon: 'fa-user-graduate' },
-        { id: 'teachers', label: 'Smart Teacher Creation', icon: 'fa-chalkboard-teacher' },
-        { id: 'classes', label: 'Smart Class Creation', icon: 'fa-school' }
-    ] as const;
-
-    const handleStudentCreated = (student: User) => {
-        setSuccessMessage(`Student "${student.name}" created successfully with automation features!`);
-        setShowStudentModal(false);
-    };
-
-    const handleTeacherCreated = (teacher: User) => {
-        setSuccessMessage(`Teacher "${teacher.name}" created successfully with automation features!`);
-        setShowTeacherModal(false);
-    };
-
-    const handleClassCreated = (classObj: any) => {
-        setSuccessMessage(`Class "${classObj.name}" created successfully with automation features!`);
-        setShowClassModal(false);
-    };
-
-    return (
-        <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h2 className="text-2xl font-bold text-gray-800">{t('automation')}</h2>
-            </div>
-
-            {/* Tab Navigation */}
-            <div className="bg-gray-100 rounded-lg p-1">
-                <nav className="flex space-x-1">
-                    {tabs.map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`flex-1 flex items-center justify-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                                activeTab === tab.id
-                                    ? 'bg-white text-indigo-600 shadow-sm'
-                                    : 'text-gray-600 hover:text-indigo-600'
-                            }`}
-                        >
-                            <i className={`fas ${tab.icon}`}></i>
-                            <span className="font-medium">{tab.label}</span>
-                        </button>
-                    ))}
-                </nav>
-            </div>
-
-            {/* Tab Content */}
-            <div className="bg-white rounded-lg p-6">
-                {activeTab === 'students' && (
-                    <div>
-                        <div className="mb-6">
-                            <h3 className="text-xl font-semibold text-gray-800 mb-2">{t('smart_student_creation')}</h3>
-                            <p className="text-gray-600">
-                                {t('student_creation_description')}
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => setShowStudentModal(true)}
-                            className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition flex items-center space-x-2"
-                        >
-                            <i className="fas fa-plus"></i>
-                            <span>{t('create_smart_student')}</span>
-                        </button>
-                    </div>
-                )}
-
-                {activeTab === 'teachers' && (
-                    <div>
-                        <div className="mb-6">
-                            <h3 className="text-xl font-semibold text-gray-800 mb-2">{t('smart_teacher_creation')}</h3>
-                            <p className="text-gray-600">
-                                {t('teacher_creation_description')}
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => setShowTeacherModal(true)}
-                            className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition flex items-center space-x-2"
-                        >
-                            <i className="fas fa-plus"></i>
-                            <span>{t('create_smart_teacher')}</span>
-                        </button>
-                    </div>
-                )}
-
-                {activeTab === 'classes' && (
-                    <div>
-                        <div className="mb-6">
-                            <h3 className="text-xl font-semibold text-gray-800 mb-2">{t('smart_class_creation')}</h3>
-                            <p className="text-gray-600">
-                                {t('class_creation_description')}
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => setShowClassModal(true)}
-                            className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition flex items-center space-x-2"
-                        >
-                            <i className="fas fa-plus"></i>
-                            <span>{t('create_smart_class')}</span>
-                        </button>
-                    </div>
-                )}
-            </div>
-
-            {/* Modals */}
-            {showStudentModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-                        <SmartStudentCreation
-                            onStudentCreated={handleStudentCreated}
-                            onCancel={() => setShowStudentModal(false)}
-                        />
-                    </div>
-                </div>
-            )}
-
-            {showTeacherModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-                        <SmartTeacherCreation
-                            onTeacherCreated={handleTeacherCreated}
-                            onCancel={() => setShowTeacherModal(false)}
-                        />
-                    </div>
-                </div>
-            )}
-
-            {showClassModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-                        <SmartClassCreation
-                            onClassCreated={handleClassCreated}
-                            onCancel={() => setShowClassModal(false)}
-                        />
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
 
 export default AdminDashboard;
