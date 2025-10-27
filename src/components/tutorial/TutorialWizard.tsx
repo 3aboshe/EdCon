@@ -39,7 +39,21 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
       return;
     }
 
-    const targetElement = document.querySelector(currentStep.target) as HTMLElement;
+    let targetElement: HTMLElement | null = null;
+    
+    // Try multiple selectors if needed
+    if (currentStep.target.includes(',')) {
+      // Multiple selectors provided
+      const selectors = currentStep.target.split(',').map(s => s.trim());
+      for (const selector of selectors) {
+        targetElement = document.querySelector(selector) as HTMLElement;
+        if (targetElement) break;
+      }
+    } else {
+      // Single selector
+      targetElement = document.querySelector(currentStep.target) as HTMLElement;
+    }
+    
     if (targetElement) {
       // Store original styles
       const originalZIndex = targetElement.style.zIndex;
@@ -139,6 +153,23 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
         targetElement.style.removeProperty('border');
         targetElement.style.removeProperty('border-radius');
       };
+    } else {
+      // Element not found, log error and continue with centered tooltip
+      console.warn(`Tutorial element not found: ${currentStep.target}`);
+      
+      // Show centered tooltip with warning
+      setTooltipPosition({
+        top: (window.innerHeight - 300) / 2,
+        left: (window.innerWidth - 500) / 2,
+        width: 500
+      });
+      
+      // Execute action if provided
+      if (currentStep.action) {
+        setTimeout(() => {
+          currentStep.action?.();
+        }, 500);
+      }
     }
   }, [isActive, currentStep]);
 
