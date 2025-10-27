@@ -391,9 +391,11 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
             }`}
           />
         )}
-      </div>
-    </>
-  );
+        </div>
+      </>
+    )}
+  </>
+);
 };
 
 export default TutorialWizard;
