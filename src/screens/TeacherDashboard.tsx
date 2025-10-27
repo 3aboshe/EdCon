@@ -111,7 +111,7 @@ const TeacherDashboard: React.FC = () => {
         <div className="flex flex-col lg:flex-row min-h-screen bg-gray-50">
             {/* Mobile Header - only visible on mobile */}
             <div className="lg:hidden w-full">
-                <Header title={t(screen)} showBackButton={screen !== 'dashboard'} onBack={handleBack} />
+                <Header user={user} onLogout={logout} showLanguageSelector={false} />
                 {successMessage && <SuccessBanner message={successMessage} />}
             </div>
 

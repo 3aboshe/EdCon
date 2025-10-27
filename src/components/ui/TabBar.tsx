@@ -2,7 +2,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-type ParentTab = 'dashboard' | 'performance' | 'homework' | 'messages' | 'profile';
+type ParentTab = 'dashboard' | 'performance' | 'homework' | 'announcements' | 'messages' | 'profile';
 
 interface TabBarProps {
     activeTab: ParentTab;
@@ -16,6 +16,7 @@ const TabBar: React.FC<TabBarProps> = ({ activeTab, onTabChange }) => {
         { id: 'dashboard', labelKey: 'dashboard', icon: 'fa-home' },
         { id: 'performance', labelKey: 'performance', icon: 'fa-chart-line' },
         { id: 'homework', labelKey: 'homework', icon: 'fa-book-open' },
+        { id: 'announcements', labelKey: 'announcements', icon: 'fa-bullhorn' },
         { id: 'messages', labelKey: 'messages', icon: 'fa-comments' },
         { id: 'profile', labelKey: 'profile', icon: 'fa-user-circle' },
     ];
