@@ -1,7 +1,7 @@
 import React, { useContext, useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppContext } from '../contexts/AppContext';
-import { TutorialProvider, useTutorial } from '../contexts/TutorialContext';
+import { useTutorial } from '../contexts/TutorialContext';
 import Header from '../components/ui/Header';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
@@ -76,85 +76,83 @@ const AdminDashboard: React.FC = () => {
     };
 
     return (
-        <TutorialProvider>
-            <div className="min-h-screen bg-gray-50">
-                <Header user={user} onLogout={logout} showLanguageSelector={false} />
-                {successMessage && (
-                    <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 m-4 rounded-lg shadow">
-                        <p className="font-semibold">{successMessage}</p>
-                    </div>
-                )}
-                
-                {/* Manual Tutorial Trigger Button */}
-                <div className="fixed bottom-4 right-4 z-50">
-                    <button
-                        onClick={() => startTutorial('adminDashboard')}
-                        className="bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-all duration-200 hover:scale-110"
-                        title="Start Tutorial"
-                    >
-                        <i className="fas fa-question-circle text-xl"></i>
-                    </button>
+        <div className="min-h-screen bg-gray-50">
+            <Header user={user} onLogout={logout} showLanguageSelector={false} />
+            {successMessage && (
+                <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 m-4 rounded-lg shadow">
+                    <p className="font-semibold">{successMessage}</p>
                 </div>
-                
-                {/* Tutorial Alert Modal */}
-                <TutorialAlertModal 
-                    isOpen={showTutorialAlert} 
-                    onClose={() => setShowTutorialAlert(false)} 
-                />
-                
-                {/* Tutorial Wizard */}
-                <TutorialWizard />
-                
-                <div className="flex flex-col lg:flex-row">
-                    {/* Sidebar Navigation */}
-                    <div className="lg:w-64 bg-white shadow-lg">
-                        <div className="p-4">
-                            <h2 className="text-lg font-bold text-gray-800 mb-4">{t('admin_panel')}</h2>
-                            <nav className="space-y-2">
-                                {sections.map(section => (
-                                    <button
-                                        key={section.id}
-                                        data-section={section.id}
-                                        onClick={() => setActiveSection(section.id)}
-                                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                                            activeSection === section.id
-                                                ? `bg-${section.color}-100 text-${section.color}-700 border-l-4 border-${section.color}-500`
-                                                : 'text-gray-600 hover:bg-gray-100'
-                                        }`}
-                                    >
-                                        <i className={`fas ${section.icon}`}></i>
-                                        <span className="font-medium">{section.label}</span>
-                                    </button>
-                                ))}
-                            </nav>
-                        </div>
+            )}
+            
+            {/* Manual Tutorial Trigger Button */}
+            <div className="fixed bottom-4 right-4 z-50">
+                <button
+                    onClick={() => startTutorial('adminDashboard')}
+                    className="bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-all duration-200 hover:scale-110"
+                    title="Start Tutorial"
+                >
+                    <i className="fas fa-question-circle text-xl"></i>
+                </button>
+            </div>
+            
+            {/* Tutorial Alert Modal */}
+            <TutorialAlertModal
+                isOpen={showTutorialAlert}
+                onClose={() => setShowTutorialAlert(false)}
+            />
+            
+            {/* Tutorial Wizard */}
+            <TutorialWizard />
+            
+            <div className="flex flex-col lg:flex-row">
+                {/* Sidebar Navigation */}
+                <div className="lg:w-64 bg-white shadow-lg">
+                    <div className="p-4">
+                        <h2 className="text-lg font-bold text-gray-800 mb-4">{t('admin_panel')}</h2>
+                        <nav className="space-y-2">
+                            {sections.map(section => (
+                                <button
+                                    key={section.id}
+                                    data-section={section.id}
+                                    onClick={() => setActiveSection(section.id)}
+                                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                                        activeSection === section.id
+                                            ? `bg-${section.color}-100 text-${section.color}-700 border-l-4 border-${section.color}-500`
+                                            : 'text-gray-600 hover:bg-gray-100'
+                                    }`}
+                                >
+                                    <i className={`fas ${section.icon}`}></i>
+                                    <span className="font-medium">{section.label}</span>
+                                </button>
+                            ))}
+                        </nav>
                     </div>
+                </div>
 
-                    {/* Main Content Area */}
-                    <div className="flex-1 p-4 lg:p-6">
-                        {/* Class Filter */}
-                        {(activeSection === 'dashboard' || activeSection === 'analytics' || activeSection === 'reports') && (
-                            <Card className="mb-6">
-                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                                    <h3 className="text-lg font-semibold text-gray-800">{t('filter_by_class')}</h3>
-                                    <select
-                                        value={selectedClassId}
-                                        onChange={(e) => setSelectedClassId(e.target.value)}
-                                        className="px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    >
-                                        <option value="all">{t('all_classes')}</option>
-                                        {classList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                    </select>
-                                </div>
-                            </Card>
-                        )}
+                {/* Main Content Area */}
+                <div className="flex-1 p-4 lg:p-6">
+                    {/* Class Filter */}
+                    {(activeSection === 'dashboard' || activeSection === 'analytics' || activeSection === 'reports') && (
+                        <Card className="mb-6">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                <h3 className="text-lg font-semibold text-gray-800">{t('filter_by_class')}</h3>
+                                <select
+                                    value={selectedClassId}
+                                    onChange={(e) => setSelectedClassId(e.target.value)}
+                                    className="px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="all">{t('all_classes')}</option>
+                                    {classList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                </select>
+                            </div>
+                        </Card>
+                    )}
 
-                        {/* Render Section Content */}
-                        {renderContent()}
-                    </div>
+                    {/* Render Section Content */}
+                    {renderContent()}
                 </div>
             </div>
-        </TutorialProvider>
+        </div>
     );
 };
 
