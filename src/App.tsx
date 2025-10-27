@@ -320,11 +320,10 @@ const App: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </NavigationHandler>
-                </AppContext.Provider>
-            </Router>
-        </Suspense>
+                        </NavigationHandler>
+                    </AppContext.Provider>
+                </Router>
+            </Suspense>
         </TutorialProvider>
     );
 };
