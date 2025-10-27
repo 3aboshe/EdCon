@@ -42,7 +42,7 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
     let targetElement: HTMLElement | null = null;
     
     // Try multiple selectors if needed
-    if (currentStep.target.includes(',')) {
+    if (currentStep?.target?.includes(',')) {
       // Multiple selectors provided
       const selectors = currentStep.target.split(',').map(s => s.trim());
       for (const selector of selectors) {
@@ -78,7 +78,7 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
       let width = rect.width;
 
       // Adjust position based on step position preference
-      switch (currentStep.position) {
+      switch (currentStep?.position) {
         case 'top':
           top = rect.top + scrollY - 120;
           left = rect.left + scrollX + (rect.width / 2) - 250;
@@ -116,12 +116,12 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
         width = Math.min(width, window.innerWidth - 40);
         
         // Recalculate left position for centered tooltips on mobile
-        if (currentStep.position === 'center') {
+        if (currentStep?.position === 'center') {
           left = (window.innerWidth - width) / 2;
         }
         
         // Adjust position for side tooltips on mobile
-        if (currentStep.position === 'left' || currentStep.position === 'right') {
+        if (currentStep?.position === 'left' || currentStep?.position === 'right') {
           // Position below the element on mobile
           top = rect.bottom + scrollY + 10;
           left = rect.left + scrollX;
@@ -155,7 +155,7 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
       };
     } else {
       // Element not found, log error and continue with centered tooltip
-      console.warn(`Tutorial element not found: ${currentStep.target}`);
+      console.warn(`Tutorial element not found: ${currentStep?.target}`);
       
       // Show centered tooltip with warning
       setTooltipPosition({
@@ -165,7 +165,7 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
       });
       
       // Execute action if provided
-      if (currentStep.action) {
+      if (currentStep?.action) {
         setTimeout(() => {
           currentStep.action?.();
         }, 500);
@@ -182,7 +182,7 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
         inline: 'center'
       });
     }
-  }, [highlightedElement, currentStep]);
+  }, [highlightedElement, currentStep?.position]);
 
   const isLastStep = progress === totalSteps;
   const isFirstStep = progress === 1;
@@ -280,7 +280,7 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
             className={`fixed inset-0 bg-black bg-opacity-50 z-[9998] transition-opacity duration-300 ${
               isVisible ? 'opacity-100' : 'opacity-0'
             }`}
-            onClick={currentStep.requireInteraction ? undefined : handleSkip}
+            onClick={currentStep?.requireInteraction ? undefined : handleSkip}
             aria-label={t('tutorial_overlay')}
             role="presentation"
           />
@@ -375,7 +375,7 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
         </div>
 
         {/* Arrow pointer */}
-        {currentStep.position !== 'center' && currentStep.target && (
+        {currentStep?.position !== 'center' && currentStep?.target && (
           <div
             className={`absolute w-4 h-4 bg-white transform rotate-45 ${
               currentStep.position === 'top' ? 'bottom-[-8px] left-1/2 -translate-x-1/2' :
