@@ -15,7 +15,6 @@ import messageRoutes from './routes/messages.js';
 import parentChildRoutes from './routes/parent-child.js';
 import healthRoutes from './routes/health.js';
 import backupRoutes from './routes/backup.js';
-import workflowsRoutes from './routes/workflows.js';
 
 dotenv.config();
 
@@ -69,7 +68,6 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/parent-child', parentChildRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/backup', backupRoutes);
-app.use('/api/workflows', workflowsRoutes);
 
 // File serving route
 app.get('/uploads/:filename', (req, res) => {
