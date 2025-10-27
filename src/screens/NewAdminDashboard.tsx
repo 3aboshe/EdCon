@@ -61,7 +61,7 @@ const AdminDashboard: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <Header user={user} onLogout={logout} />
+            <Header user={user} onLogout={logout} showLanguageSelector={false} />
             {successMessage && (
                 <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 m-4 rounded-lg shadow">
                     <p className="font-semibold">{successMessage}</p>

@@ -8,6 +8,7 @@ export interface User {
   avatar?: string;
   childrenIds?: string[];
   classIds?: string[];
+  subject?: string;
   messagingAvailability?: {
     startTime: string;
     endTime: string;
@@ -50,6 +51,7 @@ export interface Announcement {
   date: string;
   teacherId: string;
   priority: 'high' | 'medium' | 'low';
+  classIds?: string[];
 }
 
 export interface Homework {
@@ -71,6 +73,7 @@ export interface Attendance {
 export interface Class {
     id: string;
     name: string;
+    subjectIds?: string[];
 }
 
 export interface Subject {

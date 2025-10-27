@@ -75,7 +75,7 @@ const ParentDashboard: React.FC = () => {
     if (user.childrenIds && user.childrenIds.length > 0 && !selectedStudent) {
         return (
             <div className="flex flex-col min-h-screen bg-gray-50">
-                <Header title={t('dashboard')} />
+                <Header user={user} onLogout={() => {}} showLanguageSelector={false} />
                 <main className="flex-grow p-4">
                     <LoadingSpinner />
                 </main>
@@ -87,7 +87,7 @@ const ParentDashboard: React.FC = () => {
         <div className="flex flex-col lg:flex-row min-h-screen bg-gray-50">
             {/* Mobile Header - only visible on mobile */}
             <div className="lg:hidden w-full">
-                <Header title={tabTitles[activeTab]} />
+                <Header user={user} onLogout={() => {}} showLanguageSelector={false} />
             </div>
 
             {/* Desktop Sidebar - only visible on desktop */}

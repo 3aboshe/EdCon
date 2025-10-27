@@ -8,9 +8,10 @@ interface HeaderProps {
     role: string;
   } | null;
   onLogout: () => void;
+  showLanguageSelector?: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
+const Header: React.FC<HeaderProps> = ({ user, onLogout, showLanguageSelector = true }) => {
   const { t } = useTranslation();
 
   return (
@@ -24,7 +25,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
           </div>
           
           <div className="flex items-center space-x-4">
-            <LanguageSelector />
+            {showLanguageSelector && <LanguageSelector />}
             
             {user && (
               <div className="flex items-center space-x-3">
