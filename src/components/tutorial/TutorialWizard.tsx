@@ -72,6 +72,39 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
 
   // Highlight target element
   useEffect(() => {
+    // Handle center position without target
+    if (currentStep?.position === 'center' && !currentStep?.target) {
+      // Clear any highlighted element
+      if (highlightedElement) {
+        highlightedElement.style.removeProperty('z-index');
+        highlightedElement.style.removeProperty('position');
+        highlightedElement.style.removeProperty('box-shadow');
+        highlightedElement.style.removeProperty('border');
+        setHighlightedElement(null);
+      }
+      
+      // Calculate center position for tooltip
+      const tooltipHeight = 300;
+      const tooltipWidth = 500;
+      const isMobile = window.innerWidth < 768;
+      const mobileTooltipHeight = isMobile ? 250 : tooltipHeight;
+      const mobileTooltipWidth = Math.min(tooltipWidth, window.innerWidth - 40);
+      
+      setTooltipPosition({
+        top: (window.innerHeight - mobileTooltipHeight) / 2,
+        left: (window.innerWidth - mobileTooltipWidth) / 2,
+        width: mobileTooltipWidth
+      });
+      
+      // Execute action if provided
+      if (currentStep?.action) {
+        setTimeout(() => {
+          currentStep.action?.();
+        }, 500);
+      }
+      return;
+    }
+    
     if (!isActive || !currentStep?.target) {
       if (highlightedElement) {
         highlightedElement.style.removeProperty('z-index');
