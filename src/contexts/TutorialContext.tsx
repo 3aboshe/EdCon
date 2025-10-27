@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 
 export interface TutorialStep {
   id: string;
@@ -397,18 +397,27 @@ export const TutorialProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   };
 
+  // Memoize functions to prevent recreation on every render
+  const memoizedStartTutorial = useCallback(startTutorial, []);
+  const memoizedNextStep = useCallback(nextStep, [currentTutorial, currentStepIndex]);
+  const memoizedPreviousStep = useCallback(previousStep, [currentStepIndex]);
+  const memoizedSkipTutorial = useCallback(skipTutorial, []);
+  const memoizedCompleteTutorial = useCallback(completeTutorial, []);
+  const memoizedPauseTutorial = useCallback(pauseTutorial, []);
+  const memoizedResumeTutorial = useCallback(resumeTutorial, [currentTutorial]);
+
   const value: TutorialContextType = {
     isActive,
     currentTutorial,
     currentStepIndex,
     currentStep,
-    startTutorial,
-    nextStep,
-    previousStep,
-    skipTutorial,
-    completeTutorial,
-    pauseTutorial,
-    resumeTutorial,
+    startTutorial: memoizedStartTutorial,
+    nextStep: memoizedNextStep,
+    previousStep: memoizedPreviousStep,
+    skipTutorial: memoizedSkipTutorial,
+    completeTutorial: memoizedCompleteTutorial,
+    pauseTutorial: memoizedPauseTutorial,
+    resumeTutorial: memoizedResumeTutorial,
     dontShowAgain,
     setDontShowAgain,
     progress,
