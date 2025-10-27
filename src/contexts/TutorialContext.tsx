@@ -42,12 +42,12 @@ const TUTORIALS: Record<string, TutorialConfig> = {
   adminDashboard: {
     id: 'adminDashboard',
     name: 'Admin Dashboard Tutorial',
-    description: 'Learn how to navigate and use the admin dashboard effectively',
+    description: 'Learn how to navigate and use admin dashboard effectively',
     steps: [
       {
         id: 'welcome',
         title: 'Welcome to EdCon Admin Dashboard',
-        content: 'This tutorial will guide you through the admin dashboard and show you how to manage your educational institution efficiently. Let\'s start with the main navigation.',
+        content: 'This tutorial will guide you through admin dashboard and show you how to manage your educational institution efficiently. Let\'s start with the main navigation.',
         position: 'center',
         requireInteraction: true
       },
@@ -63,21 +63,33 @@ const TUTORIALS: Record<string, TutorialConfig> = {
         title: 'Dashboard Overview',
         content: 'The dashboard gives you a quick overview of your institution with key metrics, statistics, and recent activities.',
         target: '[data-section="dashboard"]',
-        position: 'bottom'
+        position: 'bottom',
+        action: () => {
+          const tab = document.querySelector('[data-section="dashboard"]') as HTMLButtonElement;
+          tab?.click();
+        }
       },
       {
         id: 'analytics',
         title: 'Analytics Section',
         content: 'View detailed analytics including grade distributions, attendance trends, and performance metrics to make data-driven decisions.',
         target: '[data-section="analytics"]',
-        position: 'bottom'
+        position: 'bottom',
+        action: () => {
+          const tab = document.querySelector('[data-section="analytics"]') as HTMLButtonElement;
+          tab?.click();
+        }
       },
       {
         id: 'users',
         title: 'User Management',
         content: 'Manage all users in your system - students, teachers, and parents. You can add, edit, or delete users from here.',
         target: '[data-section="users"]',
-        position: 'bottom'
+        position: 'bottom',
+        action: () => {
+          const tab = document.querySelector('[data-section="users"]') as HTMLButtonElement;
+          tab?.click();
+        }
       },
       {
         id: 'students-tab',
@@ -117,7 +129,11 @@ const TUTORIALS: Record<string, TutorialConfig> = {
         title: 'Academic Management',
         content: 'Manage classes and subjects. Create classes, assign subjects to them, and organize your academic structure.',
         target: '[data-section="academic"]',
-        position: 'bottom'
+        position: 'bottom',
+        action: () => {
+          const tab = document.querySelector('[data-section="academic"]') as HTMLButtonElement;
+          tab?.click();
+        }
       },
       {
         id: 'classes-management',
@@ -146,14 +162,22 @@ const TUTORIALS: Record<string, TutorialConfig> = {
         title: 'System Settings',
         content: 'Access system-wide settings including data backup, system information, and administrative tools.',
         target: '[data-section="system"]',
-        position: 'bottom'
+        position: 'bottom',
+        action: () => {
+          const tab = document.querySelector('[data-section="system"]') as HTMLButtonElement;
+          tab?.click();
+        }
       },
       {
         id: 'reports',
         title: 'Reports',
         content: 'Generate comprehensive reports about user activity, system usage, and communication summaries.',
         target: '[data-section="reports"]',
-        position: 'bottom'
+        position: 'bottom',
+        action: () => {
+          const tab = document.querySelector('[data-section="reports"]') as HTMLButtonElement;
+          tab?.click();
+        }
       },
       {
         id: 'relationships',
