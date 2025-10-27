@@ -22,7 +22,7 @@ type AcademicTab = 'classes' | 'subjects';
 const AdminDashboard: React.FC = () => {
     const { classes: classList, users, students, teachers, subjects, grades, homework, announcements, attendance, messages, user, logout } = useContext(AppContext);
     const { t } = useTranslation();
-    const { dontShowAgain } = useTutorial();
+    const { dontShowAgain, startTutorial } = useTutorial();
     const [activeSection, setActiveSection] = useState<AdminSection>('dashboard');
     const [selectedClassId, setSelectedClassId] = useState<string>('all');
     const [successMessage, setSuccessMessage] = useState('');
@@ -84,6 +84,17 @@ const AdminDashboard: React.FC = () => {
                         <p className="font-semibold">{successMessage}</p>
                     </div>
                 )}
+                
+                {/* Manual Tutorial Trigger Button */}
+                <div className="fixed bottom-4 right-4 z-50">
+                    <button
+                        onClick={() => startTutorial('adminDashboard')}
+                        className="bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-all duration-200 hover:scale-110"
+                        title="Start Tutorial"
+                    >
+                        <i className="fas fa-question-circle text-xl"></i>
+                    </button>
+                </div>
                 
                 {/* Tutorial Alert Modal */}
                 <TutorialAlertModal 
