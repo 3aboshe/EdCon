@@ -1,9 +1,12 @@
 import React, { useContext, useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppContext } from '../contexts/AppContext';
+import { TutorialProvider, useTutorial } from '../contexts/TutorialContext';
 import Header from '../components/ui/Header';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
+import TutorialAlertModal from '../components/tutorial/TutorialAlertModal';
+import TutorialWizard from '../components/tutorial/TutorialWizard';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { Teacher, UserRole, Subject, User, Student } from '../types';
 import ProfileImage from '../components/ui/ProfileImage';
@@ -19,10 +22,12 @@ type AcademicTab = 'classes' | 'subjects';
 const AdminDashboard: React.FC = () => {
     const { classes: classList, users, students, teachers, subjects, grades, homework, announcements, attendance, messages, user, logout } = useContext(AppContext);
     const { t } = useTranslation();
+    const { dontShowAgain } = useTutorial();
     const [activeSection, setActiveSection] = useState<AdminSection>('dashboard');
     const [selectedClassId, setSelectedClassId] = useState<string>('all');
     const [successMessage, setSuccessMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [showTutorialAlert, setShowTutorialAlert] = useState(false);
 
     useEffect(() => {
         if (successMessage) {
@@ -30,6 +35,17 @@ const AdminDashboard: React.FC = () => {
             return () => clearTimeout(timer);
         }
     }, [successMessage]);
+
+    // Show tutorial alert for admin users (if not disabled)
+    useEffect(() => {
+        if (user?.role === 'admin' && !dontShowAgain) {
+            // Small delay to ensure dashboard is fully loaded
+            const timer = setTimeout(() => {
+                setShowTutorialAlert(true);
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [user, dontShowAgain]);
 
     const sections = [
         { id: 'dashboard', label: t('dashboard'), icon: 'fa-tachometer-alt', color: 'blue' },
@@ -60,62 +76,74 @@ const AdminDashboard: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <Header user={user} onLogout={logout} showLanguageSelector={false} />
-            {successMessage && (
-                <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 m-4 rounded-lg shadow">
-                    <p className="font-semibold">{successMessage}</p>
-                </div>
-            )}
-            
-            <div className="flex flex-col lg:flex-row">
-                {/* Sidebar Navigation */}
-                <div className="lg:w-64 bg-white shadow-lg">
-                    <div className="p-4">
-                        <h2 className="text-lg font-bold text-gray-800 mb-4">{t('admin_panel')}</h2>
-                        <nav className="space-y-2">
-                            {sections.map(section => (
-                                <button
-                                    key={section.id}
-                                    onClick={() => setActiveSection(section.id)}
-                                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                                        activeSection === section.id
-                                            ? `bg-${section.color}-100 text-${section.color}-700 border-l-4 border-${section.color}-500`
-                                            : 'text-gray-600 hover:bg-gray-100'
-                                    }`}
-                                >
-                                    <i className={`fas ${section.icon}`}></i>
-                                    <span className="font-medium">{section.label}</span>
-                                </button>
-                            ))}
-                        </nav>
+        <TutorialProvider>
+            <div className="min-h-screen bg-gray-50">
+                <Header user={user} onLogout={logout} showLanguageSelector={false} />
+                {successMessage && (
+                    <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 m-4 rounded-lg shadow">
+                        <p className="font-semibold">{successMessage}</p>
+                    </div>
+                )}
+                
+                {/* Tutorial Alert Modal */}
+                <TutorialAlertModal 
+                    isOpen={showTutorialAlert} 
+                    onClose={() => setShowTutorialAlert(false)} 
+                />
+                
+                {/* Tutorial Wizard */}
+                <TutorialWizard />
+                
+                <div className="flex flex-col lg:flex-row">
+                    {/* Sidebar Navigation */}
+                    <div className="lg:w-64 bg-white shadow-lg">
+                        <div className="p-4">
+                            <h2 className="text-lg font-bold text-gray-800 mb-4">{t('admin_panel')}</h2>
+                            <nav className="space-y-2">
+                                {sections.map(section => (
+                                    <button
+                                        key={section.id}
+                                        data-section={section.id}
+                                        onClick={() => setActiveSection(section.id)}
+                                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                                            activeSection === section.id
+                                                ? `bg-${section.color}-100 text-${section.color}-700 border-l-4 border-${section.color}-500`
+                                                : 'text-gray-600 hover:bg-gray-100'
+                                        }`}
+                                    >
+                                        <i className={`fas ${section.icon}`}></i>
+                                        <span className="font-medium">{section.label}</span>
+                                    </button>
+                                ))}
+                            </nav>
+                        </div>
+                    </div>
+
+                    {/* Main Content Area */}
+                    <div className="flex-1 p-4 lg:p-6">
+                        {/* Class Filter */}
+                        {(activeSection === 'dashboard' || activeSection === 'analytics' || activeSection === 'reports') && (
+                            <Card className="mb-6">
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                    <h3 className="text-lg font-semibold text-gray-800">{t('filter_by_class')}</h3>
+                                    <select
+                                        value={selectedClassId}
+                                        onChange={(e) => setSelectedClassId(e.target.value)}
+                                        className="px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    >
+                                        <option value="all">{t('all_classes')}</option>
+                                        {classList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    </select>
+                                </div>
+                            </Card>
+                        )}
+
+                        {/* Render Section Content */}
+                        {renderContent()}
                     </div>
                 </div>
-
-                {/* Main Content Area */}
-                <div className="flex-1 p-4 lg:p-6">
-                    {/* Class Filter */}
-                    {(activeSection === 'dashboard' || activeSection === 'analytics' || activeSection === 'reports') && (
-                        <Card className="mb-6">
-                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                                <h3 className="text-lg font-semibold text-gray-800">{t('filter_by_class')}</h3>
-                                <select
-                                    value={selectedClassId}
-                                    onChange={(e) => setSelectedClassId(e.target.value)}
-                                    className="px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                >
-                                    <option value="all">{t('all_classes')}</option>
-                                    {classList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                </select>
-                            </div>
-                        </Card>
-                    )}
-
-                    {/* Render Section Content */}
-                    {renderContent()}
-                </div>
             </div>
-        </div>
+        </TutorialProvider>
     );
 };
 
@@ -328,6 +356,7 @@ const UserManagementSection: React.FC<{ setSuccessMessage: (msg: string) => void
                     {tabs.map(tab => (
                         <button
                             key={tab.id}
+                            data-tab={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`flex-1 flex items-center justify-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
                                 activeTab === tab.id 
@@ -370,6 +399,7 @@ const AcademicManagement: React.FC<{ selectedClassId: string, setSuccessMessage:
                     {tabs.map(tab => (
                         <button
                             key={tab.id}
+                            data-tab={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
                                 activeTab === tab.id 
@@ -1611,24 +1641,25 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
 
     const handleAddParent = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newParentName.trim()) return;
-
+        if(!newParentName.trim()) return;
+        
         setIsLoading(true);
         try {
             const parentData = {
                 name: newParentName.trim(),
-                role: 'parent'
+                role: 'parent',
+                avatar: ''
             };
 
             const result = await apiService.createUser(parentData);
             setUsers([...users, result.user]);
 
-            setSuccessMessage(`Parent "${newParentName}" created successfully! Parent code: ${result.user.id}`);
+            setSuccessMessage(t('parent_added_with_code').replace('{code}', `<b>${result.user.id}</b>`));
             setNewParentName('');
             setShowAddModal(false);
         } catch (error) {
             console.error('Error creating parent:', error);
-            setSuccessMessage('Failed to create parent. Please try again.');
+            setSuccessMessage('Error creating parent. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -1654,7 +1685,7 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
             setShowEditModal(false);
         } catch (error) {
             console.error('Error updating parent:', error);
-            setSuccessMessage('Failed to update parent. Please try again.');
+            setSuccessMessage('Error updating parent. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -1675,7 +1706,7 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
             setDeleteConfirm({ isOpen: false, parent: null });
         } catch (error) {
             console.error('Error deleting parent:', error);
-            setSuccessMessage('Failed to delete parent. Please try again.');
+            setSuccessMessage('Error deleting parent. Please try again.');
         } finally {
             setIsDeleting(false);
         }
@@ -1761,7 +1792,7 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
                         <input
                             type="text"
                             value={newParentName}
-                            onChange={(e) => setNewParentName(e.target.value)}
+                            onChange={e => setNewParentName(e.target.value)}
                             placeholder={t('enter_parent_name')}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             required
@@ -1917,7 +1948,7 @@ const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = 
     };
 
     const confirmDeleteClass = (classItem: any) => {
-        setDeleteConfirm({ isOpen: true, classItem: classItem });
+        setDeleteConfirm({ isOpen: true, classItem });
     };
 
     const handleDeleteClass = async () => {
@@ -2164,14 +2195,23 @@ const SubjectManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> 
 
         setIsLoading(true);
         try {
-            const newSubject = await apiService.createSubject(newSubjectName.trim());
-            setSubjects([...subjects, newSubject]);
-            setSuccessMessage(`Subject "${newSubjectName}" created successfully!`);
-            setNewSubjectName('');
-            setShowAddModal(false);
+            console.log('Creating subject:', newSubjectName.trim());
+            const response = await apiService.createSubject(newSubjectName.trim());
+            console.log('API response:', response);
+            
+            if (response && response.id) {
+                console.log('Created subject:', response);
+                setSubjects([...subjects, response]);
+                setNewSubjectName('');
+                setShowAddModal(false);
+                setSuccessMessage(t('subject_added'));
+            } else {
+                console.error('Invalid subject response:', response);
+                setSuccessMessage('Error: Invalid response from server');
+            }
         } catch (error) {
             console.error('Error creating subject:', error);
-            setSuccessMessage('Failed to create subject. Please try again.');
+            setSuccessMessage('Error creating subject. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -2187,13 +2227,13 @@ const SubjectManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> 
                 name: newSubjectName.trim()
             });
             setSubjects(subjects.map(s => s.id === editingSubject.id ? updatedSubject : s));
-            setSuccessMessage(`Subject "${newSubjectName}" updated successfully!`);
             setNewSubjectName('');
             setEditingSubject(null);
             setShowEditModal(false);
+            setSuccessMessage(`Subject "${newSubjectName}" updated successfully!`);
         } catch (error) {
             console.error('Error updating subject:', error);
-            setSuccessMessage('Failed to update subject. Please try again.');
+            setSuccessMessage('Error updating subject. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -2220,7 +2260,7 @@ const SubjectManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> 
             setDeleteConfirm({ isOpen: false, subjectItem: null });
         } catch (error) {
             console.error('Error deleting subject:', error);
-            setSuccessMessage('Failed to delete subject. Please try again.');
+            setSuccessMessage('Error deleting subject. Please try again.');
         } finally {
             setIsDeleting(false);
         }
@@ -2252,7 +2292,7 @@ const SubjectManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> 
                                             </button>
                                             <button 
                                                 onClick={() => confirmDelete(subject)}
-                                                className="text-red-600 hover:text-red-800 transition"
+                                                className="text-red-500 hover:text-red-700 transition-colors"
                                                 title="Delete subject"
                                             >
                                                 <i className="fas fa-trash"></i>

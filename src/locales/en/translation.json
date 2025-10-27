@@ -742,5 +742,22 @@
     "notification_privacy_compliance_reporting": "Privacy Compliance Reporting",
     "notification_security_compliance_reporting": "Security Compliance Reporting",
     "notification_privacy_compliance_improvement": "Privacy Compliance Improvement",
-    "notification_security_compliance_improvement": "Security Compliance Improvement"
+    "notification_security_compliance_improvement": "Security Compliance Improvement",
+    "welcome_to_admin_dashboard": "Welcome to Admin Dashboard",
+    "tutorial_description": "Take a quick tour to learn how to navigate and use the admin dashboard efficiently.",
+    "what_you_will_learn": "What you'll learn:",
+    "navigate_dashboard_efficiently": "Navigate dashboard efficiently",
+    "manage_users_effectively": "Manage users effectively",
+    "understand_system_relationships": "Understand system relationships",
+    "utilize_analytics_reports": "Utilize analytics and reports",
+    "tutorial_duration": "Approximately 5 minutes",
+    "dont_show_again": "Don't show this again",
+    "skip_tutorial": "Skip Tutorial",
+    "start_tutorial": "Start Tutorial",
+    "step": "Step",
+    "of": "of",
+    "previous": "Previous",
+    "next": "Next",
+    "finish": "Finish",
+    "skip": "Skip"
 }
