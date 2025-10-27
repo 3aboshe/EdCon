@@ -14,7 +14,7 @@
     "build": "prisma generate",
     "vercel-build": "prisma generate && prisma migrate deploy",
     "deploy": "echo 'Deploy complete'",
-    "postinstall": "echo 'Install complete'",
+    "postinstall": "prisma generate",
     "seed": "node seed-db.js"
   },
   "dependencies": {
