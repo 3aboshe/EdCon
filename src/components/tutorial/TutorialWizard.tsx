@@ -9,6 +9,7 @@ interface TutorialWizardProps {
 const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
   const {
     isActive,
+    currentTutorial,
     currentStep,
     nextStep,
     previousStep,
