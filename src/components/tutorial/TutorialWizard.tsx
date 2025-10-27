@@ -277,36 +277,39 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
 
   return (
     <>
-      {/* Overlay */}
-      <div
-        className={`fixed inset-0 bg-black bg-opacity-50 z-[9998] transition-opacity duration-300 ${
-          isVisible ? 'opacity-100' : 'opacity-0'
-        }`}
-        onClick={currentStep.requireInteraction ? undefined : handleSkip}
-        aria-label={t('tutorial_overlay')}
-        role="presentation"
-      />
-      
-      {/* Tooltip */}
-      <div
-        ref={tooltipRef}
-        className={`fixed z-[9999] bg-white rounded-lg shadow-2xl p-6 transition-all duration-300 transform ${
-          isRtl ? 'rtl' : 'ltr'
-        } ${
-          isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-        }`}
-        style={{
-          top: `${tooltipPosition.top}px`,
-          left: `${tooltipPosition.left}px`,
-          width: `${tooltipPosition.width}px`,
-          minWidth: '450px',
-          maxWidth: '600px'
-        }}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="tutorial-title"
-        aria-describedby="tutorial-content"
-      >
+      {/* Only render if tutorial is active and we have a current step */}
+      {isActive && currentStep && (
+        <>
+          {/* Overlay */}
+          <div
+            className={`fixed inset-0 bg-black bg-opacity-50 z-[9998] transition-opacity duration-300 ${
+              isVisible ? 'opacity-100' : 'opacity-0'
+            }`}
+            onClick={currentStep.requireInteraction ? undefined : handleSkip}
+            aria-label={t('tutorial_overlay')}
+            role="presentation"
+          />
+          
+          {/* Tooltip */}
+          <div
+            ref={tooltipRef}
+            className={`fixed z-[9999] bg-white rounded-lg shadow-2xl p-6 transition-all duration-300 transform ${
+              isRtl ? 'rtl' : 'ltr'
+            } ${
+              isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+            }`}
+            style={{
+              top: `${tooltipPosition.top}px`,
+              left: `${tooltipPosition.left}px`,
+              width: `${tooltipPosition.width}px`,
+              minWidth: '450px',
+              maxWidth: '600px'
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="tutorial-title"
+            aria-describedby="tutorial-content"
+          >
         {/* Progress Bar */}
         <div className="mb-4">
           <div className="flex justify-between items-center mb-2">
@@ -378,7 +381,7 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
 
         {/* Arrow pointer */}
         {currentStep.position !== 'center' && currentStep.target && (
-          <div 
+          <div
             className={`absolute w-4 h-4 bg-white transform rotate-45 ${
               currentStep.position === 'top' ? 'bottom-[-8px] left-1/2 -translate-x-1/2' :
               currentStep.position === 'bottom' ? 'top-[-8px] left-1/2 -translate-x-1/2' :
