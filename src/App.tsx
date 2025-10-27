@@ -4,16 +4,17 @@ import { useTranslation } from 'react-i18next';
 import AppRoutes from './routes/AppRoutes';
 import { User, Student, Class, Teacher, Subject, Grade, Homework, Announcement, Attendance, Message, TimetableEntry } from './types';
 import apiService from './services/apiService';
-import { 
-  saveUserSession, 
-  loadUserSession, 
-  clearUserSession, 
-  initActivityTracking, 
-  stopActivityTracking 
+import {
+  saveUserSession,
+  loadUserSession,
+  clearUserSession,
+  initActivityTracking,
+  stopActivityTracking
 } from './utils/sessionManager';
 import { realTimeManager } from './utils/realTimeManager';
 import NavigationHandler from './components/layout/NavigationHandler';
 import { AppContext } from './contexts/AppContext';
+import { TutorialProvider } from './contexts/TutorialContext';
 
 const App: React.FC = () => {
     const { i18n } = useTranslation();
@@ -307,14 +308,16 @@ const App: React.FC = () => {
     }, [i18n, i18n.language]);
 
     return (
-        <Suspense fallback="loading">
-            <Router>
-                <AppContext.Provider value={appContextValue}>
-                    <NavigationHandler>
-                        <div dir={i18n.dir(i18n.language)} className="font-sans">
-                            <div className="w-full min-h-screen bg-white lg:bg-gray-50">
-                                <div className="max-w-md mx-auto lg:max-w-none lg:mx-0 min-h-screen bg-white lg:bg-transparent">
-                                    <AppRoutes />
+        <TutorialProvider>
+            <Suspense fallback="loading">
+                <Router>
+                    <AppContext.Provider value={appContextValue}>
+                        <NavigationHandler>
+                            <div dir={i18n.dir(i18n.language)} className="font-sans">
+                                <div className="w-full min-h-screen bg-white lg:bg-gray-50">
+                                    <div className="max-w-md mx-auto lg:max-w-none lg:mx-0 min-h-screen bg-white lg:bg-transparent">
+                                        <AppRoutes />
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -322,6 +325,7 @@ const App: React.FC = () => {
                 </AppContext.Provider>
             </Router>
         </Suspense>
+        </TutorialProvider>
     );
 };
 
