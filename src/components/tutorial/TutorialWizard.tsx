@@ -26,6 +26,50 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
   const tooltipRef = useRef<HTMLDivElement>(null);
   const isRtl = ['ar', 'ku-sorani', 'ku-badini', 'syr'].includes(i18n.language);
 
+  const isLastStep = progress === totalSteps;
+  const isFirstStep = progress === 1;
+
+  // Handle step transitions with animation
+  const handleNext = useCallback(() => {
+    setIsTransitioning(true);
+    setIsVisible(false);
+    
+    setTimeout(() => {
+      nextStep();
+      setIsTransitioning(false);
+      setIsVisible(true);
+    }, 300);
+  }, [nextStep]);
+
+  const handlePrevious = useCallback(() => {
+    setIsTransitioning(true);
+    setIsVisible(false);
+    
+    setTimeout(() => {
+      previousStep();
+      setIsTransitioning(false);
+      setIsVisible(true);
+    }, 300);
+  }, [previousStep]);
+
+  const handleSkip = useCallback(() => {
+    setIsTransitioning(true);
+    setIsVisible(false);
+    
+    setTimeout(() => {
+      skipTutorial();
+    }, 300);
+  }, [skipTutorial]);
+
+  const handleComplete = useCallback(() => {
+    setIsTransitioning(true);
+    setIsVisible(false);
+    
+    setTimeout(() => {
+      completeTutorial();
+    }, 300);
+  }, [completeTutorial]);
+
   // Highlight target element
   useEffect(() => {
     if (!isActive || !currentStep?.target) {
@@ -184,52 +228,6 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
     }
   }, [highlightedElement, currentStep?.position]);
 
-  const isLastStep = progress === totalSteps;
-  const isFirstStep = progress === 1;
-
-  if (!isActive || !currentStep) return null;
-
-  // Handle step transitions with animation
-  const handleNext = useCallback(() => {
-    setIsTransitioning(true);
-    setIsVisible(false);
-    
-    setTimeout(() => {
-      nextStep();
-      setIsTransitioning(false);
-      setIsVisible(true);
-    }, 300);
-  }, [nextStep]);
-
-  const handlePrevious = useCallback(() => {
-    setIsTransitioning(true);
-    setIsVisible(false);
-    
-    setTimeout(() => {
-      previousStep();
-      setIsTransitioning(false);
-      setIsVisible(true);
-    }, 300);
-  }, [previousStep]);
-
-  const handleSkip = useCallback(() => {
-    setIsTransitioning(true);
-    setIsVisible(false);
-    
-    setTimeout(() => {
-      skipTutorial();
-    }, 300);
-  }, [skipTutorial]);
-
-  const handleComplete = useCallback(() => {
-    setIsTransitioning(true);
-    setIsVisible(false);
-    
-    setTimeout(() => {
-      completeTutorial();
-    }, 300);
-  }, [completeTutorial]);
-
   // Handle keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -269,6 +267,9 @@ const TutorialWizard: React.FC<TutorialWizardProps> = ({ className = '' }) => {
       return () => clearTimeout(timer);
     }
   }, [isActive, currentStep?.id]);
+
+  // Early return after all hooks are defined
+  if (!isActive || !currentStep) return null;
 
   return (
     <>
