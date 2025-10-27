@@ -100,8 +100,9 @@ const TutorialAlertModal: React.FC<TutorialAlertModalProps> = ({ isOpen, onClose
             checked={dontShowAgain}
             onChange={handleDontShowAgainChange}
             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            aria-describedby="dont-show-again-desc"
           />
-          <label htmlFor="dont-show-again" className="ml-2 text-sm text-gray-600">
+          <label htmlFor="dont-show-again" className="ml-2 text-sm text-gray-600" id="dont-show-again-desc">
             {t('dont_show_again')}
           </label>
         </div>
@@ -111,13 +112,15 @@ const TutorialAlertModal: React.FC<TutorialAlertModalProps> = ({ isOpen, onClose
           <div className="flex space-x-3">
             <button
               onClick={handleSkip}
-              className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+              className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              aria-label={t('skip_tutorial')}
             >
               {t('skip_tutorial')}
             </button>
             <button
               onClick={handleStartTutorial}
-              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center"
+              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              aria-label={t('start_tutorial')}
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -129,7 +132,8 @@ const TutorialAlertModal: React.FC<TutorialAlertModalProps> = ({ isOpen, onClose
           
           <button
             onClick={handleStartDigitizationTutorial}
-            className="w-full px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center"
+            className="w-full px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+            aria-label={t('start_digitization_tutorial')}
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
