@@ -165,6 +165,30 @@ router.get('/users', async (req, res) => {
   }
 });
 
+// Get all teachers
+router.get('/users/teachers', async (req, res) => {
+  try {
+    console.log('Attempting to fetch teachers from PostgreSQL...');
+    const teachers = await prisma.user.findMany({
+      where: {
+        role: 'TEACHER'
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+    console.log(`Successfully fetched ${teachers.length} teachers`);
+    res.json(teachers);
+  } catch (error) {
+    console.error('Error fetching teachers:', error);
+    res.status(500).json({
+      message: 'Server error',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
 // Get user by code with better error handling
 router.get('/user/:code', async (req, res) => {
   try {
