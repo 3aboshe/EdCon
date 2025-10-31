@@ -37,6 +37,42 @@ router.get('/teacher/:teacherId', async (req, res) => {
   }
 });
 
+// Get homework by student
+router.get('/student/:studentId', async (req, res) => {
+  try {
+    const { studentId } = req.params;
+
+    // First, get the student to find their classIds
+    const student = await prisma.user.findUnique({
+      where: { id: studentId }
+    });
+
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    // Get homework assigned to any of the student's classes
+    const homework = await prisma.homework.findMany({
+      where: {
+        OR: [
+          // Homework assigned to the student's class
+          { classIds: { has: student.classId } },
+          // Or homework assigned to all classes (empty array means all classes)
+          { classIds: { equals: [] } }
+        ]
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    res.json(homework);
+  } catch (error) {
+    console.error('Error fetching homework by student:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // Create homework
 router.post('/', async (req, res) => {
   try {
