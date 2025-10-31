@@ -190,17 +190,17 @@ router.get('/user/:code', async (req, res) => {
   }
 });
 
-// Login with better error handling
+// Login with better error handling and token generation
 router.post('/login', async (req, res) => {
   try {
     console.log('Login attempt for code:', req.body.code);
     const { code } = req.body;
-    
+
     if (!code) {
       console.log('No code provided');
       return res.status(400).json({ message: 'Code is required' });
     }
-    
+
     const user = await prisma.user.findUnique({
       where: {
         id: code,
@@ -210,13 +210,20 @@ router.post('/login', async (req, res) => {
       console.log('User not found for login code:', code);
       return res.status(404).json({ message: 'Invalid code' });
     }
-    
-    console.log('Login successful for user:', user.name);
-    res.json({ success: true, user });
+
+    // Generate session token
+    const token = `session_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+
+    console.log('Login successful for user:', user.name, 'with token:', token);
+    res.json({
+      success: true,
+      user,
+      token // Add session token for Flutter app
+    });
   } catch (error) {
     console.error('Error during login:', error);
-    res.status(500).json({ 
-      message: 'Server error', 
+    res.status(500).json({
+      message: 'Server error',
       error: error.message,
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
