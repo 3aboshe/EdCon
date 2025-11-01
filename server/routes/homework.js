@@ -128,20 +128,63 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const deletedHomework = await prisma.homework.delete({
       where: {
         id: id
       }
     });
-    
+
     if (!deletedHomework) {
       return res.status(404).json({ message: 'Homework not found' });
     }
-    
+
     res.json({ message: 'Homework deleted successfully' });
   } catch (error) {
     console.error('Delete homework error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Update homework submission
+router.put('/:id/submission', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { studentId, status } = req.body;
+
+    // Get the homework
+    const homework = await prisma.homework.findUnique({
+      where: { id }
+    });
+
+    if (!homework) {
+      return res.status(404).json({ message: 'Homework not found' });
+    }
+
+    // Get current submitted list
+    let submitted = homework.submitted || [];
+
+    if (status === 'submitted') {
+      // Add student to submitted list if not already there
+      if (!submitted.includes(studentId)) {
+        submitted.push(studentId);
+      }
+    } else {
+      // Remove student from submitted list
+      submitted = submitted.filter(sId => sId !== studentId);
+    }
+
+    // Update homework with new submitted list
+    const updatedHomework = await prisma.homework.update({
+      where: { id },
+      data: {
+        submitted: submitted
+      }
+    });
+
+    res.json({ message: 'Submission status updated', homework: updatedHomework });
+  } catch (error) {
+    console.error('Update submission error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
