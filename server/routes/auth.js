@@ -254,6 +254,30 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Logout endpoint
+router.post('/logout', async (req, res) => {
+  try {
+    console.log('Logout request received');
+
+    // In a real JWT implementation, you would invalidate the token here
+    // For now, we'll just send a success response
+    // The Flutter app will handle clearing local storage
+
+    console.log('Logout successful');
+    res.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+  } catch (error) {
+    console.error('Error during logout:', error);
+    res.status(500).json({
+      message: 'Server error',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
 // Get user codes for admin panel
 router.get('/codes', async (req, res) => {
   try {
