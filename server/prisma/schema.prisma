@@ -39,6 +39,7 @@ model User {
   // Teacher relations
   homework      Homework[]
   announcements Announcement[]
+  exams         Exam[]
   
   // Student relations
   grades        Grade[]      @relation("StudentGrades")
