@@ -75,11 +75,30 @@ model Grade {
   maxMarks     Int
   date         DateTime  @default(now())
   type         GradeType @default(QUIZ)
-  
+  examId       String?
+
   // Relations
   student      User      @relation("StudentGrades", fields: [studentId], references: [id])
-  
+  exam         Exam?     @relation(fields: [examId], references: [id])
+
   @@map("grades")
+}
+
+model Exam {
+  id           String    @id
+  title        String
+  date         String
+  maxScore     Int
+  teacherId    String
+  classId      String
+  subject      String
+  createdAt    DateTime  @default(now())
+
+  // Relations
+  teacher      User      @relation(fields: [teacherId], references: [id])
+  grades       Grade[]
+
+  @@map("exams")
 }
 
 model Homework {
