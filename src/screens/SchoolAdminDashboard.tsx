@@ -33,19 +33,17 @@ const SchoolAdminDashboard: React.FC = () => {
       
       setIsLoading(true);
       try {
-        // In a real app, we'd fetch these from the API
-        // const statsRes = await apiService.getSchoolStats(user.schoolId);
-        // if (statsRes.success) setStats(statsRes.data);
+        const statsRes = await apiService.getSchoolStats(user.schoolId);
+        if (statsRes.success && statsRes.data) {
+          setStats(statsRes.data);
+        }
         
-        // Mock data for now
-        setStats({
-          totalStudents: 450,
-          totalTeachers: 32,
-          totalParents: 410,
-          attendanceRate: 94.5,
-          activeAlerts: 3
-        });
-
+        // For pending users, we might need a specific endpoint or filter users
+        // For now, we'll keep the mock or implement a fetch if an endpoint exists
+        // const usersRes = await apiService.getUsers({ schoolId: user.schoolId, status: 'INVITED' });
+        // if (usersRes.success) setPendingUsers(usersRes.data);
+        
+        // Mock pending users for now as we don't have a specific endpoint for it yet in this refactor
         setPendingUsers([
           { id: 1, name: 'Sarah Parent', role: 'PARENT', status: 'pending_otp' },
           { id: 2, name: 'John Teacher', role: 'TEACHER', status: 'pending_otp' },

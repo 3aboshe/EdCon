@@ -559,43 +559,30 @@ class ApiService {
     });
   }
 
-  async getSuperAdminMetrics(): Promise<ApiResponse<any>> {
-    // Mock implementation until backend endpoint exists
-    return Promise.resolve({
-      success: true,
-      data: {
-        totalSchools: 12,
-        totalUsers: 1450,
-        activeUsers: 890,
-        systemHealth: 'healthy'
-      }
+  async deleteSchool(schoolId: string): Promise<ApiResponse<any>> {
+    return this.request<any>(`/schools/${schoolId}`, {
+      method: 'DELETE'
     });
   }
 
-  async getRecentActivity(): Promise<ApiResponse<any[]>> {
-    // Mock implementation until backend endpoint exists
-    return Promise.resolve({
-      success: true,
-      data: [
-        { id: '1', type: 'login', description: 'New login from Demo School Admin', timestamp: new Date().toISOString(), user: { name: 'Demo Admin', role: 'SCHOOL_ADMIN' } },
-        { id: '2', type: 'create_school', description: 'Created new school "Sunrise Academy"', timestamp: new Date(Date.now() - 3600000).toISOString(), user: { name: 'Super Admin', role: 'SUPER_ADMIN' } },
-      ]
+  async addSchoolAdmin(schoolId: string, data: { name: string; email?: string }): Promise<ApiResponse<any>> {
+    return this.request<any>(`/schools/${schoolId}/admins`, {
+      method: 'POST',
+      body: JSON.stringify(data)
     });
+  }
+
+  async getSuperAdminMetrics(): Promise<ApiResponse<any>> {
+    return this.request<any>('/analytics/super-admin');
+  }
+
+  async getRecentActivity(): Promise<ApiResponse<any[]>> {
+    return this.request<any[]>('/analytics/activity');
   }
 
   // School Admin Methods
   async getSchoolStats(schoolId: string): Promise<ApiResponse<any>> {
-    // Mock implementation until backend endpoint exists
-    return Promise.resolve({
-      success: true,
-      data: {
-        totalStudents: 450,
-        totalTeachers: 32,
-        totalParents: 410,
-        attendanceRate: 94.5,
-        activeAlerts: 3
-      }
-    });
+    return this.request<any>(`/analytics/school/${schoolId}`);
   }
 
   async inviteUser(data: any): Promise<ApiResponse<User>> {

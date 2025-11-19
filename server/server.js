@@ -18,6 +18,7 @@ import healthRoutes from './routes/health.js';
 import backupRoutes from './routes/backup.js';
 import schoolRoutes from './routes/schools.js';
 import userManagementRoutes from './routes/users.js';
+import analyticsRoutes from './routes/analytics.js';
 
 dotenv.config();
 
@@ -72,6 +73,7 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/parent-child', parentChildRoutes);
 app.use('/api/schools', schoolRoutes);
 app.use('/api/users', userManagementRoutes);
+app.use('/api/analytics', analyticsRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/backup', backupRoutes);
 
