@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { 
   Users, School, Activity, Plus, Search, MoreVertical, 
-  Settings, LogOut, Bell, Shield, CheckCircle, AlertCircle 
+  Settings, LogOut, Bell, Shield, CheckCircle, AlertCircle, Trash2, UserPlus 
 } from 'lucide-react';
 import apiService from '../services/apiService';
 import { useSession } from '../hooks/useSession';
@@ -12,6 +12,7 @@ import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 
 const SuperAdminDashboard: React.FC = () => {
   const { t } = useTranslation();
@@ -30,6 +31,17 @@ const SuperAdminDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Delete School State
+  const [deleteSchoolId, setDeleteSchoolId] = useState<string | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Add Admin State
+  const [addAdminSchoolId, setAddAdminSchoolId] = useState<string | null>(null);
+  const [isAddAdminModalOpen, setIsAddAdminModalOpen] = useState(false);
+  const [newAdmin, setNewAdmin] = useState({ name: '', email: '' });
+  const [adminCredentials, setAdminCredentials] = useState<{accessCode: string, temporaryPassword: string} | null>(null);
 
   // Form state for new school
   const [newSchool, setNewSchool] = useState({
@@ -102,6 +114,56 @@ const SuperAdminDashboard: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to create school', error);
+    }
+  };
+
+  const confirmDeleteSchool = (id: string) => {
+    setDeleteSchoolId(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteSchool = async () => {
+    if (!deleteSchoolId) return;
+    
+    setIsDeleting(true);
+    try {
+      const res = await apiService.deleteSchool(deleteSchoolId);
+      if (res.success) {
+        setSchools(schools.filter(s => s.id !== deleteSchoolId));
+        setIsDeleteModalOpen(false);
+        setDeleteSchoolId(null);
+      }
+    } catch (error) {
+      console.error('Failed to delete school', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const openAddAdminModal = (schoolId: string) => {
+    setAddAdminSchoolId(schoolId);
+    setNewAdmin({ name: '', email: '' });
+    setAdminCredentials(null);
+    setIsAddAdminModalOpen(true);
+  };
+
+  const handleAddAdmin = async () => {
+    if (!addAdminSchoolId || !newAdmin.name) return;
+
+    try {
+      const res = await apiService.addSchoolAdmin(addAdminSchoolId, newAdmin);
+      if (res.success) {
+        // Assuming response contains credentials
+        const responseData = res as any;
+        if (responseData.credentials) {
+          setAdminCredentials(responseData.credentials);
+        } else if (responseData.data && responseData.data.credentials) {
+          setAdminCredentials(responseData.data.credentials);
+        }
+        // Don't close modal immediately, show credentials first
+      }
+    } catch (error) {
+      console.error('Failed to add admin', error);
     }
   };
 
@@ -222,13 +284,27 @@ const SuperAdminDashboard: React.FC = () => {
                         </div>
                       </div>
                       <div className="flex items-center space-x-4">
-                        <div className="text-right hidden sm:block">
+                        <div className="text-right hidden sm:block mr-2">
                           <p className="text-sm font-medium text-slate-900">{school._count?.users || 0} Users</p>
                           <p className="text-xs text-slate-500 font-mono bg-slate-100 px-2 py-0.5 rounded mt-1">{school.code}</p>
                         </div>
-                        <button className="p-2 text-slate-400 hover:text-blue-600 rounded-full hover:bg-blue-50 opacity-0 group-hover:opacity-100 transition-all">
-                          <MoreVertical className="w-5 h-5" />
-                        </button>
+                        
+                        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <button 
+                            onClick={() => openAddAdminModal(school.id)}
+                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                            title="Add Admin"
+                          >
+                            <UserPlus className="w-5 h-5" />
+                          </button>
+                          <button 
+                            onClick={() => confirmDeleteSchool(school.id)}
+                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                            title="Delete School"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))
@@ -274,97 +350,182 @@ const SuperAdminDashboard: React.FC = () => {
         onClose={() => setShowCreateModal(false)}
         title="Create New School"
       >
-        <div className="space-y-5">
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 mb-4">
-            <p className="text-sm text-blue-800">
-              Creating a school will automatically generate a School Admin account. Credentials will be shown after creation.
-            </p>
+        {createdCredentials ? (
+          <div className="space-y-6">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start space-x-3">
+              <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-green-900">School Created Successfully!</h3>
+                <p className="text-green-700 text-sm mt-1">Please save these admin credentials securely.</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Access Code</label>
+                <div className="flex items-center justify-between mt-1">
+                  <code className="text-lg font-mono font-bold text-slate-900">{createdCredentials.accessCode}</code>
+                </div>
+              </div>
+              <div className="pt-3 border-t border-slate-200">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Temporary Password</label>
+                <div className="flex items-center justify-between mt-1">
+                  <code className="text-lg font-mono font-bold text-slate-900">{createdCredentials.temporaryPassword}</code>
+                </div>
+              </div>
+            </div>
+
+            <Button 
+              onClick={() => {
+                setCreatedCredentials(null);
+                setShowCreateModal(false);
+              }}
+              className="w-full bg-blue-600 text-white hover:bg-blue-700"
+            >
+              Done
+            </Button>
           </div>
-          
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1.5">School Name</label>
-            <Input
-              value={newSchool.name}
-              onChange={(e) => setNewSchool({...newSchool, name: e.target.value})}
-              placeholder="e.g. Springfield High"
-              className="border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
-            />
+        ) : (
+          <div className="space-y-5">
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 mb-4">
+              <p className="text-sm text-blue-800">
+                Creating a school will automatically generate a School Admin account. Credentials will be shown after creation.
+              </p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">School Name</label>
+              <Input
+                value={newSchool.name}
+                onChange={(e) => setNewSchool({...newSchool, name: e.target.value})}
+                placeholder="e.g. Springfield High"
+                className="border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Address</label>
+              <Input
+                value={newSchool.address}
+                onChange={(e) => setNewSchool({...newSchool, address: e.target.value})}
+                placeholder="123 Education Ave"
+                className="border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Admin Name</label>
+                <Input
+                  value={newSchool.adminName}
+                  onChange={(e) => setNewSchool({...newSchool, adminName: e.target.value})}
+                  placeholder="Principal Skinner"
+                  className="border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Admin Email</label>
+                <Input
+                  type="email"
+                  value={newSchool.adminEmail}
+                  onChange={(e) => setNewSchool({...newSchool, adminEmail: e.target.value})}
+                  placeholder="admin@school.edu"
+                  className="border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3 pt-4">
+              <Button variant="outline" onClick={() => setShowCreateModal(false)}>Cancel</Button>
+              <Button onClick={handleCreateSchool} className="bg-blue-600 text-white hover:bg-blue-700">Create School</Button>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Address</label>
-            <Input
-              value={newSchool.address}
-              onChange={(e) => setNewSchool({...newSchool, address: e.target.value})}
-              placeholder="123 Education Ave"
-              className="border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
-            />
+        )}
+      </Modal>
+
+      {/* Add Admin Modal */}
+      <Modal
+        isOpen={isAddAdminModalOpen}
+        onClose={() => setIsAddAdminModalOpen(false)}
+        title="Add School Admin"
+      >
+        {adminCredentials ? (
+          <div className="space-y-6">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start space-x-3">
+              <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-green-900">Admin Added Successfully!</h3>
+                <p className="text-green-700 text-sm mt-1">Please share these credentials with the new admin.</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Access Code</label>
+                <div className="flex items-center justify-between mt-1">
+                  <code className="text-lg font-mono font-bold text-slate-900">{adminCredentials.accessCode}</code>
+                </div>
+              </div>
+              <div className="pt-3 border-t border-slate-200">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Temporary Password</label>
+                <div className="flex items-center justify-between mt-1">
+                  <code className="text-lg font-mono font-bold text-slate-900">{adminCredentials.temporaryPassword}</code>
+                </div>
+              </div>
+            </div>
+
+            <Button 
+              onClick={() => {
+                setAdminCredentials(null);
+                setIsAddAdminModalOpen(false);
+              }}
+              className="w-full bg-blue-600 text-white hover:bg-blue-700"
+            >
+              Done
+            </Button>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+        ) : (
+          <div className="space-y-5">
+            <div className="bg-green-50 p-4 rounded-lg border border-green-100 mb-4">
+              <p className="text-sm text-green-800">
+                You are about to add a new admin to this school. Please provide the admin's details.
+              </p>
+            </div>
+            
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">Admin Name</label>
               <Input
-                value={newSchool.adminName}
-                onChange={(e) => setNewSchool({...newSchool, adminName: e.target.value})}
-                placeholder="Principal Skinner"
+                value={newAdmin.name}
+                onChange={(e) => setNewAdmin({...newAdmin, name: e.target.value})}
+                placeholder="e.g. John Doe"
                 className="border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Admin Email</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Email (Optional)</label>
               <Input
-                type="email"
-                value={newSchool.adminEmail}
-                onChange={(e) => setNewSchool({...newSchool, adminEmail: e.target.value})}
+                value={newAdmin.email}
+                onChange={(e) => setNewAdmin({...newAdmin, email: e.target.value})}
                 placeholder="admin@school.edu"
+                type="email"
                 className="border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
               />
             </div>
-          </div>
-          <div className="pt-6 flex justify-end space-x-3 border-t border-slate-100 mt-2">
-            <Button variant="secondary" onClick={() => setShowCreateModal(false)} className="hover:bg-slate-100">Cancel</Button>
-            <Button onClick={handleCreateSchool} className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-200">Create School</Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Credentials Modal */}
-      <Modal
-        isOpen={!!createdCredentials}
-        onClose={() => setCreatedCredentials(null)}
-        title="School Created Successfully"
-      >
-        <div className="space-y-6 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="w-8 h-8 text-green-600" />
-          </div>
-          
-          <p className="text-slate-600">
-            The school has been initialized and the admin account is ready. Please share these credentials with the school administrator securely.
-          </p>
-
-          <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-4">
-            <div>
-              <p className="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-1">Access Code</p>
-              <p className="text-2xl font-mono font-bold text-slate-900 tracking-widest select-all">{createdCredentials?.accessCode}</p>
-            </div>
-            <div className="border-t border-slate-200 pt-4">
-              <p className="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-1">Temporary Password</p>
-              <p className="text-xl font-mono font-bold text-blue-600 select-all">{createdCredentials?.temporaryPassword}</p>
+            <div className="flex justify-end space-x-3 pt-4">
+              <Button variant="outline" onClick={() => setIsAddAdminModalOpen(false)}>Cancel</Button>
+              <Button onClick={handleAddAdmin} className="bg-blue-600 text-white hover:bg-blue-700">Add Admin</Button>
             </div>
           </div>
-
-          <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-100 flex items-start text-left">
-            <AlertCircle className="w-5 h-5 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-yellow-800">
-              This password will only be shown once. The admin will be required to change it upon their first login.
-            </p>
-          </div>
-
-          <Button onClick={() => setCreatedCredentials(null)} className="w-full bg-slate-900 text-white hover:bg-slate-800">
-            Done
-          </Button>
-        </div>
+        )}
       </Modal>
+
+      <ConfirmDialog
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteSchool}
+        title="Delete School"
+        message="Are you sure you want to delete this school? This action cannot be undone and will delete all associated data including users, classes, and grades."
+        confirmText="Delete School"
+        type="danger"
+        isLoading={isDeleting}
+      />
     </div>
   );
 };

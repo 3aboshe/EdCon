@@ -12,15 +12,9 @@ export const setCookie = (name: string, value: string, days: number = 7) => {
   
   const cookieString = `${name}=${encodeURIComponent(value)}; expires=${expires.toUTCString()}; path=/; ${secureFlag}${sameSiteFlag}`;
   document.cookie = cookieString;
-  
-  console.log('Setting cookie:', cookieString);
-  console.log('All cookies after setting:', document.cookie);
 };
 
 export const getCookie = (name: string): string | null => {
-  console.log('Getting cookie:', name);
-  console.log('All cookies:', document.cookie);
-  
   const nameEQ = name + "=";
   const ca = document.cookie.split(';');
   for (let i = 0; i < ca.length; i++) {
@@ -28,11 +22,9 @@ export const getCookie = (name: string): string | null => {
     while (c.charAt(0) === ' ') c = c.substring(1, c.length);
     if (c.indexOf(nameEQ) === 0) {
       const value = decodeURIComponent(c.substring(nameEQ.length, c.length));
-      console.log('Found cookie value:', value);
       return value;
     }
   }
-  console.log('Cookie not found');
   return null;
 };
 
@@ -81,20 +73,14 @@ export interface StoredSession {
 
 export const saveUserSession = (user: User, token: string) => {
   try {
-    console.log('Saving session for user:', user.name, 'ID:', user.id);
-    
     // Save user data to localStorage for immediate access
     localStorage.setItem(SESSION_KEYS.USER_DATA, JSON.stringify(user));
-    console.log('Saved to localStorage:', SESSION_KEYS.USER_DATA);
     
     // Save session token as cookie for persistence across browser sessions
     setCookie(SESSION_KEYS.SESSION_TOKEN, token, 30); // 30 days
-    console.log('Attempting to save cookie:', SESSION_KEYS.SESSION_TOKEN, 'with value:', '***');
     
     // Update last activity
     updateLastActivity();
-    
-    console.log('Session saved successfully for user:', user.name);
   } catch (error) {
     console.error('Error saving user session:', error);
   }
