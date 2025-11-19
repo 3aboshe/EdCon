@@ -5,11 +5,11 @@ import AppRoutes from './routes/AppRoutes';
 import { User, Student, Class, Teacher, Subject, Grade, Homework, Announcement, Attendance, Message, TimetableEntry, School } from './types';
 import apiService from './services/apiService';
 import {
-  saveUserSession,
-  loadUserSession,
-  clearUserSession,
-  initActivityTracking,
-  stopActivityTracking
+    saveUserSession,
+    loadUserSession,
+    clearUserSession,
+    initActivityTracking,
+    stopActivityTracking
 } from './utils/sessionManager';
 import { realTimeManager } from './utils/realTimeManager';
 import NavigationHandler from './components/layout/NavigationHandler';
@@ -34,8 +34,30 @@ const App: React.FC = () => {
     const [attendance, setAttendance] = useState<Attendance[]>([]);
     const [messages, setMessages] = useState<Message[]>([]);
     const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
+
+    // Sync school code with API service
+    useEffect(() => {
+        if (school?.code) {
+            apiService.setSchoolCode(school.code);
+        } else {
+            apiService.setSchoolCode(null);
+        }
+    }, [school]);
     useEffect(() => {
         if (!user || !apiService.getAuthToken()) {
+            return;
+        }
+
+        // Skip for Super Admin if no school is selected
+        // We check backendRole if available, otherwise infer from lack of schoolId for admins
+        // Also check for legacy 'SUPER_ADMIN' role string in case of old session data
+        const isSuperAdmin =
+            user.backendRole === 'SUPER_ADMIN' ||
+            (user.role === 'admin' && !user.schoolId) ||
+            (user.role as any) === 'SUPER_ADMIN';
+
+        if (isSuperAdmin && !school) {
+            console.log('Skipping initial data fetch for Super Admin (no school selected)');
             return;
         }
 
@@ -92,7 +114,7 @@ const App: React.FC = () => {
         };
 
         fetchAllData();
-    }, [user]);
+    }, [user, school]);
 
     // Session restoration - runs immediately on app start
     useEffect(() => {
@@ -103,9 +125,21 @@ const App: React.FC = () => {
 
                 if (storedSession?.user && storedSession.token) {
                     console.log('App: Restoring session for user:', storedSession.user.name, 'Role:', storedSession.user.role);
+
+                    // Normalize user data to ensure consistent shape (handles legacy session data)
+                    const normalizedUser = mapApiUserToClient(storedSession.user);
+
                     apiService.setAuthToken(storedSession.token);
-                    setUser(storedSession.user);
-                    setSchool(storedSession.user.school || null);
+                    setUser(normalizedUser);
+                    const storedSchool = storedSession.user.school || null;
+                    setSchool(storedSchool);
+
+                    if (storedSchool?.code) {
+                        apiService.setSchoolCode(storedSchool.code);
+                    } else {
+                        apiService.setSchoolCode(null);
+                    }
+
                     initActivityTracking();
 
                     try {
@@ -123,6 +157,7 @@ const App: React.FC = () => {
                         console.warn('App: Unable to refresh remote session, clearing local state', refreshError);
                         clearUserSession();
                         apiService.setAuthToken(null);
+                        apiService.setSchoolCode(null);
                         setUser(null);
                         setSchool(null);
                     }
@@ -140,6 +175,15 @@ const App: React.FC = () => {
     // Real-time setup - runs when user is set and data is loaded
     useEffect(() => {
         if (user && messages.length >= 0 && announcements.length >= 0) {
+            // Skip polling for Super Admin if no school is selected
+            const isSuperAdmin =
+                user.backendRole === 'SUPER_ADMIN' ||
+                (user.role === 'admin' && !user.schoolId) ||
+                (user.role as any) === 'SUPER_ADMIN';
+
+            if (isSuperAdmin && !school) {
+                return;
+            }
             // Initialize real-time manager
             realTimeManager.setCallbacks({
                 onMessagesUpdate: (newMessages) => {
@@ -151,13 +195,13 @@ const App: React.FC = () => {
                     setAnnouncements(newAnnouncements);
                 }
             });
-            
+
             // Initialize data counts for change detection
             realTimeManager.initializeDataCounts(messages.length, announcements.length);
-            
+
             // Start real-time polling
             realTimeManager.startPolling();
-            
+
             // Request notification permission
             realTimeManager.requestNotificationPermission();
         }
@@ -177,7 +221,15 @@ const App: React.FC = () => {
 
         apiService.setAuthToken(session.token);
         setUser(normalizedUser);
-        setSchool(session.school || normalizedUser.school || null);
+        const userSchool = session.school || normalizedUser.school || null;
+        setSchool(userSchool);
+
+        // Sync school code immediately for login flow
+        if (userSchool?.code) {
+            apiService.setSchoolCode(userSchool.code);
+        } else {
+            apiService.setSchoolCode(null);
+        }
 
         saveUserSession(normalizedUser, session.token);
 
@@ -193,7 +245,17 @@ const App: React.FC = () => {
         });
 
         realTimeManager.initializeDataCounts(messages.length, announcements.length);
-        realTimeManager.startPolling();
+
+        // Only start polling if not Super Admin or if school is selected
+        const isSuperAdmin =
+            normalizedUser.backendRole === 'SUPER_ADMIN' ||
+            (normalizedUser.role === 'admin' && !normalizedUser.schoolId) ||
+            (normalizedUser.role as any) === 'SUPER_ADMIN';
+
+        if (!(isSuperAdmin && !school)) {
+            realTimeManager.startPolling();
+        }
+
         realTimeManager.requestNotificationPermission();
         initActivityTracking();
     };
@@ -215,7 +277,7 @@ const App: React.FC = () => {
         console.log('Avatar length:', avatarDataUrl.length);
         console.log('Current user ID:', user?.id);
         console.log('Is updating current user:', user?.id === userId);
-        
+
         setUsers(currentUsers => {
             console.log('Previous users count:', currentUsers.length);
             const updated = currentUsers.map(u => u.id === userId ? { ...u, avatar: avatarDataUrl } : u);
@@ -223,20 +285,20 @@ const App: React.FC = () => {
             console.log('Updated user avatar:', updated.find(u => u.id === userId)?.avatar ? 'has avatar' : 'no avatar');
             return updated;
         });
-        
+
         // Also update the current user if they are the one being changed
-        if(user?.id === userId) {
+        if (user?.id === userId) {
             console.log('Updating current user avatar');
             setUser(prevUser => prevUser ? { ...prevUser, avatar: avatarDataUrl } : null);
         }
-        
+
         // Also update students array if the user is a student
         setStudents(currentStudents => {
             const updated = currentStudents.map(s => s.id === userId ? { ...s, avatar: avatarDataUrl } : s);
             console.log('Updated students with new avatar:', updated.find(s => s.id === userId)?.avatar ? 'has avatar' : 'no avatar');
             return updated;
         });
-        
+
         console.log('Avatar update completed in App context');
     }, [user?.id]);
 
