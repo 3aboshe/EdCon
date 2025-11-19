@@ -4,12 +4,12 @@ const getApiBaseUrl = () => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  
+
   // Always use Railway URL for now (since local server isn't running)
   const url = 'https://edcon-production.up.railway.app/api';
   console.log('🔗 Using API URL:', url);
   return url;
-  
+
   // In development, default to localhost (uncomment when local server is running)
   // return 'http://localhost:5005/api';
 };
@@ -25,8 +25,11 @@ export interface ApiResponse<T> {
 export interface User {
   id: string;
   name: string;
-  role: 'student' | 'teacher' | 'parent' | 'admin';
+  role: 'student' | 'teacher' | 'parent' | 'admin' | 'STUDENT' | 'TEACHER' | 'PARENT' | 'ADMIN' | 'SUPER_ADMIN' | 'SCHOOL_ADMIN';
   avatar?: string;
+  status?: string;
+  schoolId?: string;
+  schoolCode?: string;
 }
 
 export interface Class {
@@ -132,7 +135,7 @@ class ApiService {
       const defaultHeaders = options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' };
       const authHeader = this.authToken ? { Authorization: `Bearer ${this.authToken}` } : {};
       const schoolHeader = this.schoolCode ? { 'x-edcon-school-code': this.schoolCode } : {};
-      
+
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
         headers: {
@@ -197,18 +200,29 @@ class ApiService {
   }
 
   // Create user (admin only)
-  async createUser(user: { name: string; role: string; avatar?: string; [key: string]: any }): Promise<{ code: string; user: User }> {
+  async createUser(user: { name: string; role: string; avatar?: string;[key: string]: any }): Promise<{ code: string; user: User; password?: string }> {
     console.log('=== API CREATE USER DEBUG ===');
     console.log('Creating user with data:', user);
-    console.log('API URL:', `${API_BASE_URL}/auth/create`);
-    
-    const response = await this.request<{ code: string; user: User }>('/auth/create', {
+
+    const response = await this.request<any>('/users', {
       method: 'POST',
       body: JSON.stringify(user),
     });
-    
+
     console.log('API response:', response);
-    return response.data!;
+    const res = response as any;
+
+    // The backend returns { success: true, user: ..., credentials: { accessCode, temporaryPassword } }
+    if (res.credentials) {
+      return {
+        code: res.credentials.accessCode,
+        user: res.user,
+        password: res.credentials.temporaryPassword
+      };
+    }
+
+    // Fallback if response structure is different
+    return res.data || res;
   }
 
   // Get user codes (admin only)
@@ -248,14 +262,14 @@ class ApiService {
     console.log('=== CREATE CLASS API DEBUG ===');
     console.log('Class name:', name);
     console.log('Subject IDs:', subjectIds);
-    
-    const response = await this.request<{success: boolean, class: Class}>('/classes', {
+
+    const response = await this.request<{ success: boolean, class: Class }>('/classes', {
       method: 'POST',
       body: JSON.stringify({ name, subjectIds }),
     });
-    
+
     console.log('Raw API response:', response);
-    
+
     // The server returns {success: true, class: {...}}
     if (response && (response as any).class) {
       return (response as any).class;
@@ -277,16 +291,16 @@ class ApiService {
   async createSubject(name: string): Promise<Subject> {
     console.log('=== CREATE SUBJECT API DEBUG ===');
     console.log('Subject name:', name);
-    
-    const response = await this.request<{success: boolean, subject: Subject}>('/subjects', {
+
+    const response = await this.request<{ success: boolean, subject: Subject }>('/subjects', {
       method: 'POST',
       body: JSON.stringify({ name }),
     });
-    
+
     console.log('Raw API response:', response);
     console.log('Response type:', typeof response);
     console.log('Response keys:', Object.keys(response));
-    
+
     // The server returns {success: true, subject: {...}}
     // But response.data might be undefined, so check the response directly
     if (response && (response as any).subject) {
@@ -303,11 +317,11 @@ class ApiService {
 
   // Update class
   async updateClass(classId: string, updates: { name?: string; subjectIds?: string[] }): Promise<Class> {
-    const response = await this.request<{success: boolean, class: Class}>(`/classes/${classId}`, {
+    const response = await this.request<{ success: boolean, class: Class }>(`/classes/${classId}`, {
       method: 'PUT',
       body: JSON.stringify(updates),
     });
-    
+
     if (response && (response as any).class) {
       return (response as any).class;
     } else if (response.data && (response.data as any).class) {
@@ -326,11 +340,11 @@ class ApiService {
 
   // Update subject
   async updateSubject(subjectId: string, updates: { name: string }): Promise<Subject> {
-    const response = await this.request<{success: boolean, subject: Subject}>(`/subjects/${subjectId}`, {
+    const response = await this.request<{ success: boolean, subject: Subject }>(`/subjects/${subjectId}`, {
       method: 'PUT',
       body: JSON.stringify(updates),
     });
-    
+
     if (response && (response as any).subject) {
       return (response as any).subject;
     } else if (response.data && (response.data as any).subject) {
@@ -432,7 +446,7 @@ class ApiService {
   // Send a message
   async sendMessage(message: Omit<Message, 'id'> & { files?: File[] }): Promise<Message> {
     const formData = new FormData();
-    
+
     // Add message data
     formData.append('senderId', message.senderId);
     formData.append('receiverId', message.receiverId);
@@ -442,14 +456,14 @@ class ApiService {
     if (message.content) {
       formData.append('content', message.content);
     }
-    
+
     // Add files if any
     if (message.files) {
       message.files.forEach(file => {
         formData.append('files', file);
       });
     }
-    
+
     const response = await this.request<Message>('/messages', {
       method: 'POST',
       body: formData,
@@ -496,12 +510,12 @@ class ApiService {
       console.log('Avatar length:', updates.avatar.length);
       console.log('Avatar preview:', updates.avatar.substring(0, 100) + '...');
     }
-    
+
     const response = await this.request<User>(`/auth/users/${userId}`, {
       method: 'PUT',
       body: JSON.stringify(updates),
     });
-    
+
     console.log('API response:', response);
     return response.data!;
   }
@@ -520,11 +534,11 @@ class ApiService {
         'Content-Type': 'application/json',
       },
     });
-    
+
     if (!response.ok) {
       throw new Error('Failed to create backup');
     }
-    
+
     return response.blob();
   }
 
