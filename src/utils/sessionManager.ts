@@ -10,7 +10,7 @@ export const setCookie = (name: string, value: string, days: number = 7) => {
   const secureFlag = isProduction ? 'Secure; ' : '';
   const sameSiteFlag = isProduction ? 'SameSite=None; ' : 'SameSite=Lax; ';
   
-  const cookieString = `${name}=${value}; expires=${expires.toUTCString()}; path=/; ${secureFlag}${sameSiteFlag}`;
+  const cookieString = `${name}=${encodeURIComponent(value)}; expires=${expires.toUTCString()}; path=/; ${secureFlag}${sameSiteFlag}`;
   document.cookie = cookieString;
   
   console.log('Setting cookie:', cookieString);
@@ -27,7 +27,7 @@ export const getCookie = (name: string): string | null => {
     let c = ca[i];
     while (c.charAt(0) === ' ') c = c.substring(1, c.length);
     if (c.indexOf(nameEQ) === 0) {
-      const value = c.substring(nameEQ.length, c.length);
+      const value = decodeURIComponent(c.substring(nameEQ.length, c.length));
       console.log('Found cookie value:', value);
       return value;
     }
@@ -74,7 +74,12 @@ export const SESSION_KEYS = {
   LAST_ACTIVITY: 'edcon_last_activity',
 } as const;
 
-export const saveUserSession = (user: User) => {
+export interface StoredSession {
+  user: User;
+  token: string;
+}
+
+export const saveUserSession = (user: User, token: string) => {
   try {
     console.log('Saving session for user:', user.name, 'ID:', user.id);
     
@@ -83,8 +88,8 @@ export const saveUserSession = (user: User) => {
     console.log('Saved to localStorage:', SESSION_KEYS.USER_DATA);
     
     // Save session token as cookie for persistence across browser sessions
-    setCookie(SESSION_KEYS.SESSION_TOKEN, user.id, 30); // 30 days
-    console.log('Attempting to save cookie:', SESSION_KEYS.SESSION_TOKEN, 'with value:', user.id);
+    setCookie(SESSION_KEYS.SESSION_TOKEN, token, 30); // 30 days
+    console.log('Attempting to save cookie:', SESSION_KEYS.SESSION_TOKEN, 'with value:', '***');
     
     // Update last activity
     updateLastActivity();
@@ -95,7 +100,7 @@ export const saveUserSession = (user: User) => {
   }
 };
 
-export const loadUserSession = (): User | null => {
+export const loadUserSession = (): StoredSession | null => {
   try {
     // Check if session token exists
     const sessionToken = getCookie(SESSION_KEYS.SESSION_TOKEN);
@@ -134,16 +139,9 @@ export const loadUserSession = (): User | null => {
       }
     }
     
-    // Verify session token matches user ID
-    if (sessionToken !== user.id) {
-      console.log('Session token mismatch');
-      clearUserSession();
-      return null;
-    }
-    
     updateLastActivity();
     console.log('Session successfully loaded for user:', user.name);
-    return user;
+    return { user, token: sessionToken };
   } catch (error) {
     console.error('Error loading user session:', error);
     clearUserSession();

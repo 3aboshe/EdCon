@@ -1,12 +1,19 @@
 import express from 'express';
 import { prisma } from '../config/db.js';
+import authenticate from '../middleware/authenticate.js';
+import resolveSchoolContext from '../middleware/schoolContext.js';
+import requireRole from '../middleware/requireRole.js';
 
 const router = express.Router();
+
+router.use(authenticate);
+router.use(resolveSchoolContext);
 
 // Get all homework
 router.get('/', async (req, res) => {
   try {
     const homework = await prisma.homework.findMany({
+      where: { schoolId: req.school.id },
       orderBy: {
         createdAt: 'desc'
       }
@@ -24,7 +31,8 @@ router.get('/teacher/:teacherId', async (req, res) => {
     const { teacherId } = req.params;
     const homework = await prisma.homework.findMany({
       where: {
-        teacherId: teacherId
+        teacherId: teacherId,
+        schoolId: req.school.id
       },
       orderBy: {
         createdAt: 'desc'
@@ -43,8 +51,8 @@ router.get('/student/:studentId', async (req, res) => {
     const { studentId } = req.params;
 
     // First, get the student to find their classIds
-    const student = await prisma.user.findUnique({
-      where: { id: studentId }
+    const student = await prisma.user.findFirst({
+      where: { id: studentId, schoolId: req.school.id }
     });
 
     if (!student) {
@@ -54,6 +62,7 @@ router.get('/student/:studentId', async (req, res) => {
     // Get homework assigned to any of the student's classes
     const homework = await prisma.homework.findMany({
       where: {
+        schoolId: req.school.id,
         OR: [
           // Homework assigned to the student's class
           { classIds: { has: student.classId } },
@@ -74,9 +83,36 @@ router.get('/student/:studentId', async (req, res) => {
 });
 
 // Create homework
-router.post('/', async (req, res) => {
+router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
   try {
     const { title, subject, dueDate, assignedDate, teacherId, classIds } = req.body;
+
+    if (!title || !subject || !dueDate) {
+      return res.status(400).json({ message: 'Title, subject, and due date are required' });
+    }
+
+    let resolvedTeacherId = teacherId;
+    if (req.user.role === 'TEACHER') {
+      resolvedTeacherId = req.user.id;
+    }
+
+    if (!resolvedTeacherId) {
+      return res.status(400).json({ message: 'Teacher ID is required' });
+    }
+
+    const teacher = await prisma.user.findFirst({ where: { id: resolvedTeacherId, schoolId: req.school.id } });
+    if (!teacher) {
+      return res.status(404).json({ message: 'Teacher not found in this school' });
+    }
+
+    if (Array.isArray(classIds) && classIds.length > 0) {
+      await Promise.all(classIds.map(async (cid) => {
+        const klass = await prisma.class.findFirst({ where: { id: cid, schoolId: req.school.id } });
+        if (!klass) {
+          throw new Error('One or more classes do not belong to this school');
+        }
+      }));
+    }
     
     // Generate a unique ID for the homework
     const homeworkId = `HW${Date.now()}`;
@@ -86,10 +122,11 @@ router.post('/', async (req, res) => {
         id: homeworkId,
         title,
         subject,
-        dueDate,
-        assignedDate,
-        teacherId,
-        classIds: classIds || []
+        dueDate: new Date(dueDate),
+        assignedDate: assignedDate ? new Date(assignedDate) : new Date(),
+        teacherId: resolvedTeacherId,
+        classIds: classIds || [],
+        schoolId: req.school.id
       }
     });
     
@@ -101,22 +138,30 @@ router.post('/', async (req, res) => {
 });
 
 // Update homework
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
+
+    const homework = await prisma.homework.findFirst({ where: { id, schoolId: req.school.id } });
+    if (!homework) {
+      return res.status(404).json({ message: 'Homework not found' });
+    }
+
+    if (updateData.dueDate) {
+      updateData.dueDate = new Date(updateData.dueDate);
+    }
+    if (updateData.assignedDate) {
+      updateData.assignedDate = new Date(updateData.assignedDate);
+    }
     
     const updatedHomework = await prisma.homework.update({
       where: {
-        id: id
+        id: homework.id
       },
       data: updateData
     });
-    
-    if (!updatedHomework) {
-      return res.status(404).json({ message: 'Homework not found' });
-    }
-    
+
     res.json(updatedHomework);
   } catch (error) {
     console.error('Update homework error:', error);
@@ -125,19 +170,20 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete homework
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
   try {
     const { id } = req.params;
 
-    const deletedHomework = await prisma.homework.delete({
-      where: {
-        id: id
-      }
-    });
-
-    if (!deletedHomework) {
+    const homework = await prisma.homework.findFirst({ where: { id, schoolId: req.school.id } });
+    if (!homework) {
       return res.status(404).json({ message: 'Homework not found' });
     }
+
+    await prisma.homework.delete({
+      where: {
+        id: homework.id
+      }
+    });
 
     res.json({ message: 'Homework deleted successfully' });
   } catch (error) {
@@ -153,8 +199,8 @@ router.put('/:id/submission', async (req, res) => {
     const { studentId, status } = req.body;
 
     // Get the homework
-    const homework = await prisma.homework.findUnique({
-      where: { id }
+    const homework = await prisma.homework.findFirst({
+      where: { id, schoolId: req.school.id }
     });
 
     if (!homework) {
@@ -176,7 +222,7 @@ router.put('/:id/submission', async (req, res) => {
 
     // Update homework with new submitted list
     const updatedHomework = await prisma.homework.update({
-      where: { id },
+      where: { id: homework.id },
       data: {
         submitted: submitted
       }

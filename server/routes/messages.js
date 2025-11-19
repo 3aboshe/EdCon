@@ -2,6 +2,13 @@ import express from 'express';
 import { prisma } from '../config/db.js';
 import multer from 'multer';
 import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import authenticate from '../middleware/authenticate.js';
+import resolveSchoolContext from '../middleware/schoolContext.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
@@ -45,10 +52,14 @@ const upload = multer({
   }
 });
 
+router.use(authenticate);
+router.use(resolveSchoolContext);
+
 // Get all messages
 router.get('/', async (req, res) => {
   try {
     const messages = await prisma.message.findMany({
+      where: { schoolId: req.school.id },
       orderBy: {
         createdAt: 'desc'
       }
@@ -69,7 +80,8 @@ router.get('/conversation/:user1Id/:user2Id', async (req, res) => {
         OR: [
           { senderId: user1Id, receiverId: user2Id },
           { senderId: user2Id, receiverId: user1Id }
-        ]
+        ],
+        schoolId: req.school.id
       },
       orderBy: {
         createdAt: 'asc'
@@ -91,7 +103,8 @@ router.get('/user/:userId', async (req, res) => {
         OR: [
           { senderId: userId },
           { receiverId: userId }
-        ]
+        ],
+        schoolId: req.school.id
       },
       orderBy: {
         createdAt: 'desc'
@@ -130,13 +143,13 @@ router.post('/', upload.array('files', 5), async (req, res) => {
     }
     
     // Validate that sender and receiver users exist
-    const sender = await prisma.user.findUnique({ where: { id: senderId } });
+    const sender = await prisma.user.findFirst({ where: { id: senderId, schoolId: req.school.id } });
     if (!sender) {
       console.error('Sender not found:', senderId);
       return res.status(400).json({ message: 'Sender user not found' });
     }
     
-    const receiver = await prisma.user.findUnique({ where: { id: receiverId } });
+    const receiver = await prisma.user.findFirst({ where: { id: receiverId, schoolId: req.school.id } });
     if (!receiver) {
       console.error('Receiver not found:', receiverId);
       return res.status(400).json({ message: 'Receiver user not found' });
@@ -181,12 +194,13 @@ router.post('/', upload.array('files', 5), async (req, res) => {
         id: `M${Date.now()}`,
         senderId,
         receiverId,
-        timestamp: timestamp || new Date().toISOString(),
+        timestamp: timestamp ? new Date(timestamp) : new Date(),
         isRead: isRead || false,
         type: messageType,
         content,
         audioSrc: null,
-        attachments: attachments
+        attachments: attachments,
+        schoolId: req.school.id
       }
     });
     
@@ -214,14 +228,15 @@ router.put('/:id/read', async (req, res) => {
   try {
     const { id } = req.params;
     
-    const updatedMessage = await prisma.message.update({
-      where: { id },
-      data: { isRead: true }
-    });
-    
-    if (!updatedMessage) {
+    const message = await prisma.message.findFirst({ where: { id, schoolId: req.school.id } });
+    if (!message) {
       return res.status(404).json({ message: 'Message not found' });
     }
+
+    const updatedMessage = await prisma.message.update({
+      where: { id: message.id },
+      data: { isRead: true }
+    });
     
     res.json(updatedMessage);
   } catch (error) {
@@ -235,14 +250,15 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    const deletedMessage = await prisma.message.delete({
-      where: { id }
-    });
-    
-    if (!deletedMessage) {
+    const message = await prisma.message.findFirst({ where: { id, schoolId: req.school.id } });
+    if (!message) {
       return res.status(404).json({ message: 'Message not found' });
     }
-    
+
+    await prisma.message.delete({
+      where: { id: message.id }
+    });
+
     res.json({ message: 'Message deleted successfully' });
   } catch (error) {
     console.error('Delete message error:', error);

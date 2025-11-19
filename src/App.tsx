@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'reac
 import { BrowserRouter as Router } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import AppRoutes from './routes/AppRoutes';
-import { User, Student, Class, Teacher, Subject, Grade, Homework, Announcement, Attendance, Message, TimetableEntry } from './types';
+import { User, Student, Class, Teacher, Subject, Grade, Homework, Announcement, Attendance, Message, TimetableEntry, School } from './types';
 import apiService from './services/apiService';
 import {
   saveUserSession,
@@ -13,12 +13,14 @@ import {
 } from './utils/sessionManager';
 import { realTimeManager } from './utils/realTimeManager';
 import NavigationHandler from './components/layout/NavigationHandler';
-import { AppContext } from './contexts/AppContext';
+import { AppContext, SessionPayload } from './contexts/AppContext';
 import { TutorialProvider } from './contexts/TutorialContext';
+import { mapApiUsers, mapApiUserToClient } from './lib/userAdapter';
 
 const App: React.FC = () => {
     const { i18n } = useTranslation();
     const [user, setUser] = useState<User | null>(null);
+    const [school, setSchool] = useState<School | null>(null);
 
     // Lifted state - all initialized as empty arrays
     const [users, setUsers] = useState<User[]>([]);
@@ -32,13 +34,15 @@ const App: React.FC = () => {
     const [attendance, setAttendance] = useState<Attendance[]>([]);
     const [messages, setMessages] = useState<Message[]>([]);
     const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
-
-
     useEffect(() => {
+        if (!user || !apiService.getAuthToken()) {
+            return;
+        }
+
         const fetchAllData = async () => {
             try {
-                console.log('Fetching data from PostgreSQL...');
-                const [allUsers, allClasses, allSubjects, allGrades, allHomework, allAnnouncements, allAttendance, allMessages] = await Promise.all([
+                console.log('Fetching scoped data for authenticated user...');
+                const [rawUsers, allClasses, allSubjects, allGrades, allHomework, allAnnouncements, allAttendance, allMessages] = await Promise.all([
                     apiService.getAllUsers(),
                     apiService.getAllClasses(),
                     apiService.getAllSubjects(),
@@ -49,24 +53,8 @@ const App: React.FC = () => {
                     apiService.getAllMessages(),
                 ]);
 
-                console.log('Fetched users with avatars:', allUsers.map(u => ({ 
-                    id: u.id, 
-                    name: u.name, 
-                    avatar: u.avatar ? `has avatar (${u.avatar.length} chars)` : 'no avatar',
-                    avatarPreview: u.avatar ? u.avatar.substring(0, 50) + '...' : 'none'
-                })));
-
-                console.log('Fetched users:', allUsers.length);
-                console.log('Fetched classes:', allClasses.length);
-                console.log('Fetched subjects:', allSubjects.length);
-                console.log('Fetched grades:', allGrades.length);
-                console.log('Fetched homework:', allHomework.length);
-                console.log('Fetched announcements:', allAnnouncements.length);
-                console.log('Fetched attendance:', allAttendance.length);
-                console.log('Fetched messages:', allMessages.length);
-
-                // Always update with PostgreSQL data when available
-                setUsers(allUsers);
+                const normalizedUsers = mapApiUsers(rawUsers as any[]);
+                setUsers(normalizedUsers);
                 setClasses(allClasses);
                 setSubjects(allSubjects);
                 setGrades(allGrades);
@@ -75,55 +63,78 @@ const App: React.FC = () => {
                 setAttendance(allAttendance);
                 setMessages(allMessages);
 
-                // Process students from PostgreSQL data
-                const studentUsers = allUsers.filter(u => u.role?.toLowerCase() === 'student').map(u => ({
-                    ...u,
-                    grade: 1, // Default grade
-                    classId: (u as any).classId || '',
-                    parentId: (u as any).parentId || '',
-                })) as Student[];
-                
-                console.log('=== STUDENTS PROCESSING DEBUG ===');
-                console.log('All users:', allUsers.length);
-                console.log('Student users:', studentUsers.length);
-                console.log('Student details:', studentUsers.map(s => ({ id: s.id, name: s.name, classId: s.classId, parentId: s.parentId })));
-                console.log('Students with parentId:', studentUsers.filter(s => s.parentId).length);
-                
+                const studentUsers: Student[] = normalizedUsers
+                    .filter(u => u.role === 'student')
+                    .map(u => ({
+                        id: u.id,
+                        name: u.name,
+                        grade: 1,
+                        classId: u.classId || '',
+                        parentId: u.parentId || '',
+                        avatar: u.avatar || '',
+                    }));
                 setStudents(studentUsers);
 
-                // Load teachers with their classIds
-                const teacherUsers = allUsers.filter(u => u.role?.toLowerCase() === 'teacher').map(u => ({
-                    id: u.id,
-                    name: u.name,
-                    subject: (u as any).subject || '',
-                    classIds: (u as any).classIds || [],
-                })) as Teacher[];
+                const teacherUsers: Teacher[] = normalizedUsers
+                    .filter(u => u.role === 'teacher')
+                    .map(u => ({
+                        id: u.id,
+                        name: u.name,
+                        subject: u.subject || '',
+                        classIds: u.classIds || [],
+                    }));
                 setTeachers(teacherUsers);
 
-                console.log('Successfully loaded all data from PostgreSQL');
-
+                console.log('Successfully loaded scoped data');
             } catch (error) {
-                console.error("Failed to fetch initial data from PostgreSQL", error);
-                // Keep using empty arrays if PostgreSQL fetch fails
+                console.error('Failed to fetch authenticated data', error);
             }
         };
 
         fetchAllData();
-    }, []);
+    }, [user]);
 
     // Session restoration - runs immediately on app start
     useEffect(() => {
-        console.log('App: Attempting to load user session...');
-        const savedUser = loadUserSession();
-        if (savedUser) {
-            console.log('App: Restoring session for user:', savedUser.name, 'Role:', savedUser.role);
-            setUser(savedUser);
-            
-            // Start activity tracking immediately
-            initActivityTracking();
-        } else {
-            console.log('App: No saved session found');
-        }
+        const bootstrapSession = async () => {
+            try {
+                console.log('App: Attempting to load user session...');
+                const storedSession = loadUserSession();
+
+                if (storedSession?.user && storedSession.token) {
+                    console.log('App: Restoring session for user:', storedSession.user.name, 'Role:', storedSession.user.role);
+                    apiService.setAuthToken(storedSession.token);
+                    setUser(storedSession.user);
+                    setSchool(storedSession.user.school || null);
+                    initActivityTracking();
+
+                    try {
+                        const remoteSession: any = await apiService.fetchSession();
+                        const remoteUser = remoteSession?.user || remoteSession?.data?.user;
+                        if (remoteUser) {
+                            const refreshedUser = mapApiUserToClient(remoteUser);
+                            const resolvedSchool = remoteSession?.school || remoteSession?.data?.school || refreshedUser.school || null;
+                            const updatedUser = { ...refreshedUser, school: resolvedSchool };
+                            setUser(updatedUser);
+                            setSchool(resolvedSchool);
+                            saveUserSession(updatedUser, storedSession.token);
+                        }
+                    } catch (refreshError) {
+                        console.warn('App: Unable to refresh remote session, clearing local state', refreshError);
+                        clearUserSession();
+                        apiService.setAuthToken(null);
+                        setUser(null);
+                        setSchool(null);
+                    }
+                } else {
+                    console.log('App: No saved session found');
+                }
+            } finally {
+                // No-op placeholder for future instrumentation
+            }
+        };
+
+        bootstrapSession();
     }, []);
 
     // Real-time setup - runs when user is set and data is loaded
@@ -160,45 +171,16 @@ const App: React.FC = () => {
         };
     }, [user, messages.length, announcements.length]);
 
-    const handleLogin = (newUser: User) => {
-        // Find the full user data from the users array
-        const fullUser = users.find(u => u.id === newUser.id) || newUser;
-        
-        console.log('Login attempt for user:', newUser.id);
-        console.log('Found full user data:', fullUser);
-        
-        // For teachers, ensure classIds are loaded
-        if (fullUser.role === 'teacher') {
-            const teacherData = users.find(u => u.id === newUser.id);
-            if (teacherData) {
-                setUser({
-                    ...fullUser,
-                    classIds: (teacherData as any).classIds || []
-                });
-            } else {
-                setUser(fullUser);
-            }
-        } else if (fullUser.role === 'parent') {
-            // For parents, ensure childrenIds are loaded
-            const parentData = users.find(u => u.id === newUser.id);
-            if (parentData) {
-                console.log('Parent data with childrenIds:', parentData);
-                setUser({
-                    ...fullUser,
-                    childrenIds: (parentData as any).childrenIds || []
-                });
-            } else {
-                setUser(fullUser);
-            }
-        } else {
-            console.log('Setting user for admin/student:', fullUser);
-            setUser(fullUser);
-        }
-        
-        // Save session and start real-time updates
-        saveUserSession(fullUser);
-        
-        // Initialize real-time manager
+    const handleLogin = (session: SessionPayload) => {
+        const normalizedUser = session.user;
+        console.log('Login completed for user:', normalizedUser.name, 'role:', normalizedUser.role);
+
+        apiService.setAuthToken(session.token);
+        setUser(normalizedUser);
+        setSchool(session.school || normalizedUser.school || null);
+
+        saveUserSession(normalizedUser, session.token);
+
         realTimeManager.setCallbacks({
             onMessagesUpdate: (newMessages) => {
                 console.log('Real-time: Messages updated');
@@ -209,28 +191,21 @@ const App: React.FC = () => {
                 setAnnouncements(newAnnouncements);
             }
         });
-        
-        // Initialize data counts for change detection
+
         realTimeManager.initializeDataCounts(messages.length, announcements.length);
-        
-        // Start real-time polling
         realTimeManager.startPolling();
-        
-        // Request notification permission
         realTimeManager.requestNotificationPermission();
-        
-        // Start activity tracking
         initActivityTracking();
-        
-        console.log('Login completed for user:', fullUser.name);
     };
 
     const handleLogout = () => {
         // Clear session and stop real-time updates
         clearUserSession();
+        apiService.setAuthToken(null);
         realTimeManager.stopPolling();
         stopActivityTracking();
         setUser(null);
+        setSchool(null);
         console.log('User logged out and session cleared');
     };
 
@@ -274,6 +249,7 @@ const App: React.FC = () => {
 
     const appContextValue = useMemo(() => ({
         user,
+        school,
         login: handleLogin,
         logout: handleLogout,
         users,
@@ -300,7 +276,7 @@ const App: React.FC = () => {
         setTimetable,
         updateUserAvatar: handleUpdateUserAvatar,
         updateUser: handleUpdateUser,
-    }), [user, users, students, classes, teachers, subjects, grades, homework, announcements, attendance, messages, timetable, handleUpdateUserAvatar, handleUpdateUser]);
+    }), [user, school, users, students, classes, teachers, subjects, grades, homework, announcements, attendance, messages, timetable, handleUpdateUserAvatar, handleUpdateUser]);
 
     useEffect(() => {
         document.documentElement.lang = i18n.language;

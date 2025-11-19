@@ -1,13 +1,21 @@
 import express from 'express';
 import { prisma } from '../config/db.js';
+import authenticate from '../middleware/authenticate.js';
+import resolveSchoolContext from '../middleware/schoolContext.js';
+import requireRole from '../middleware/requireRole.js';
 
 const router = express.Router();
+
+router.use(authenticate);
+router.use(resolveSchoolContext);
+router.use(requireRole(['SCHOOL_ADMIN', 'TEACHER', 'SUPER_ADMIN']));
 
 // Get all subjects
 router.get('/', async (req, res) => {
   try {
     console.log('Fetching subjects from database...');
     const subjects = await prisma.subject.findMany({
+      where: { schoolId: req.school.id },
       orderBy: {
         name: 'asc'
       }
@@ -21,14 +29,14 @@ router.get('/', async (req, res) => {
 });
 
 // Create a new subject
-router.post('/', async (req, res) => {
+router.post('/', requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
   try {
     const { name } = req.body;
     console.log('Creating subject:', name);
     
     // Check if subject already exists
     const existingSubject = await prisma.subject.findFirst({
-      where: { name: name }
+      where: { name: name, schoolId: req.school.id }
     });
     
     if (existingSubject) {
@@ -42,7 +50,8 @@ router.post('/', async (req, res) => {
     const subject = await prisma.subject.create({
       data: {
         id: subjectId,
-        name: name
+        name: name,
+        schoolId: req.school.id
       }
     });
     
@@ -68,14 +77,14 @@ router.post('/', async (req, res) => {
 });
 
 // Delete a subject
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
   try {
     const { id } = req.params;
     console.log('Deleting subject:', id);
     
     // Check if subject exists
-    const existingSubject = await prisma.subject.findUnique({
-      where: { id: id }
+    const existingSubject = await prisma.subject.findFirst({
+      where: { id: id, schoolId: req.school.id }
     });
     
     if (!existingSubject) {
@@ -85,7 +94,7 @@ router.delete('/:id', async (req, res) => {
     
     // Delete the subject
     await prisma.subject.delete({
-      where: { id: id }
+      where: { id: existingSubject.id }
     });
     
     console.log('Successfully deleted subject:', id);

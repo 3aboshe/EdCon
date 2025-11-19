@@ -1,12 +1,19 @@
 import express from 'express';
 import { prisma } from '../config/db.js';
+import authenticate from '../middleware/authenticate.js';
+import resolveSchoolContext from '../middleware/schoolContext.js';
+import requireRole from '../middleware/requireRole.js';
 
 const router = express.Router();
+
+router.use(authenticate);
+router.use(resolveSchoolContext);
 
 // Get all announcements
 router.get('/', async (req, res) => {
   try {
     const announcements = await prisma.announcement.findMany({
+      where: { schoolId: req.school.id },
       orderBy: {
         createdAt: 'desc'
       }
@@ -23,7 +30,7 @@ router.get('/teacher/:teacherId', async (req, res) => {
   try {
     const { teacherId } = req.params;
     const announcements = await prisma.announcement.findMany({
-      where: { teacherId },
+      where: { teacherId, schoolId: req.school.id },
       orderBy: {
         createdAt: 'desc'
       }
@@ -36,9 +43,18 @@ router.get('/teacher/:teacherId', async (req, res) => {
 });
 
 // Add new announcement
-router.post('/', async (req, res) => {
+router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
   try {
     const { title, content, date, teacherId, priority, classIds } = req.body;
+
+    let resolvedTeacherId = teacherId;
+    if (req.user.role === 'TEACHER') {
+      resolvedTeacherId = req.user.id;
+    }
+
+    if (!resolvedTeacherId) {
+      return res.status(400).json({ message: 'Teacher ID is required' });
+    }
     
     // Generate a unique ID for the announcement
     const announcementId = `ANN${Date.now()}`;
@@ -51,10 +67,11 @@ router.post('/', async (req, res) => {
         id: announcementId,
         title,
         content,
-        date,
-        teacherId,
+        date: date ? new Date(date) : new Date(),
+        teacherId: resolvedTeacherId,
         classIds: classIds || [],
-        priority: priorityValue
+        priority: priorityValue,
+        schoolId: req.school.id
       }
     });
     
@@ -66,7 +83,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update announcement
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = { ...req.body };
@@ -76,15 +93,20 @@ router.put('/:id', async (req, res) => {
       updateData.priority = updateData.priority.toUpperCase();
     }
     
-    const updatedAnnouncement = await prisma.announcement.update({
-      where: { id },
-      data: updateData
-    });
-    
-    if (!updatedAnnouncement) {
+    if (updateData.date) {
+      updateData.date = new Date(updateData.date);
+    }
+
+    const announcement = await prisma.announcement.findFirst({ where: { id, schoolId: req.school.id } });
+    if (!announcement) {
       return res.status(404).json({ message: 'Announcement not found' });
     }
-    
+
+    const updatedAnnouncement = await prisma.announcement.update({
+      where: { id: announcement.id },
+      data: updateData
+    });
+
     res.json(updatedAnnouncement);
   } catch (error) {
     console.error('Update announcement error:', error);
@@ -93,18 +115,19 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete announcement
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
   try {
     const { id } = req.params;
-    
-    const deletedAnnouncement = await prisma.announcement.delete({
-      where: { id }
-    });
-    
-    if (!deletedAnnouncement) {
+
+    const announcement = await prisma.announcement.findFirst({ where: { id, schoolId: req.school.id } });
+    if (!announcement) {
       return res.status(404).json({ message: 'Announcement not found' });
     }
-    
+
+    await prisma.announcement.delete({
+      where: { id: announcement.id }
+    });
+
     res.json({ message: 'Announcement deleted successfully' });
   } catch (error) {
     console.error('Delete announcement error:', error);

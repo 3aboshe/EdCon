@@ -1,12 +1,20 @@
 import express from 'express';
 import { prisma } from '../config/db.js';
+import authenticate from '../middleware/authenticate.js';
+import resolveSchoolContext from '../middleware/schoolContext.js';
+import requireRole from '../middleware/requireRole.js';
 
 const router = express.Router();
+
+router.use(authenticate);
+router.use(resolveSchoolContext);
+router.use(requireRole(['SCHOOL_ADMIN', 'TEACHER', 'SUPER_ADMIN']));
 
 // Get all classes
 router.get('/', async (req, res) => {
   try {
     const classes = await prisma.class.findMany({
+      where: { schoolId: req.school.id },
       orderBy: {
         name: 'asc'
       }
@@ -19,7 +27,7 @@ router.get('/', async (req, res) => {
 });
 
 // Create a new class
-router.post('/', async (req, res) => {
+router.post('/', requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
   try {
     const { name, subjectIds = [] } = req.body;
     console.log('Creating class:', name, 'with subjects:', subjectIds);
@@ -31,7 +39,8 @@ router.post('/', async (req, res) => {
       data: {
         id: classId,
         name: name,
-        subjectIds: subjectIds
+        subjectIds: subjectIds,
+        schoolId: req.school.id
       }
     });
     
@@ -41,7 +50,7 @@ router.post('/', async (req, res) => {
       
       // Get all teachers
       const teachers = await prisma.user.findMany({
-        where: { role: 'TEACHER' }
+        where: { role: 'TEACHER', schoolId: req.school.id }
       });
       
       // For each teacher, check if they teach any of the subjects in this class
@@ -49,7 +58,7 @@ router.post('/', async (req, res) => {
         if (teacher.subject) {
           // Find the subject by name
           const subject = await prisma.subject.findFirst({
-            where: { name: teacher.subject }
+            where: { name: teacher.subject, schoolId: req.school.id }
           });
           
           if (subject && subjectIds.includes(subject.id)) {
@@ -78,15 +87,15 @@ router.post('/', async (req, res) => {
 });
 
 // Update a class
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
   try {
     const { id } = req.params;
     const { name, subjectIds } = req.body;
     console.log('Updating class:', id, 'with data:', { name, subjectIds });
     
     // Check if class exists
-    const existingClass = await prisma.class.findUnique({
-      where: { id: id }
+    const existingClass = await prisma.class.findFirst({
+      where: { id: id, schoolId: req.school.id }
     });
     
     if (!existingClass) {
@@ -115,7 +124,7 @@ router.put('/:id', async (req, res) => {
       
       // Get all teachers
       const teachers = await prisma.user.findMany({
-        where: { role: 'TEACHER' }
+        where: { role: 'TEACHER', schoolId: req.school.id }
       });
       
       // For each teacher, check if they teach any of the subjects in this class
@@ -123,7 +132,7 @@ router.put('/:id', async (req, res) => {
         if (teacher.subject) {
           // Find the subject by name
           const subject = await prisma.subject.findFirst({
-            where: { name: teacher.subject }
+            where: { name: teacher.subject, schoolId: req.school.id }
           });
           
           if (subject && subjectIds.includes(subject.id)) {
@@ -164,14 +173,14 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete a class
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
   try {
     const { id } = req.params;
     console.log('Deleting class:', id);
     
     // Check if class exists
-    const existingClass = await prisma.class.findUnique({
-      where: { id: id }
+    const existingClass = await prisma.class.findFirst({
+      where: { id: id, schoolId: req.school.id }
     });
     
     if (!existingClass) {
@@ -181,7 +190,7 @@ router.delete('/:id', async (req, res) => {
     
     // Check if class has students
     const studentsInClass = await prisma.user.findMany({
-      where: { classId: id }
+      where: { classId: id, schoolId: req.school.id }
     });
     
     if (studentsInClass.length > 0) {
