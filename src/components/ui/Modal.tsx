@@ -8,22 +8,23 @@ interface ModalProps {
     onClose: () => void;
     title: string | React.ReactNode;
     children: React.ReactNode;
+    className?: string;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, className = '' }) => {
     const { i18n } = useTranslation();
     const dir = ['ar', 'ku-sorani', 'ku-badini', 'syr'].includes(i18n.language) ? 'rtl' : 'ltr';
-    
+
     if (!isOpen) return null;
 
     return (
-        <div 
+        <div
             className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4"
             onClick={onClose}
         >
             <div
                 dir={dir}
-                className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col"
+                className={`bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col ${className}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex justify-between items-center p-4 border-b">
