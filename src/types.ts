@@ -1,4 +1,3 @@
-
 export type BackendUserRole = 'SUPER_ADMIN' | 'SCHOOL_ADMIN' | 'TEACHER' | 'PARENT' | 'STUDENT';
 export type UserRole = 'parent' | 'teacher' | 'admin' | 'student';
 
@@ -8,6 +7,10 @@ export interface School {
   code: string;
   timezone?: string;
   address?: string;
+  _count?: {
+    users: number;
+    classes: number;
+  };
 }
 
 export interface User {
@@ -231,4 +234,38 @@ export interface BulkImportResult {
     message: string;
   }>;
   operationId?: string;
+}
+
+export interface SchoolStats {
+  totalStudents: number;
+  totalTeachers: number;
+  totalParents: number;
+  attendanceRate: number;
+  activeAlerts: number;
+}
+
+export interface DashboardMetrics {
+  totalSchools: number;
+  totalUsers: number;
+  activeUsers: number;
+  systemHealth: 'healthy' | 'degraded' | 'down';
+}
+
+export interface ActivityLog {
+  id: string;
+  type: 'login' | 'create_school' | 'create_user' | 'update_settings';
+  description: string;
+  timestamp: string;
+  user?: {
+    name: string;
+    role: string;
+  };
+}
+
+export interface CreateSchoolData {
+  name: string;
+  address: string;
+  timezone: string;
+  adminEmail: string;
+  adminName: string;
 }

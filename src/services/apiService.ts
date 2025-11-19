@@ -93,6 +93,14 @@ export interface Message {
   }>;
 }
 
+export interface School {
+  id: string;
+  name: string;
+  adminId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 class ApiService {
   private authToken: string | null = null;
 
@@ -539,6 +547,71 @@ class ApiService {
     return response;
   }
 
+  // Super Admin Methods
+  async getSchools(): Promise<ApiResponse<School[]>> {
+    return this.request<School[]>('/schools');
+  }
+
+  async createSchool(data: any): Promise<ApiResponse<School>> {
+    return this.request<School>('/schools', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  async getSuperAdminMetrics(): Promise<ApiResponse<any>> {
+    // Mock implementation until backend endpoint exists
+    return Promise.resolve({
+      success: true,
+      data: {
+        totalSchools: 12,
+        totalUsers: 1450,
+        activeUsers: 890,
+        systemHealth: 'healthy'
+      }
+    });
+  }
+
+  async getRecentActivity(): Promise<ApiResponse<any[]>> {
+    // Mock implementation until backend endpoint exists
+    return Promise.resolve({
+      success: true,
+      data: [
+        { id: '1', type: 'login', description: 'New login from Demo School Admin', timestamp: new Date().toISOString(), user: { name: 'Demo Admin', role: 'SCHOOL_ADMIN' } },
+        { id: '2', type: 'create_school', description: 'Created new school "Sunrise Academy"', timestamp: new Date(Date.now() - 3600000).toISOString(), user: { name: 'Super Admin', role: 'SUPER_ADMIN' } },
+      ]
+    });
+  }
+
+  // School Admin Methods
+  async getSchoolStats(schoolId: string): Promise<ApiResponse<any>> {
+    // Mock implementation until backend endpoint exists
+    return Promise.resolve({
+      success: true,
+      data: {
+        totalStudents: 450,
+        totalTeachers: 32,
+        totalParents: 410,
+        attendanceRate: 94.5,
+        activeAlerts: 3
+      }
+    });
+  }
+
+  async inviteUser(data: any): Promise<ApiResponse<User>> {
+    return this.request<User>('/users/invite', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  async resetUserPassword(userId: string): Promise<ApiResponse<any>> {
+    return this.request(`/auth/reset-password-request`, {
+      method: 'POST',
+      body: JSON.stringify({ userId })
+    });
+  }
+
 }
 
-export default new ApiService(); 
+export default new ApiService();

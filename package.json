@@ -13,6 +13,7 @@
     "@types/react-router-dom": "^5.3.3",
     "i18next": "^25.5.2",
     "i18next-browser-languagedetector": "^8.2.0",
+    "lucide-react": "^0.554.0",
     "mongodb": "^6.18.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
