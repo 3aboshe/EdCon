@@ -1,20 +1,38 @@
 import express from 'express';
 import { prisma } from '../config/db.js';
+import authenticate from '../middleware/authenticate.js';
+import requireRole from '../middleware/requireRole.js';
 
 const router = express.Router();
+
+router.use(authenticate);
+router.use(requireRole(['SUPER_ADMIN']));
+
+const buildWhere = async (req) => {
+  const schoolCode = req.query.schoolCode || req.headers['x-edcon-school-code'];
+  if (!schoolCode) {
+    return {};
+  }
+  const school = await prisma.school.findUnique({ where: { code: schoolCode.toString().toUpperCase() } });
+  if (!school) {
+    throw new Error('School not found for backup');
+  }
+  return { schoolId: school.id };
+};
 
 // Create a full database backup
 router.post('/create', async (req, res) => {
   try {
     console.log('Creating database backup...');
+    const where = await buildWhere(req);
     
     // Get all data from the database
     const [users, classes, subjects, announcements, messages] = await Promise.all([
-      prisma.user.findMany(),
-      prisma.class.findMany(),
-      prisma.subject.findMany(),
-      prisma.announcement.findMany(),
-      prisma.message.findMany()
+      prisma.user.findMany({ where }),
+      prisma.class.findMany({ where }),
+      prisma.subject.findMany({ where }),
+      prisma.announcement.findMany({ where }),
+      prisma.message.findMany({ where })
     ]);
 
     const backup = {
@@ -75,12 +93,13 @@ router.post('/create', async (req, res) => {
 // Get backup statistics
 router.get('/stats', async (req, res) => {
   try {
+    const where = await buildWhere(req);
     const [userCount, classCount, subjectCount, announcementCount, messageCount] = await Promise.all([
-      prisma.user.count(),
-      prisma.class.count(),
-      prisma.subject.count(),
-      prisma.announcement.count(),
-      prisma.message.count()
+      prisma.user.count({ where }),
+      prisma.class.count({ where }),
+      prisma.subject.count({ where }),
+      prisma.announcement.count({ where }),
+      prisma.message.count({ where })
     ]);
 
     const stats = {

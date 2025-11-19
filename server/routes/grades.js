@@ -1,12 +1,19 @@
 import express from 'express';
 import { prisma } from '../config/db.js';
+import authenticate from '../middleware/authenticate.js';
+import resolveSchoolContext from '../middleware/schoolContext.js';
+import requireRole from '../middleware/requireRole.js';
 
 const router = express.Router();
+
+router.use(authenticate);
+router.use(resolveSchoolContext);
 
 // Get all grades
 router.get('/', async (req, res) => {
   try {
     const grades = await prisma.grade.findMany({
+      where: { schoolId: req.school.id },
       orderBy: {
         date: 'desc'
       }
@@ -23,7 +30,7 @@ router.get('/student/:studentId', async (req, res) => {
   try {
     const { studentId } = req.params;
     const grades = await prisma.grade.findMany({
-      where: { studentId },
+      where: { studentId, schoolId: req.school.id },
       orderBy: {
         date: 'desc'
       }
@@ -36,7 +43,7 @@ router.get('/student/:studentId', async (req, res) => {
 });
 
 // Add a new grade
-router.post('/', async (req, res) => {
+router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
   try {
     const { studentId, subject, assignment, marksObtained, maxMarks, type, date, examId } = req.body;
 
@@ -44,9 +51,15 @@ router.post('/', async (req, res) => {
     console.log('Request body:', req.body);
     console.log('Parsed data:', { studentId, subject, assignment, marksObtained, maxMarks, type, date, examId });
 
+    const student = await prisma.user.findFirst({ where: { id: studentId, schoolId: req.school.id } });
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found in this school' });
+    }
+
     const newGrade = await prisma.grade.create({
       data: {
         studentId,
+        schoolId: req.school.id,
         subject,
         assignment,
         marksObtained,
@@ -71,20 +84,21 @@ router.post('/', async (req, res) => {
 });
 
 // Update a grade
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
     
-    const updatedGrade = await prisma.grade.update({
-      where: { id },
-      data: updateData
-    });
-    
-    if (!updatedGrade) {
+    const grade = await prisma.grade.findFirst({ where: { id, schoolId: req.school.id } });
+    if (!grade) {
       return res.status(404).json({ message: 'Grade not found' });
     }
-    
+
+    const updatedGrade = await prisma.grade.update({
+      where: { id: grade.id },
+      data: updateData
+    });
+
     res.json(updatedGrade);
   } catch (error) {
     console.error('Update grade error:', error);
@@ -93,18 +107,19 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete a grade
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
   try {
     const { id } = req.params;
     
-    const deletedGrade = await prisma.grade.delete({
-      where: { id }
-    });
-    
-    if (!deletedGrade) {
+    const grade = await prisma.grade.findFirst({ where: { id, schoolId: req.school.id } });
+    if (!grade) {
       return res.status(404).json({ message: 'Grade not found' });
     }
-    
+
+    await prisma.grade.delete({
+      where: { id: grade.id }
+    });
+
     res.json({ message: 'Grade deleted successfully' });
   } catch (error) {
     console.error('Delete grade error:', error);

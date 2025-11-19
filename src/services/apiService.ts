@@ -94,6 +94,16 @@ export interface Message {
 }
 
 class ApiService {
+  private authToken: string | null = null;
+
+  setAuthToken(token: string | null) {
+    this.authToken = token;
+  }
+
+  getAuthToken() {
+    return this.authToken;
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -106,12 +116,15 @@ class ApiService {
         bodyType: options.body ? (options.body instanceof FormData ? 'FormData' : 'JSON') : 'none'
       });
 
+      const defaultHeaders = options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' };
+      const authHeader = this.authToken ? { Authorization: `Bearer ${this.authToken}` } : {};
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
         headers: {
-          ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
+          ...defaultHeaders,
+          ...authHeader,
           ...options.headers,
         },
-        ...options,
       });
 
       console.log('API response status:', response.status);
@@ -142,22 +155,29 @@ class ApiService {
   }
 
   // Authentication
-  async login(code: string): Promise<ApiResponse<{ user: User }>> {
+  async login(accessCode: string, password: string) {
     const response = await this.request<any>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ code }),
+      body: JSON.stringify({ accessCode, password }),
     });
-    
-    // Handle both response formats (direct user object or { success: true, user })
-    const responseAny = response as any;
-    if (responseAny.success && responseAny.user) {
-      return response.data || response as any;
-    } else if (responseAny.id && responseAny.name && responseAny.role) {
-      // Backend returns user object directly
-      return { success: true, user: responseAny } as ApiResponse<{ user: User }>;
-    } else {
-      throw new Error('Invalid response format from login endpoint');
+
+    const payload = response as any;
+    if (payload?.token) {
+      this.setAuthToken(payload.token);
     }
+
+    return payload;
+  }
+
+  async fetchSession() {
+    return this.request<any>('/auth/me');
+  }
+
+  async resetPassword(currentPassword: string, newPassword: string) {
+    return this.request<any>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
   }
 
   // Create user (admin only)

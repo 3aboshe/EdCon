@@ -14,15 +14,15 @@ export const useSession = () => {
 
   // Load session on mount
   useEffect(() => {
-    const savedUser = loadUserSession();
-    if (savedUser) {
-      setUser(savedUser);
+    const storedSession = loadUserSession();
+    if (storedSession?.user) {
+      setUser(storedSession.user);
     }
   }, []);
 
-  const login = useCallback((newUser: User) => {
+  const login = useCallback((newUser: User, token: string) => {
     setUser(newUser);
-    saveUserSession(newUser);
+    saveUserSession(newUser, token);
     initActivityTracking();
     
     // Start real-time updates

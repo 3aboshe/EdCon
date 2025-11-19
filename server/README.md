@@ -1,85 +1,97 @@
-# EdCon Backend API
+# EdCon Backend API (Prisma + PostgreSQL)
 
-This is the backend API for the EdCon application, built with Express.js and MongoDB.
+Express + Prisma service that powers the multi‑school EdCon experience. The backend now targets PostgreSQL (Railway in production) and enforces access code + OTP onboarding flows.
 
-## Setup Instructions
+## Prerequisites
 
-### 1. Install MongoDB
+- Node.js 18+
+- PostgreSQL 15+ (local or hosted)
+- npm 8+
 
-**Option A: Local MongoDB**
-- Download and install MongoDB Community Server from [mongodb.com](https://www.mongodb.com/try/download/community)
-- Start MongoDB service
+## Local Setup
 
-**Option B: MongoDB Atlas (Cloud)**
-- Create a free account at [mongodb.com/atlas](https://www.mongodb.com/atlas)
-- Create a new cluster
-- Get your connection string
+1. **Install dependencies**
 
-### 2. Install Dependencies
+	```bash
+	cd server
+	npm install
+	```
 
-```bash
-cd server
-npm install
-```
+2. **Configure environment** – create `server/.env`:
 
-### 3. Environment Setup
+	```env
+	PORT=5005
+	JWT_SECRET=change-me
+	DATABASE_URL="postgresql://postgres:postgres@localhost:5432/edcon?schema=public"
+	DATABASE_PUBLIC_URL="postgresql://postgres:postgres@localhost:5432/edcon"
+	SUPER_ADMIN_EMAIL=super@edcon.app
+	SUPER_ADMIN_PASSWORD=SuperAdmin#2025
+	```
 
-Create a `.env` file in the server directory:
+3. **Apply migrations + generate Prisma client**
 
-```env
-MONGODB_URI=mongodb://localhost:27017/edcon
-PORT=5000
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-```
+	```bash
+	npx prisma migrate deploy
+	npm run build
+	```
 
-For MongoDB Atlas, use your connection string:
-```env
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/edcon
-```
+4. **Seed demo data (creates super admin, school admin, teacher, parent, student)**
 
-### 4. Seed the Database
+	```bash
+	npm run seed
+	```
 
-```bash
-node seed.js
-```
+5. **Run the API**
 
-This will create initial users and grades data.
+	```bash
+	npm run dev   # or npm start for production profile
+	```
 
-### 5. Start the Server
+Health check: `http://localhost:5005/api/health`
 
-```bash
-npm run dev
-```
+## Railway Deployment Checklist
 
-The server will start on `http://localhost:5000`
+1. **Environment variables (Railway dashboard → Variables)**
+	- `DATABASE_URL` – use the *public* proxy string Railway provides (e.g. `postgresql://postgres:<password>@turntable.proxy.rlwy.net:32570/railway`). The internal host `postgres.railway.internal` is not reachable from this service plan.
+	- `DATABASE_PUBLIC_URL` – same as above (optional, used by Prisma tooling).
+	- `JWT_SECRET`, `SUPER_ADMIN_EMAIL`, `SUPER_ADMIN_PASSWORD`, `PORT=8080` (or leave default if Railway injects it).
 
-## API Endpoints
+2. **Migrations + seed against Railway** (run locally once whenever schema changes):
 
-### Authentication
-- `POST /api/auth/login` - Login with user code
-- `GET /api/auth/users` - Get all users (admin only)
+	```bash
+	cd server
+	DATABASE_URL="postgresql://postgres:<password>@turntable.proxy.rlwy.net:32570/railway" \
+	npx prisma migrate deploy
 
-### Grades
-- `GET /api/grades/student/:studentId` - Get grades for a student
-- `POST /api/grades` - Add a new grade
-- `PUT /api/grades/:id` - Update a grade
-- `DELETE /api/grades/:id` - Delete a grade
+	DATABASE_URL="postgresql://postgres:<password>@turntable.proxy.rlwy.net:32570/railway" \
+	npm run seed
+	```
 
-### Health Check
-- `GET /api/health` - Check if API is running
+	> ⚠️ `npm run seed` is destructive—run it only on fresh environments.
 
-## Test Users
+3. **Deploy pipeline**
+	- Railway install runs `npm install` and `npm run build` (already generates Prisma client).
+	- Server start simply executes `npm start` → `node server.js`. Automatic `prisma db push` was removed; schema is expected to be up to date before deploy.
 
-After seeding, you can login with these codes:
-- `student1` - Student account
-- `student2` - Another student account
-- `teacher1` - Teacher account
-- `parent1` - Parent account
-- `admin1` - Admin account
+4. **Redeploy**
+	- Commit your changes: `git commit -am "message" && git push origin main`.
+	- Railway rebuilds automatically; watch the “Deploy Logs” for `✅ PostgreSQL connected successfully`.
 
-## Connecting Frontend
+5. **Verify**
+	- `curl https://<railway-domain>/api/health`
+	- Confirm login using the seeded credentials (access code + OTP workflow).
 
-The frontend is already configured to connect to this backend via the `services/apiService.ts` file. Make sure both frontend and backend are running:
+## Useful npm scripts
 
-1. Backend: `cd server && npm run dev` (port 5000)
-2. Frontend: `npm run dev` (port 5173) 
+| Script | Purpose |
+| --- | --- |
+| `npm run dev` | Start Express server with nodemon |
+| `npm start` | Start Express server (production) |
+| `npm run build` | Generate Prisma client |
+| `npm run seed` | Seed demo data (super admin, school admin, teacher, parent, student) |
+
+## Notes
+
+- Never run `prisma db push` in production; use `prisma migrate deploy` to preserve history.
+- OTP credentials are printed to the console during `npm run seed`—store them securely.
+- The frontend expects the API base URL via `VITE_API_URL`; update once Railway is live. 

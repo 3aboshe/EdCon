@@ -1,9 +1,16 @@
 import React, { createContext } from 'react';
-import { User, Student, Class, Teacher, Subject, Grade, Homework, Announcement, Attendance, Message, TimetableEntry } from '../types';
+import { User, Student, Class, Teacher, Subject, Grade, Homework, Announcement, Attendance, Message, TimetableEntry, School } from '../types';
+
+export interface SessionPayload {
+    user: User;
+    token: string;
+    school?: School | null;
+}
 
 export interface AppContextType {
     user: User | null;
-    login: (user: User) => void;
+    school: School | null;
+    login: (session: SessionPayload) => void;
     logout: () => void;
     users: User[];
     students: Student[];
@@ -33,6 +40,7 @@ export interface AppContextType {
 
 const defaultContextValue: AppContextType = {
     user: null,
+    school: null,
     login: () => {},
     logout: () => {},
     users: [],

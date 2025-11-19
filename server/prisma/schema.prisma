@@ -10,170 +10,228 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id
+model School {
+  id        String   @id @default(cuid())
   name      String
-  role      UserRole
-  email     String?
-  avatar    String   @default("")
-  
-  // Student-specific fields
-  classId   String?
-  parentId  String?
-  
-  // Parent-specific fields  
-  childrenIds String[]
-  
-  // Teacher-specific fields
-  subject   String?
-  classIds  String[]
-  messagingAvailability Json?
-  
+  code      String   @unique
+  address   String?
+  timezone  String?  @default("UTC")
+  metadata  Json?
   createdAt DateTime @default(now())
-  
-  // Relations
-  class     Class?   @relation("StudentClass", fields: [classId], references: [id])
-  parent    User?    @relation("ParentChild", fields: [parentId], references: [id])
-  children  User[]   @relation("ParentChild")
-  
-  // Teacher relations
+  updatedAt DateTime @updatedAt
+
+  users         User[]
+  classes       Class[]
+  subjects      Subject[]
+  grades        Grade[]
+  exams         Exam[]
   homework      Homework[]
   announcements Announcement[]
-  exams         Exam[]
-  
-  // Student relations
-  grades        Grade[]      @relation("StudentGrades")
   attendance    Attendance[]
+  messages      Message[]
+  automationSuggestions AutomationSuggestion[]
+  workflowExecutions   WorkflowExecution[]
+  learnedPatterns      LearnedPattern[]
+  bulkOperations       BulkOperation[]
+
+  @@map("schools")
+}
+
+model User {
+  id                     String   @id @default(cuid())
+  accessCode             String   @unique
+  schoolId               String?
+  schoolCode             String?
+  role                   UserRole
+  status                 UserStatus @default(ACTIVE)
+  name                   String
+  email                  String?
+  phone                  String?
+  avatar                 String   @default("")
+  passwordHash           String
+  temporaryPasswordHash  String?
+  temporaryPasswordIssuedAt DateTime?
+  requiresPasswordReset  Boolean  @default(false)
+  lastLoginAt            DateTime?
+  classId                String?
+  parentId               String?
+  subject                String?
+  classIds               String[] @default([])
+  childrenIds            String[] @default([])
+  messagingAvailability  Json?
+  metadata               Json?
+  createdById            String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  school        School?  @relation(fields: [schoolId], references: [id])
+  class         Class?   @relation("StudentClass", fields: [classId], references: [id])
+  parent        User?    @relation("ParentChild", fields: [parentId], references: [id])
+  children      User[]   @relation("ParentChild")
+  createdBy     User?    @relation("UserCreator", fields: [createdById], references: [id])
+  createdUsers  User[]   @relation("UserCreator")
+  homework      Homework[] @relation("HomeworkTeacher")
+  announcements Announcement[] @relation("AnnouncementTeacher")
+  exams         Exam[]   @relation("ExamTeacher")
+  grades        Grade[]  @relation("StudentGrades")
+  attendance    Attendance[] @relation("StudentAttendance")
   sentMessages     Message[] @relation("MessageSender")
   receivedMessages Message[] @relation("MessageReceiver")
   submittedHomework Homework[] @relation("HomeworkSubmissions")
-  
+
   @@map("users")
 }
 
 model Class {
-  id        String @id
-  name      String
-  subjectIds String[]
-  students  User[] @relation("StudentClass")
-  
+  id         String   @id @default(cuid())
+  name       String
+  schoolId   String
+  subjectIds String[] @default([])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  school  School @relation(fields: [schoolId], references: [id])
+  students User[] @relation("StudentClass")
+  exams    Exam[]
+
   @@map("classes")
 }
 
 model Subject {
-  id   String @id
-  name String
-  
+  id        String   @id @default(cuid())
+  name      String
+  schoolId  String
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  school School @relation(fields: [schoolId], references: [id])
+
   @@map("subjects")
 }
 
 model Grade {
-  id           String    @id @default(cuid())
-  studentId    String
-  subject      String
-  assignment   String
-  marksObtained Int
-  maxMarks     Int
-  date         DateTime  @default(now())
-  type         GradeType @default(QUIZ)
-  examId       String?
+  id             String    @id @default(cuid())
+  studentId      String
+  schoolId       String
+  subject        String
+  assignment     String
+  marksObtained  Int
+  maxMarks       Int
+  date           DateTime  @default(now())
+  type           GradeType @default(QUIZ)
+  examId         String?
 
-  // Relations
-  student      User      @relation("StudentGrades", fields: [studentId], references: [id])
-  exam         Exam?     @relation(fields: [examId], references: [id])
+  school  School @relation(fields: [schoolId], references: [id])
+  student User   @relation("StudentGrades", fields: [studentId], references: [id])
+  exam    Exam?  @relation(fields: [examId], references: [id])
 
   @@map("grades")
 }
 
 model Exam {
-  id           String    @id
-  title        String
-  date         String
-  maxScore     Int
-  teacherId    String
-  classId      String
-  subject      String
-  createdAt    DateTime  @default(now())
+  id        String   @id @default(cuid())
+  title     String
+  date      DateTime
+  maxScore  Int
+  teacherId String
+  classId   String
+  subject   String
+  schoolId  String
+  createdAt DateTime @default(now())
 
-  // Relations
-  teacher      User      @relation(fields: [teacherId], references: [id])
-  grades       Grade[]
+  school School @relation(fields: [schoolId], references: [id])
+  teacher User   @relation("ExamTeacher", fields: [teacherId], references: [id])
+  class   Class  @relation(fields: [classId], references: [id])
+  grades  Grade[]
 
   @@map("exams")
 }
 
 model Homework {
-  id           String   @id
+  id           String   @id @default(cuid())
   title        String
   subject      String
-  dueDate      String
-  assignedDate String
+  dueDate      DateTime
+  assignedDate DateTime
   teacherId    String
+  schoolId     String
   classIds     String[] @default([])
   submitted    String[] @default([])
   createdAt    DateTime @default(now())
-  
-  // Relations
-  teacher      User     @relation(fields: [teacherId], references: [id])
-  submittedBy  User[]   @relation("HomeworkSubmissions")
-  
+
+  school      School @relation(fields: [schoolId], references: [id])
+  teacher     User   @relation("HomeworkTeacher", fields: [teacherId], references: [id])
+  submittedBy User[] @relation("HomeworkSubmissions")
+
   @@map("homework")
 }
 
 model Announcement {
-  id        String             @id
+  id        String               @id @default(cuid())
   title     String
   content   String
-  date      String
+  date      DateTime
   teacherId String
-  classIds  String[]           @default([])
+  schoolId  String
+  classIds  String[]             @default([])
   priority  AnnouncementPriority @default(MEDIUM)
-  createdAt DateTime           @default(now())
+  createdAt DateTime             @default(now())
 
-  // Relations
-  teacher   User               @relation(fields: [teacherId], references: [id])
+  school  School @relation(fields: [schoolId], references: [id])
+  teacher User   @relation("AnnouncementTeacher", fields: [teacherId], references: [id])
 
   @@map("announcements")
 }
 
 model Attendance {
   id        String           @id @default(cuid())
-  date      String
+  date      DateTime
   studentId String
+  schoolId  String
   status    AttendanceStatus
   createdAt DateTime         @default(now())
-  
-  // Relations
-  student   User             @relation(fields: [studentId], references: [id])
-  
+
+  school  School @relation(fields: [schoolId], references: [id])
+  student User   @relation("StudentAttendance", fields: [studentId], references: [id])
+
   @@map("attendance")
 }
 
 model Message {
-  id         String      @id
+  id         String      @id @default(cuid())
   senderId   String
   receiverId String
-  timestamp  String
+  schoolId   String
+  timestamp  DateTime    @default(now())
   isRead     Boolean     @default(false)
   type       MessageType @default(TEXT)
   content    String?
   audioSrc   String?
-  attachments Json?      // Store file metadata and URLs
+  attachments Json?
   createdAt  DateTime    @default(now())
-  
-  // Relations
-  sender     User        @relation("MessageSender", fields: [senderId], references: [id])
-  receiver   User        @relation("MessageReceiver", fields: [receiverId], references: [id])
-  
+
+  school   School @relation(fields: [schoolId], references: [id])
+  sender   User   @relation("MessageSender", fields: [senderId], references: [id])
+  receiver User   @relation("MessageReceiver", fields: [receiverId], references: [id])
+
   @@map("messages")
 }
 
 // Enums
 enum UserRole {
-  STUDENT
+  SUPER_ADMIN
+  SCHOOL_ADMIN
   TEACHER
   PARENT
-  ADMIN
+  STUDENT
+}
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+  DISABLED
 }
 
 enum GradeType {
@@ -202,9 +260,10 @@ enum MessageType {
   FILE
 }
 
-// Automation tables for Phase 1
+// Automation tables scoped to schools for governance features
 model AutomationSuggestion {
   id             Int      @id @default(autoincrement())
+  schoolId       String?
   entityType     String
   entityId       String?
   suggestionType String
@@ -214,11 +273,14 @@ model AutomationSuggestion {
   createdAt      DateTime @default(now())
   appliedAt      DateTime?
 
+  school School? @relation(fields: [schoolId], references: [id])
+
   @@map("automation_suggestions")
 }
 
 model WorkflowExecution {
   id              Int      @id @default(autoincrement())
+  schoolId        String?
   workflowType    String
   triggerData     Json
   executionStatus String   @default("pending")
@@ -228,11 +290,14 @@ model WorkflowExecution {
   startedAt       DateTime @default(now())
   completedAt     DateTime?
 
+  school School? @relation(fields: [schoolId], references: [id])
+
   @@map("workflow_executions")
 }
 
 model LearnedPattern {
   id             Int      @id @default(autoincrement())
+  schoolId       String?
   patternType    String
   patternData    Json
   successCount   Int      @default(0)
@@ -241,11 +306,14 @@ model LearnedPattern {
   lastApplied    DateTime?
   createdAt      DateTime @default(now())
 
+  school School? @relation(fields: [schoolId], references: [id])
+
   @@map("learned_patterns")
 }
 
 model BulkOperation {
   id                Int      @id @default(autoincrement())
+  schoolId          String?
   operationType     String
   entityType        String
   totalRecords      Int      @default(0)
@@ -256,6 +324,8 @@ model BulkOperation {
   createdBy         String?
   createdAt         DateTime @default(now())
   completedAt       DateTime?
+
+  school School? @relation(fields: [schoolId], references: [id])
 
   @@map("bulk_operations")
 }

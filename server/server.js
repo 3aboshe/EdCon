@@ -16,6 +16,8 @@ import messageRoutes from './routes/messages.js';
 import parentChildRoutes from './routes/parent-child.js';
 import healthRoutes from './routes/health.js';
 import backupRoutes from './routes/backup.js';
+import schoolRoutes from './routes/schools.js';
+import userManagementRoutes from './routes/users.js';
 
 dotenv.config();
 
@@ -68,6 +70,8 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/parent-child', parentChildRoutes);
+app.use('/api/schools', schoolRoutes);
+app.use('/api/users', userManagementRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/backup', backupRoutes);
 
@@ -186,22 +190,7 @@ const startServer = async () => {
         await connectDB();
         console.log('✅ PostgreSQL connected successfully');
         
-        // Run database setup in background (non-blocking)
-        if (process.env.NODE_ENV === 'production') {
-          console.log('🔄 Running database setup...');
-          setTimeout(async () => {
-            try {
-              const { exec } = await import('child_process');
-              const { promisify } = await import('util');
-              const execAsync = promisify(exec);
-              
-              await execAsync('npx prisma db push');
-              console.log('✅ Database schema synchronized');
-            } catch (error) {
-              console.error('⚠️ Database setup failed:', error.message);
-            }
-          }, 3000);
-        }
+        console.log('⏭️ Skipping automatic schema sync; run prisma migrate deploy during CI/CD');
       } catch (dbError) {
         console.error('❌ PostgreSQL connection failed:', dbError.message);
         console.log('⚠️ Server will start without database');

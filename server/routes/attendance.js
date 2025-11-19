@@ -1,12 +1,19 @@
 import express from 'express';
 import { prisma } from '../config/db.js';
+import authenticate from '../middleware/authenticate.js';
+import resolveSchoolContext from '../middleware/schoolContext.js';
+import requireRole from '../middleware/requireRole.js';
 
 const router = express.Router();
+
+router.use(authenticate);
+router.use(resolveSchoolContext);
 
 // Get all attendance
 router.get('/', async (req, res) => {
   try {
     const attendance = await prisma.attendance.findMany({
+      where: { schoolId: req.school.id },
       orderBy: {
         createdAt: 'desc'
       }
@@ -23,7 +30,7 @@ router.get('/student/:studentId', async (req, res) => {
   try {
     const { studentId } = req.params;
     const attendance = await prisma.attendance.findMany({
-      where: { studentId },
+      where: { studentId, schoolId: req.school.id },
       orderBy: {
         createdAt: 'desc'
       }
@@ -40,7 +47,7 @@ router.get('/date/:date', async (req, res) => {
   try {
     const { date } = req.params;
     const attendance = await prisma.attendance.findMany({
-      where: { date },
+      where: { date: new Date(date), schoolId: req.school.id },
       orderBy: {
         createdAt: 'desc'
       }
@@ -53,15 +60,21 @@ router.get('/date/:date', async (req, res) => {
 });
 
 // Add new attendance record
-router.post('/', async (req, res) => {
+router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
   try {
     const { date, studentId, status } = req.body;
+
+    const student = await prisma.user.findFirst({ where: { id: studentId, schoolId: req.school.id } });
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found in this school' });
+    }
     
     const newAttendance = await prisma.attendance.create({
       data: {
-        date,
+        date: new Date(date),
         studentId,
-        status
+        status,
+        schoolId: req.school.id
       }
     });
     
@@ -73,20 +86,25 @@ router.post('/', async (req, res) => {
 });
 
 // Update attendance
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
-    
-    const updatedAttendance = await prisma.attendance.update({
-      where: { id },
-      data: updateData
-    });
-    
-    if (!updatedAttendance) {
+
+    const attendance = await prisma.attendance.findFirst({ where: { id, schoolId: req.school.id } });
+    if (!attendance) {
       return res.status(404).json({ message: 'Attendance record not found' });
     }
+
+    if (updateData.date) {
+      updateData.date = new Date(updateData.date);
+    }
     
+    const updatedAttendance = await prisma.attendance.update({
+      where: { id: attendance.id },
+      data: updateData
+    });
+
     res.json(updatedAttendance);
   } catch (error) {
     console.error('Update attendance error:', error);
@@ -95,18 +113,19 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete attendance
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
   try {
     const { id } = req.params;
-    
-    const deletedAttendance = await prisma.attendance.delete({
-      where: { id }
-    });
-    
-    if (!deletedAttendance) {
+
+    const attendance = await prisma.attendance.findFirst({ where: { id, schoolId: req.school.id } });
+    if (!attendance) {
       return res.status(404).json({ message: 'Attendance record not found' });
     }
-    
+
+    await prisma.attendance.delete({
+      where: { id: attendance.id }
+    });
+
     res.json({ message: 'Attendance record deleted successfully' });
   } catch (error) {
     console.error('Delete attendance error:', error);

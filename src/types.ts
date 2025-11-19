@@ -1,10 +1,29 @@
 
+export type BackendUserRole = 'SUPER_ADMIN' | 'SCHOOL_ADMIN' | 'TEACHER' | 'PARENT' | 'STUDENT';
 export type UserRole = 'parent' | 'teacher' | 'admin' | 'student';
+
+export interface School {
+  id: string;
+  name: string;
+  code: string;
+  timezone?: string;
+  address?: string;
+}
 
 export interface User {
   id: string;
   name: string;
   role: UserRole;
+  backendRole?: BackendUserRole;
+  accessCode?: string;
+  schoolId?: string;
+  schoolCode?: string;
+  email?: string;
+  phone?: string;
+  status?: string;
+  requiresPasswordReset?: boolean;
+  parentId?: string;
+  classId?: string;
   avatar?: string;
   childrenIds?: string[];
   classIds?: string[];
@@ -13,6 +32,7 @@ export interface User {
     startTime: string;
     endTime: string;
   };
+  school?: School | null;
 }
 
 export interface Student {

@@ -1,7 +1,14 @@
 import express from 'express';
 import { prisma } from '../config/db.js';
+import authenticate from '../middleware/authenticate.js';
+import resolveSchoolContext from '../middleware/schoolContext.js';
+import requireRole from '../middleware/requireRole.js';
 
 const router = express.Router();
+
+router.use(authenticate);
+router.use(resolveSchoolContext);
+router.use(requireRole(['SCHOOL_ADMIN', 'TEACHER', 'SUPER_ADMIN']));
 
 // Assign student to parent
 router.post('/assign-student', async (req, res) => {
@@ -13,8 +20,8 @@ router.post('/assign-student', async (req, res) => {
     console.log('Parent ID:', parentId);
     
     // Verify student exists
-    const student = await prisma.user.findUnique({
-      where: { id: studentId }
+    const student = await prisma.user.findFirst({
+      where: { id: studentId, schoolId: req.school.id }
     });
     
     if (!student || student.role !== 'STUDENT') {
@@ -22,8 +29,8 @@ router.post('/assign-student', async (req, res) => {
     }
     
     // Verify parent exists
-    const parent = await prisma.user.findUnique({
-      where: { id: parentId }
+    const parent = await prisma.user.findFirst({
+      where: { id: parentId, schoolId: req.school.id }
     });
     
     if (!parent || parent.role !== 'PARENT') {
@@ -72,8 +79,8 @@ router.post('/unassign-student', async (req, res) => {
     console.log('Student ID:', studentId);
     
     // Get current student
-    const student = await prisma.user.findUnique({
-      where: { id: studentId }
+    const student = await prisma.user.findFirst({
+      where: { id: studentId, schoolId: req.school.id }
     });
     
     if (!student || student.role !== 'STUDENT') {
@@ -90,8 +97,8 @@ router.post('/unassign-student', async (req, res) => {
     
     // Remove student from old parent's childrenIds
     if (oldParentId) {
-      const oldParent = await prisma.user.findUnique({
-        where: { id: oldParentId }
+      const oldParent = await prisma.user.findFirst({
+        where: { id: oldParentId, schoolId: req.school.id }
       });
       
       if (oldParent) {
@@ -123,7 +130,7 @@ router.post('/unassign-student', async (req, res) => {
 router.get('/relationships', async (req, res) => {
   try {
     const students = await prisma.user.findMany({
-      where: { role: 'STUDENT' },
+      where: { role: 'STUDENT', schoolId: req.school.id },
       select: {
         id: true,
         name: true,
@@ -133,7 +140,7 @@ router.get('/relationships', async (req, res) => {
     });
     
     const parents = await prisma.user.findMany({
-      where: { role: 'PARENT' },
+      where: { role: 'PARENT', schoolId: req.school.id },
       select: {
         id: true,
         name: true,

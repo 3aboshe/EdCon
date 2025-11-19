@@ -1,12 +1,19 @@
 import express from 'express';
 import { prisma } from '../config/db.js';
+import authenticate from '../middleware/authenticate.js';
+import resolveSchoolContext from '../middleware/schoolContext.js';
+import requireRole from '../middleware/requireRole.js';
 
 const router = express.Router();
+
+router.use(authenticate);
+router.use(resolveSchoolContext);
 
 // Get all exams
 router.get('/', async (req, res) => {
   try {
     const exams = await prisma.exam.findMany({
+      where: { schoolId: req.school.id },
       orderBy: {
         createdAt: 'desc'
       }
@@ -24,7 +31,8 @@ router.get('/teacher/:teacherId', async (req, res) => {
     const { teacherId } = req.params;
     const exams = await prisma.exam.findMany({
       where: {
-        teacherId: teacherId
+        teacherId: teacherId,
+        schoolId: req.school.id
       },
       orderBy: {
         createdAt: 'desc'
@@ -41,8 +49,8 @@ router.get('/teacher/:teacherId', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const exam = await prisma.exam.findUnique({
-      where: { id }
+    const exam = await prisma.exam.findFirst({
+      where: { id, schoolId: req.school.id }
     });
 
     if (!exam) {
@@ -57,9 +65,37 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create exam
-router.post('/', async (req, res) => {
+router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
   try {
     const { title, date, maxScore, teacherId, classId, subject } = req.body;
+
+    if (!title || !date || !maxScore) {
+      return res.status(400).json({ message: 'Title, date, and max score are required' });
+    }
+
+    let resolvedTeacherId = teacherId;
+    if (req.user.role === 'TEACHER') {
+      resolvedTeacherId = req.user.id;
+    }
+
+    if (!resolvedTeacherId) {
+      return res.status(400).json({ message: 'Teacher ID is required' });
+    }
+
+    const teacher = await prisma.user.findFirst({
+      where: { id: resolvedTeacherId, schoolId: req.school.id }
+    });
+
+    if (!teacher) {
+      return res.status(404).json({ message: 'Teacher not found in this school' });
+    }
+
+    if (classId) {
+      const klass = await prisma.class.findFirst({ where: { id: classId, schoolId: req.school.id } });
+      if (!klass) {
+        return res.status(404).json({ message: 'Class not found in this school' });
+      }
+    }
 
     // Generate a unique ID for the exam
     const examId = `EX${Date.now()}`;
@@ -68,11 +104,12 @@ router.post('/', async (req, res) => {
       data: {
         id: examId,
         title,
-        date,
+        date: new Date(date),
         maxScore: parseInt(maxScore),
-        teacherId,
+        teacherId: resolvedTeacherId,
         classId,
-        subject
+        subject,
+        schoolId: req.school.id
       }
     });
 
@@ -84,25 +121,26 @@ router.post('/', async (req, res) => {
 });
 
 // Update exam
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
   try {
     const { id } = req.params;
     const { title, date, maxScore, classId, subject } = req.body;
 
+    const exam = await prisma.exam.findFirst({ where: { id, schoolId: req.school.id } });
+    if (!exam) {
+      return res.status(404).json({ message: 'Exam not found' });
+    }
+
     const updatedExam = await prisma.exam.update({
-      where: { id },
+      where: { id: exam.id },
       data: {
         title,
-        date,
+        date: date ? new Date(date) : undefined,
         maxScore: maxScore ? parseInt(maxScore) : undefined,
         classId,
         subject
       }
     });
-
-    if (!updatedExam) {
-      return res.status(404).json({ message: 'Exam not found' });
-    }
 
     res.json(updatedExam);
   } catch (error) {
@@ -112,17 +150,18 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete exam
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
   try {
     const { id } = req.params;
 
-    const deletedExam = await prisma.exam.delete({
-      where: { id }
-    });
-
-    if (!deletedExam) {
+    const exam = await prisma.exam.findFirst({ where: { id, schoolId: req.school.id } });
+    if (!exam) {
       return res.status(404).json({ message: 'Exam not found' });
     }
+
+    await prisma.exam.delete({
+      where: { id: exam.id }
+    });
 
     res.json({ message: 'Exam deleted successfully' });
   } catch (error) {
@@ -137,7 +176,7 @@ router.get('/:id/grades', async (req, res) => {
     const { id } = req.params;
 
     const grades = await prisma.grade.findMany({
-      where: { examId: id },
+      where: { examId: id, schoolId: req.school.id },
       orderBy: {
         date: 'desc'
       }
