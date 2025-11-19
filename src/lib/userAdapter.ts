@@ -35,13 +35,13 @@ export const mapApiUserToClient = (apiUser: any): User => {
     };
   }
 
-  const { backendRole, role } = normalizeRole(apiUser.role);
+  const { backendRole: normalizedBackendRole, role } = normalizeRole(apiUser.role);
 
   return {
     id: apiUser.id,
     name: apiUser.name || 'Unknown User',
     role,
-    backendRole,
+    backendRole: apiUser.backendRole || normalizedBackendRole,
     accessCode: apiUser.accessCode || undefined,
     schoolId: apiUser.schoolId || undefined,
     schoolCode: apiUser.schoolCode || undefined,
