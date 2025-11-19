@@ -83,7 +83,7 @@ const AdminDashboard: React.FC = () => {
                     <p className="font-semibold">{successMessage}</p>
                 </div>
             )}
-            
+
             {/* Manual Tutorial Trigger Button */}
             <div className="fixed bottom-4 right-4 z-50">
                 <button
@@ -94,16 +94,16 @@ const AdminDashboard: React.FC = () => {
                     <i className="fas fa-question-circle text-xl"></i>
                 </button>
             </div>
-            
+
             {/* Tutorial Alert Modal */}
             <TutorialAlertModal
                 isOpen={showTutorialAlert}
                 onClose={() => setShowTutorialAlert(false)}
             />
-            
+
             {/* Tutorial Wizard */}
             <TutorialWizard />
-            
+
             <div className="flex flex-col lg:flex-row">
                 {/* Sidebar Navigation */}
                 <div className="lg:w-64 bg-white shadow-lg">
@@ -115,11 +115,10 @@ const AdminDashboard: React.FC = () => {
                                     key={section.id}
                                     data-section={section.id}
                                     onClick={() => setActiveSection(section.id)}
-                                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                                        activeSection === section.id
-                                            ? `bg-${section.color}-100 text-${section.color}-700 border-l-4 border-${section.color}-500`
-                                            : 'text-gray-600 hover:bg-gray-100'
-                                    }`}
+                                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${activeSection === section.id
+                                        ? `bg-${section.color}-100 text-${section.color}-700 border-l-4 border-${section.color}-500`
+                                        : 'text-gray-600 hover:bg-gray-100'
+                                        }`}
                                 >
                                     <i className={`fas ${section.icon}`}></i>
                                     <span className="font-medium">{section.label}</span>
@@ -161,7 +160,7 @@ const DashboardOverview: React.FC<{ selectedClassId: string }> = ({ selectedClas
     const { users, students, grades, homework, announcements, teachers, attendance } = useContext(AppContext);
     const { t } = useTranslation();
 
-    const filteredStudents = useMemo(() => 
+    const filteredStudents = useMemo(() =>
         selectedClassId === 'all' ? students : students.filter(s => s.classId === selectedClassId),
         [selectedClassId, students]
     );
@@ -169,7 +168,7 @@ const DashboardOverview: React.FC<{ selectedClassId: string }> = ({ selectedClas
     const stats = useMemo(() => {
         const totalTeachers = users.filter(u => u.role?.toLowerCase() === 'teacher').length;
         const totalParents = users.filter(u => u.role?.toLowerCase() === 'parent').length;
-        const avgGrade = grades.length > 0 ? 
+        const avgGrade = grades.length > 0 ?
             (grades.reduce((sum, g) => sum + (g.marksObtained / g.maxMarks * 100), 0) / grades.length).toFixed(1) : 0;
         const attendanceRate = attendance.length > 0 ?
             (attendance.filter(a => a.status?.toLowerCase() === 'present').length / attendance.length * 100).toFixed(1) : 0;
@@ -190,7 +189,7 @@ const DashboardOverview: React.FC<{ selectedClassId: string }> = ({ selectedClas
             ...homework.map(h => ({ ...h, type: 'homework', date: h.assignedDate, title: h.title })),
             ...announcements.map(a => ({ ...a, type: 'announcement', date: a.date, title: a.title }))
         ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10);
-        
+
         return activities;
     }, [homework, announcements]);
 
@@ -229,9 +228,8 @@ const DashboardOverview: React.FC<{ selectedClassId: string }> = ({ selectedClas
                     <div className="space-y-3 max-h-64 overflow-y-auto">
                         {recentActivity.map((activity, index) => (
                             <div key={index} className="flex items-start space-x-3 p-2 bg-gray-50 rounded-lg">
-                                <div className={`p-2 rounded-full ${
-                                    activity.type === 'homework' ? 'bg-blue-100 text-blue-600' : 'bg-yellow-100 text-yellow-600'
-                                }`}>
+                                <div className={`p-2 rounded-full ${activity.type === 'homework' ? 'bg-blue-100 text-blue-600' : 'bg-yellow-100 text-yellow-600'
+                                    }`}>
                                     <i className={`fas ${activity.type === 'homework' ? 'fa-book' : 'fa-bullhorn'} text-sm`}></i>
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -274,7 +272,7 @@ const AnalyticsSection: React.FC<{ selectedClassId: string }> = ({ selectedClass
             const presentCount = dayAttendance.filter(a => a.status?.toLowerCase() === 'present').length;
             const total = dayAttendance.length;
             const rate = total > 0 ? Math.round((presentCount / total) * 100) : 0;
-            
+
             return {
                 date: new Date(date).toLocaleDateString('en', { weekday: 'short' }),
                 rate
@@ -287,7 +285,7 @@ const AnalyticsSection: React.FC<{ selectedClassId: string }> = ({ selectedClass
     return (
         <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-800">{t('analytics_dashboard')}</h2>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Grade Distribution */}
                 <Card>
@@ -295,13 +293,13 @@ const AnalyticsSection: React.FC<{ selectedClassId: string }> = ({ selectedClass
                     {gradeDistribution.some(g => g.value > 0) ? (
                         <ResponsiveContainer width="100%" height={300}>
                             <PieChart>
-                                <Pie 
-                                    data={gradeDistribution} 
-                                    dataKey="value" 
-                                    nameKey="name" 
-                                    cx="50%" 
-                                    cy="50%" 
-                                    outerRadius={80} 
+                                <Pie
+                                    data={gradeDistribution}
+                                    dataKey="value"
+                                    nameKey="name"
+                                    cx="50%"
+                                    cy="50%"
+                                    outerRadius={80}
                                     label
                                 >
                                     {gradeDistribution.map((entry, index) => (
@@ -367,11 +365,10 @@ const UserManagementSection: React.FC<{ setSuccessMessage: (msg: string) => void
                             key={tab.id}
                             data-tab={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`flex-1 flex items-center justify-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                                activeTab === tab.id 
-                                    ? 'bg-white text-blue-600 shadow-sm' 
-                                    : 'text-gray-600 hover:text-blue-600'
-                            }`}
+                            className={`flex-1 flex items-center justify-center space-x-2 px-4 py-2 rounded-lg transition-colors ${activeTab === tab.id
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-gray-600 hover:text-blue-600'
+                                }`}
                         >
                             <i className={`fas ${tab.icon}`}></i>
                             <span className="font-medium">{tab.label}</span>
@@ -410,11 +407,10 @@ const AcademicManagement: React.FC<{ selectedClassId: string, setSuccessMessage:
                             key={tab.id}
                             data-tab={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                                activeTab === tab.id 
-                                    ? 'bg-white text-blue-600 shadow-sm' 
-                                    : 'text-gray-600 hover:text-blue-600'
-                            }`}
+                            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${activeTab === tab.id
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-gray-600 hover:text-blue-600'
+                                }`}
                         >
                             <i className={`fas ${tab.icon}`}></i>
                             <span className="font-medium">{tab.label}</span>
@@ -441,7 +437,7 @@ const SystemSettings: React.FC<{ setSuccessMessage: (msg: string) => void }> = (
         try {
             console.log('Creating backup...');
             const backupBlob = await apiService.createBackup();
-            
+
             // Create download link
             const url = window.URL.createObjectURL(backupBlob);
             const link = document.createElement('a');
@@ -451,7 +447,7 @@ const SystemSettings: React.FC<{ setSuccessMessage: (msg: string) => void }> = (
             link.click();
             document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
-            
+
             setSuccessMessage(t('backup_downloaded_success'));
         } catch (error) {
             console.error('Backup error:', error);
@@ -491,7 +487,7 @@ const SystemSettings: React.FC<{ setSuccessMessage: (msg: string) => void }> = (
                                 )}
                             </button>
                         </div>
-                        
+
                     </div>
                 </Card>
 
@@ -528,11 +524,11 @@ const ReportsSection: React.FC<{ selectedClassId: string }> = ({ selectedClassId
     const generateReport = async (type: string) => {
         setIsGenerating(true);
         setReportType(type);
-        
+
         try {
             let reportData;
             let fileName;
-            
+
             switch (type) {
                 case 'users':
                     reportData = {
@@ -555,7 +551,7 @@ const ReportsSection: React.FC<{ selectedClassId: string }> = ({ selectedClassId
                     };
                     fileName = `user-activity-report-${new Date().toISOString().split('T')[0]}.json`;
                     break;
-                    
+
                 case 'system':
                     reportData = {
                         title: 'System Usage Report',
@@ -571,10 +567,10 @@ const ReportsSection: React.FC<{ selectedClassId: string }> = ({ selectedClassId
                     };
                     fileName = `system-usage-report-${new Date().toISOString().split('T')[0]}.json`;
                     break;
-                    
+
                 case 'communication':
                     const today = new Date().toDateString();
-                    const todayMessages = messages.filter(m => 
+                    const todayMessages = messages.filter(m =>
                         new Date(m.timestamp).toDateString() === today
                     );
                     reportData = {
@@ -591,11 +587,11 @@ const ReportsSection: React.FC<{ selectedClassId: string }> = ({ selectedClassId
                     };
                     fileName = `communication-summary-${new Date().toISOString().split('T')[0]}.json`;
                     break;
-                    
+
                 default:
                     throw new Error('Unknown report type');
             }
-            
+
             // Create and download file
             const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
             const url = window.URL.createObjectURL(blob);
@@ -606,7 +602,7 @@ const ReportsSection: React.FC<{ selectedClassId: string }> = ({ selectedClassId
             link.click();
             document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
-            
+
         } catch (error) {
             console.error('Report generation error:', error);
         } finally {
@@ -615,19 +611,19 @@ const ReportsSection: React.FC<{ selectedClassId: string }> = ({ selectedClassId
         }
     };
 
-    const todayMessages = messages.filter(m => 
+    const todayMessages = messages.filter(m =>
         new Date(m.timestamp).toDateString() === new Date().toDateString()
     );
 
     return (
         <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-800">{t('reports_analytics')}</h2>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                     <h3 className="text-lg font-bold text-gray-800 mb-4">{t('generate_reports')}</h3>
                     <div className="space-y-3">
-                        <button 
+                        <button
                             onClick={() => generateReport('users')}
                             disabled={isGenerating}
                             className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition disabled:opacity-50">
@@ -635,7 +631,7 @@ const ReportsSection: React.FC<{ selectedClassId: string }> = ({ selectedClassId
                             {t('user_activity_report')}
                             {isGenerating && reportType === 'users' && <LoadingSpinner />}
                         </button>
-                        <button 
+                        <button
                             onClick={() => generateReport('system')}
                             disabled={isGenerating}
                             className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition disabled:opacity-50">
@@ -643,7 +639,7 @@ const ReportsSection: React.FC<{ selectedClassId: string }> = ({ selectedClassId
                             {t('system_usage_report')}
                             {isGenerating && reportType === 'system' && <LoadingSpinner />}
                         </button>
-                        <button 
+                        <button
                             onClick={() => generateReport('communication')}
                             disabled={isGenerating}
                             className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition disabled:opacity-50">
@@ -720,7 +716,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
     const [editingStudent, setEditingStudent] = useState<any | null>(null);
     const [parentSearch, setParentSearch] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [deleteConfirm, setDeleteConfirm] = useState<{isOpen: boolean, student: any | null}>({isOpen: false, student: null});
+    const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean, student: any | null }>({ isOpen: false, student: null });
     const [isDeleting, setIsDeleting] = useState(false);
 
     // Refresh data function to ensure parent-child relationships are up to date
@@ -729,10 +725,10 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
             const [allUsers] = await Promise.all([
                 apiService.getAllUsers()
             ]);
-            
+
             // Update users with fresh data
             setUsers(allUsers);
-            
+
             // Update students list with fresh data
             const updatedStudents = allUsers.filter(u => u.role?.toLowerCase() === 'student').map(u => ({
                 ...u,
@@ -742,7 +738,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                 avatar: u.avatar || ''
             }));
             setStudents(updatedStudents as Student[]);
-            
+
             console.log('=== DATA REFRESHED ===');
             console.log('Students with parentId:', updatedStudents.filter(s => s.parentId).length);
             console.log('Parents with childrenIds:', allUsers.filter(u => u.role?.toLowerCase() === 'parent' && (u as any).childrenIds && (u as any).childrenIds.length > 0).length);
@@ -757,7 +753,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
     }, []);
 
     const filteredStudents = useMemo(() => {
-        return students.filter(student => 
+        return students.filter(student =>
             student.name.toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [students, searchTerm]);
@@ -767,7 +763,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
     }, [users]);
 
     const filteredParents = useMemo(() => {
-        return parentUsers.filter(parent => 
+        return parentUsers.filter(parent =>
             parent.name.toLowerCase().includes(parentSearch.toLowerCase())
         );
     }, [parentUsers, parentSearch]);
@@ -790,20 +786,20 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
             };
 
             const result = await apiService.createUser(studentData);
-            
+
             // If parent is assigned, use the backend API to establish the relationship
             if (newStudent.parentId) {
                 await apiService.assignStudentToParent(result.user.id, newStudent.parentId);
             }
-            
+
             // Refresh data from backend to ensure consistency
             const [allUsers] = await Promise.all([
                 apiService.getAllUsers()
             ]);
-            
+
             // Update users with fresh data
             setUsers(allUsers);
-            
+
             // Update students list with fresh data
             const updatedStudents = allUsers.filter(u => u.role?.toLowerCase() === 'student').map(u => ({
                 ...u,
@@ -854,7 +850,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
             };
 
             await apiService.updateUser(editingStudent.id, updatedStudentData);
-            
+
             // If parent assignment changed, use backend API to update relationship
             if (newStudent.parentId !== editingStudent.parentId) {
                 // Unassign from old parent if there was one
@@ -866,15 +862,15 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                     await apiService.assignStudentToParent(editingStudent.id, newStudent.parentId);
                 }
             }
-            
+
             // Refresh data from backend to ensure consistency
             const [allUsers] = await Promise.all([
                 apiService.getAllUsers()
             ]);
-            
+
             // Update users with fresh data
             setUsers(allUsers);
-            
+
             // Update students list with fresh data
             const updatedStudents = allUsers.filter(u => u.role?.toLowerCase() === 'student').map(u => ({
                 ...u,
@@ -945,7 +941,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                     {filteredStudents.map(student => {
                         const studentClass = classes.find(c => c.id === student.classId);
                         const parentUser = users.find(u => u.id === student.parentId);
-                        
+
                         return (
                             <div key={student.id} className="p-4 bg-gray-50 rounded-lg">
                                 <div className="flex items-center space-x-3 mb-3">
@@ -979,14 +975,14 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                                     )}
                                 </div>
                                 <div className="mt-3 flex justify-end space-x-2">
-                                    <button 
+                                    <button
                                         onClick={() => startEditStudent(student)}
                                         className="text-blue-600 hover:text-blue-800 transition"
                                         title="Edit student"
                                     >
                                         <i className="fas fa-edit"></i>
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => confirmDeleteStudent(student)}
                                         className="text-red-600 hover:text-red-800 transition"
                                         title="Delete student"
@@ -1016,27 +1012,27 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                         <input
                             type="text"
                             value={newStudent.name}
-                            onChange={(e) => setNewStudent({...newStudent, name: e.target.value})}
+                            onChange={(e) => setNewStudent({ ...newStudent, name: e.target.value })}
                             placeholder={t('enter_student_name')}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             required
                         />
                     </div>
-                    
+
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             {t('assign_to_class_required')}
                         </label>
                         <select
                             value={newStudent.classId}
-                            onChange={(e) => setNewStudent({...newStudent, classId: e.target.value})}
+                            onChange={(e) => setNewStudent({ ...newStudent, classId: e.target.value })}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             required
                         >
                             <option value="">{t('select_a_class')}</option>
                             {classes.map(classItem => (
                                 <option key={classItem.id} value={classItem.id}>
-                                    {classItem.name} 
+                                    {classItem.name}
                                     {(classItem as any).subjectIds && ` (${(classItem as any).subjectIds.length} subjects)`}
                                 </option>
                             ))}
@@ -1046,7 +1042,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                                 <p className="text-xs text-green-700 font-medium">{t('auto_enrollment_preview')}</p>
                                 <p className="text-xs text-green-600">{t('student_will_be_enrolled')}</p>
                                 <div className="flex flex-wrap gap-1 mt-1">
-                                    {classes.find(c => c.id === newStudent.classId) && 
+                                    {classes.find(c => c.id === newStudent.classId) &&
                                         ((classes.find(c => c.id === newStudent.classId) as any).subjectIds || []).map((subjectId: string) => {
                                             const subject = subjects.find(s => s.id === subjectId);
                                             return subject ? (
@@ -1080,7 +1076,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                                             key={parent.id}
                                             type="button"
                                             onClick={() => {
-                                                setNewStudent({...newStudent, parentId: parent.id});
+                                                setNewStudent({ ...newStudent, parentId: parent.id });
                                                 setParentSearch(parent.name);
                                             }}
                                             className="w-full text-left px-3 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
@@ -1103,7 +1099,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                             )}
                         </div>
                     </div>
-                    
+
                     <div className="flex space-x-3 pt-4">
                         <button
                             type="button"
@@ -1133,27 +1129,27 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                         <input
                             type="text"
                             value={newStudent.name}
-                            onChange={(e) => setNewStudent({...newStudent, name: e.target.value})}
+                            onChange={(e) => setNewStudent({ ...newStudent, name: e.target.value })}
                             placeholder={t('enter_student_name')}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             required
                         />
                     </div>
-                    
+
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             {t('assign_to_class_required')}
                         </label>
                         <select
                             value={newStudent.classId}
-                            onChange={(e) => setNewStudent({...newStudent, classId: e.target.value})}
+                            onChange={(e) => setNewStudent({ ...newStudent, classId: e.target.value })}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             required
                         >
                             <option value="">{t('select_a_class')}</option>
                             {classes.map(classItem => (
                                 <option key={classItem.id} value={classItem.id}>
-                                    {classItem.name} 
+                                    {classItem.name}
                                     {(classItem as any).subjectIds && ` (${(classItem as any).subjectIds.length} subjects)`}
                                 </option>
                             ))}
@@ -1163,7 +1159,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                                 <p className="text-xs text-green-700 font-medium">{t('auto_enrollment_preview')}</p>
                                 <p className="text-xs text-green-600">{t('student_will_be_enrolled')}</p>
                                 <div className="flex flex-wrap gap-1 mt-1">
-                                    {classes.find(c => c.id === newStudent.classId) && 
+                                    {classes.find(c => c.id === newStudent.classId) &&
                                         ((classes.find(c => c.id === newStudent.classId) as any).subjectIds || []).map((subjectId: string) => {
                                             const subject = subjects.find(s => s.id === subjectId);
                                             return subject ? (
@@ -1197,7 +1193,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                                             key={parent.id}
                                             type="button"
                                             onClick={() => {
-                                                setNewStudent({...newStudent, parentId: parent.id});
+                                                setNewStudent({ ...newStudent, parentId: parent.id });
                                                 setParentSearch(parent.name);
                                             }}
                                             className="w-full text-left px-3 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
@@ -1220,7 +1216,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                             )}
                         </div>
                     </div>
-                    
+
                     <div className="flex space-x-3 pt-4">
                         <button
                             type="button"
@@ -1266,8 +1262,9 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
     });
     const [editingTeacher, setEditingTeacher] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [deleteConfirm, setDeleteConfirm] = useState<{isOpen: boolean, teacher: any | null}>({isOpen: false, teacher: null});
+    const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean, teacher: any | null }>({ isOpen: false, teacher: null });
     const [isDeleting, setIsDeleting] = useState(false);
+    const [createdCredentials, setCreatedCredentials] = useState<{ accessCode: string, password: string } | null>(null);
 
     const teacherUsers = useMemo(() => {
         return users.filter(u => u.role?.toLowerCase() === 'teacher')
@@ -1281,9 +1278,9 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
         setIsLoading(true);
         try {
             const selectedSubject = subjects.find(s => s.id === newTeacher.subjectId);
-            
+
             // Find all classes that have this subject
-            const classesWithSubject = classes.filter(classItem => 
+            const classesWithSubject = classes.filter(classItem =>
                 (classItem as any).subjectIds?.includes(newTeacher.subjectId)
             );
 
@@ -1295,7 +1292,7 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
             };
 
             const result = await apiService.createUser(teacherData);
-            
+
             // Update teachers list
             const newTeacherRecord = {
                 id: result.user.id,
@@ -1308,7 +1305,13 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
             // Update users list
             setUsers([...users, result.user]);
 
-            setSuccessMessage(`Teacher "${newTeacher.name}" created successfully! Assigned to ${selectedSubject?.name} and automatically assigned to ${classesWithSubject.length} classes.`);
+            // Show credentials
+            setCreatedCredentials({
+                accessCode: result.code,
+                password: result.password || ''
+            });
+
+            setSuccessMessage(`Teacher "${newTeacher.name}" created successfully! Access Code: ${result.code}${result.password ? `, Password: ${result.password}` : ''}`);
             setNewTeacher({ name: '', subjectId: '' });
             setShowAddModal(false);
         } catch (error) {
@@ -1335,9 +1338,9 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
         setIsLoading(true);
         try {
             const selectedSubject = subjects.find(s => s.id === newTeacher.subjectId);
-            
+
             // Find all classes that have this subject
-            const classesWithSubject = classes.filter(classItem => 
+            const classesWithSubject = classes.filter(classItem =>
                 (classItem as any).subjectIds?.includes(newTeacher.subjectId)
             );
 
@@ -1348,7 +1351,7 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
             };
 
             await apiService.updateUser(editingTeacher.id, updatedTeacherData);
-            
+
             // Update teachers list
             setTeachers(teachers.map(t => t.id === editingTeacher.id ? {
                 ...t,
@@ -1404,7 +1407,7 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
             <Card>
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-gray-800">Teachers ({teacherUsers.length})</h3>
-                    <button 
+                    <button
                         onClick={() => setShowAddModal(true)}
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center"
                     >
@@ -1414,7 +1417,7 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {teacherUsers.map(teacher => {
                         const teacherClasses = classes.filter(c => teacher.classIds?.includes(c.id));
-                        
+
                         return (
                             <div key={teacher.id} className="p-4 bg-gray-50 rounded-lg">
                                 <div className="flex items-center space-x-3 mb-3">
@@ -1440,14 +1443,26 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                                     </div>
                                 </div>
                                 <div className="mt-3 flex justify-end space-x-2">
-                                    <button 
+                                    <button
+                                        onClick={() => {
+                                            setCreatedCredentials({
+                                                accessCode: teacher.id,
+                                                password: ''
+                                            });
+                                        }}
+                                        className="text-green-600 hover:text-green-800 transition text-sm"
+                                        title="View Access Code"
+                                    >
+                                        <i className="fas fa-key mr-1"></i>View Code
+                                    </button>
+                                    <button
                                         onClick={() => startEditTeacher(teacher)}
                                         className="text-blue-600 hover:text-blue-800 transition"
                                         title="Edit teacher"
                                     >
                                         <i className="fas fa-edit"></i>
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => confirmDeleteTeacher(teacher)}
                                         className="text-red-600 hover:text-red-800 transition"
                                         title="Delete teacher"
@@ -1477,26 +1492,26 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                         <input
                             type="text"
                             value={newTeacher.name}
-                            onChange={(e) => setNewTeacher({...newTeacher, name: e.target.value})}
+                            onChange={(e) => setNewTeacher({ ...newTeacher, name: e.target.value })}
                             placeholder={t('enter_teacher_name')}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             required
                         />
                     </div>
-                    
+
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             {t('assign_to_subject_required')}
                         </label>
                         <select
                             value={newTeacher.subjectId}
-                            onChange={(e) => setNewTeacher({...newTeacher, subjectId: e.target.value})}
+                            onChange={(e) => setNewTeacher({ ...newTeacher, subjectId: e.target.value })}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             required
                         >
                             <option value="">{t('select_a_subject')}</option>
                             {subjects.map(subject => {
-                                const classesWithSubject = classes.filter(c => 
+                                const classesWithSubject = classes.filter(c =>
                                     (c as any).subjectIds?.includes(subject.id)
                                 );
                                 return (
@@ -1522,7 +1537,7 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                             </div>
                         )}
                     </div>
-                    
+
                     <div className="flex space-x-3 pt-4">
                         <button
                             type="button"
@@ -1552,26 +1567,26 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                         <input
                             type="text"
                             value={newTeacher.name}
-                            onChange={(e) => setNewTeacher({...newTeacher, name: e.target.value})}
+                            onChange={(e) => setNewTeacher({ ...newTeacher, name: e.target.value })}
                             placeholder="Enter teacher name"
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             required
                         />
                     </div>
-                    
+
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Assign to Subject (Required)
                         </label>
                         <select
                             value={newTeacher.subjectId}
-                            onChange={(e) => setNewTeacher({...newTeacher, subjectId: e.target.value})}
+                            onChange={(e) => setNewTeacher({ ...newTeacher, subjectId: e.target.value })}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             required
                         >
                             <option value="">Select a subject</option>
                             {subjects.map(subject => {
-                                const classesWithSubject = classes.filter(c => 
+                                const classesWithSubject = classes.filter(c =>
                                     (c as any).subjectIds?.includes(subject.id)
                                 );
                                 return (
@@ -1597,7 +1612,7 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                             </div>
                         )}
                     </div>
-                    
+
                     <div className="flex space-x-3 pt-4">
                         <button
                             type="button"
@@ -1628,6 +1643,80 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                 type="danger"
                 isLoading={isDeleting}
             />
+
+            {/* Credentials Display Modal */}
+            <Modal
+                isOpen={!!createdCredentials}
+                onClose={() => setCreatedCredentials(null)}
+                title="Teacher Credentials"
+            >
+                <div className="space-y-4">
+                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                        <p className="text-sm text-blue-700 mb-2">
+                            <i className="fas fa-info-circle mr-2"></i>
+                            Share these credentials with the teacher to log in.
+                        </p>
+                    </div>
+
+                    <div className="space-y-3">
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 mb-1">Access Code</label>
+                            <div className="flex items-center space-x-2">
+                                <input
+                                    type="text"
+                                    value={createdCredentials?.accessCode || ''}
+                                    readOnly
+                                    className="flex-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg font-mono text-lg font-bold text-blue-600"
+                                />
+                                <button
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(createdCredentials?.accessCode || '');
+                                        setSuccessMessage('Access code copied to clipboard!');
+                                    }}
+                                    className="px-3 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition"
+                                    title="Copy"
+                                >
+                                    <i className="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        {createdCredentials?.password && (
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">Temporary Password</label>
+                                <div className="flex items-center space-x-2">
+                                    <input
+                                        type="text"
+                                        value={createdCredentials.password}
+                                        readOnly
+                                        className="flex-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg font-mono text-lg font-bold text-green-600"
+                                    />
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(createdCredentials.password);
+                                            setSuccessMessage('Password copied to clipboard!');
+                                        }}
+                                        className="px-3 py-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition"
+                                        title="Copy"
+                                    >
+                                        <i className="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Teacher will be prompted to change this password on first login.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+
+                    <button
+                        onClick={() => setCreatedCredentials(null)}
+                        className="w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition"
+                    >
+                        Close
+                    </button>
+                </div>
+            </Modal>
         </>
     );
 };
@@ -1640,8 +1729,9 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
     const [newParentName, setNewParentName] = useState('');
     const [editingParent, setEditingParent] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [deleteConfirm, setDeleteConfirm] = useState<{isOpen: boolean, parent: any | null}>({isOpen: false, parent: null});
+    const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean, parent: any | null }>({ isOpen: false, parent: null });
     const [isDeleting, setIsDeleting] = useState(false);
+    const [createdCredentials, setCreatedCredentials] = useState<{ accessCode: string, password: string } | null>(null);
 
     const parentUsers = useMemo(() => {
         return users.filter(u => u.role?.toLowerCase() === 'parent')
@@ -1650,8 +1740,8 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
 
     const handleAddParent = async (e: React.FormEvent) => {
         e.preventDefault();
-        if(!newParentName.trim()) return;
-        
+        if (!newParentName.trim()) return;
+
         setIsLoading(true);
         try {
             const parentData = {
@@ -1663,7 +1753,13 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
             const result = await apiService.createUser(parentData);
             setUsers([...users, result.user]);
 
-            setSuccessMessage(t('parent_added_with_code').replace('{code}', `<b>${result.user.id}</b>`));
+            // Show credentials
+            setCreatedCredentials({
+                accessCode: result.code,
+                password: result.password || ''
+            });
+
+            setSuccessMessage(`Parent "${newParentName}" created successfully! Access Code: ${result.code}${result.password ? `, Password: ${result.password}` : ''}`);
             setNewParentName('');
             setShowAddModal(false);
         } catch (error) {
@@ -1726,7 +1822,7 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
             <Card>
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-gray-800">Parents ({parentUsers.length})</h3>
-                    <button 
+                    <button
                         onClick={() => setShowAddModal(true)}
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center"
                     >
@@ -1736,7 +1832,7 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {parentUsers.map(parent => {
                         const parentChildren = students.filter(s => parent.childrenIds?.includes(s.id));
-                        
+
                         return (
                             <div key={parent.id} className="p-4 bg-gray-50 rounded-lg">
                                 <div className="flex items-center space-x-3 mb-3">
@@ -1764,14 +1860,14 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
                                     </div>
                                 </div>
                                 <div className="mt-3 flex justify-end space-x-2">
-                                    <button 
+                                    <button
                                         onClick={() => startEditParent(parent)}
                                         className="text-blue-600 hover:text-blue-800 transition"
                                         title="Edit parent"
                                     >
                                         <i className="fas fa-edit"></i>
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => confirmDeleteParent(parent)}
                                         className="text-red-600 hover:text-red-800 transition"
                                         title="Delete parent"
@@ -1807,14 +1903,14 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
                             required
                         />
                     </div>
-                    
+
                     <div className="bg-blue-50 p-3 rounded-lg">
                         <p className="text-sm text-blue-700">
                             <i className="fas fa-info-circle mr-2"></i>
                             A unique parent code will be generated automatically. Children can be assigned later when creating students.
                         </p>
                     </div>
-                    
+
                     <div className="flex space-x-3 pt-4">
                         <button
                             type="button"
@@ -1850,14 +1946,14 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
                             required
                         />
                     </div>
-                    
+
                     <div className="bg-blue-50 p-3 rounded-lg">
                         <p className="text-sm text-blue-700">
                             <i className="fas fa-info-circle mr-2"></i>
                             Children relationships are managed when editing students.
                         </p>
                     </div>
-                    
+
                     <div className="flex space-x-3 pt-4">
                         <button
                             type="button"
@@ -1902,7 +1998,7 @@ const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = 
     const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
     const [editingClass, setEditingClass] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [deleteConfirm, setDeleteConfirm] = useState<{isOpen: boolean, classItem: any | null}>({isOpen: false, classItem: null});
+    const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean, classItem: any | null }>({ isOpen: false, classItem: null });
     const [isDeleting, setIsDeleting] = useState(false);
 
     const handleAddClass = async (e: React.FormEvent) => {
@@ -1978,8 +2074,8 @@ const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = 
     };
 
     const handleSubjectToggle = (subjectId: string) => {
-        setSelectedSubjects(prev => 
-            prev.includes(subjectId) 
+        setSelectedSubjects(prev =>
+            prev.includes(subjectId)
                 ? prev.filter(id => id !== subjectId)
                 : [...prev, subjectId]
         );
@@ -1990,7 +2086,7 @@ const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = 
             <Card>
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-gray-800">Classes ({classes.length})</h3>
-                    <button 
+                    <button
                         onClick={() => setShowAddModal(true)}
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center"
                     >
@@ -2020,22 +2116,22 @@ const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = 
                                         </div>
                                     )}
                                 </div>
-                                            <div className="flex space-x-2">
-                                                <button 
-                                                    onClick={() => startEditClass(classItem)}
-                                                    className="text-blue-600 hover:text-blue-800 transition"
-                                                    title="Edit class"
-                                                >
-                                                    <i className="fas fa-edit"></i>
-                                                </button>
-                                                <button 
-                                                    onClick={() => confirmDeleteClass(classItem)}
-                                                    className="text-red-600 hover:text-red-800 transition"
-                                                    title="Delete class"
-                                                >
-                                                    <i className="fas fa-trash"></i>
-                                                </button>
-                                            </div>
+                                <div className="flex space-x-2">
+                                    <button
+                                        onClick={() => startEditClass(classItem)}
+                                        className="text-blue-600 hover:text-blue-800 transition"
+                                        title="Edit class"
+                                    >
+                                        <i className="fas fa-edit"></i>
+                                    </button>
+                                    <button
+                                        onClick={() => confirmDeleteClass(classItem)}
+                                        className="text-red-600 hover:text-red-800 transition"
+                                        title="Delete class"
+                                    >
+                                        <i className="fas fa-trash"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}
@@ -2064,7 +2160,7 @@ const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = 
                             required
                         />
                     </div>
-                    
+
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             {t('assign_subjects_to_class')}
@@ -2090,7 +2186,7 @@ const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = 
                             Selected: {selectedSubjects.length} subject{selectedSubjects.length !== 1 ? 's' : ''}
                         </p>
                     </div>
-                    
+
                     <div className="flex space-x-3 pt-4">
                         <button
                             type="button"
@@ -2126,7 +2222,7 @@ const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = 
                             required
                         />
                     </div>
-                    
+
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Assign Subjects to Class
@@ -2152,7 +2248,7 @@ const ClassManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> = 
                             Selected: {selectedSubjects.length} subject{selectedSubjects.length !== 1 ? 's' : ''}
                         </p>
                     </div>
-                    
+
                     <div className="flex space-x-3 pt-4">
                         <button
                             type="button"
@@ -2195,7 +2291,7 @@ const SubjectManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> 
     const [newSubjectName, setNewSubjectName] = useState('');
     const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [deleteConfirm, setDeleteConfirm] = useState<{isOpen: boolean, subjectItem: Subject | null}>({isOpen: false, subjectItem: null});
+    const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean, subjectItem: Subject | null }>({ isOpen: false, subjectItem: null });
     const [isDeleting, setIsDeleting] = useState(false);
 
     const handleAddSubject = async (e: React.FormEvent) => {
@@ -2207,7 +2303,7 @@ const SubjectManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> 
             console.log('Creating subject:', newSubjectName.trim());
             const response = await apiService.createSubject(newSubjectName.trim());
             console.log('API response:', response);
-            
+
             if (response && response.id) {
                 console.log('Created subject:', response);
                 setSubjects([...subjects, response]);
@@ -2280,35 +2376,35 @@ const SubjectManagement: React.FC<{ setSuccessMessage: (msg: string) => void }> 
             <Card>
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-gray-800">Subjects ({subjects.length})</h3>
-                    <button 
+                    <button
                         onClick={() => setShowAddModal(true)}
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center"
                     >
                         <i className="fas fa-plus mr-2"></i>{t('add_new_subject')}
                     </button>
                 </div>
-                            <div className="space-y-2">
-                                {subjects.map(subject => (
-                                    <div key={subject.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                        <span className="font-medium">{subject.name}</span>
-                                        <div className="flex space-x-2">
-                                            <button 
-                                                onClick={() => startEdit(subject)}
-                                                className="text-blue-600 hover:text-blue-800 transition"
-                                                title="Edit subject"
-                                            >
-                                                <i className="fas fa-edit"></i>
-                                            </button>
-                                            <button 
-                                                onClick={() => confirmDelete(subject)}
-                                                className="text-red-500 hover:text-red-700 transition-colors"
-                                                title="Delete subject"
-                                            >
-                                                <i className="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
+                <div className="space-y-2">
+                    {subjects.map(subject => (
+                        <div key={subject.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span className="font-medium">{subject.name}</span>
+                            <div className="flex space-x-2">
+                                <button
+                                    onClick={() => startEdit(subject)}
+                                    className="text-blue-600 hover:text-blue-800 transition"
+                                    title="Edit subject"
+                                >
+                                    <i className="fas fa-edit"></i>
+                                </button>
+                                <button
+                                    onClick={() => confirmDelete(subject)}
+                                    className="text-red-500 hover:text-red-700 transition-colors"
+                                    title="Delete subject"
+                                >
+                                    <i className="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    ))}
                     {subjects.length === 0 && (
                         <div className="text-center text-gray-500 py-8">
                             <i className="fas fa-book text-4xl mb-4"></i>
