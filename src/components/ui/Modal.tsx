@@ -19,17 +19,23 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, classNa
 
     return (
         <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4"
+            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4 animate-fadeIn"
             onClick={onClose}
+            style={{
+                animation: 'fadeIn 0.2s ease-out'
+            }}
         >
             <div
                 dir={dir}
-                className={`bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col ${className}`}
+                className={`bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col transform transition-all duration-300 ${className}`}
                 onClick={(e) => e.stopPropagation()}
+                style={{
+                    animation: 'scaleIn 0.3s ease-out'
+                }}
             >
                 <div className="flex justify-between items-center p-4 border-b">
                     <h2 className="text-xl font-bold text-gray-800">{title}</h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800 text-2xl">
+                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800 text-2xl hover:rotate-90 transition-transform duration-200">
                         &times;
                     </button>
                 </div>
@@ -37,6 +43,22 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, classNa
                     {children}
                 </div>
             </div>
+            <style>{`
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes scaleIn {
+                    from { 
+                        opacity: 0;
+                        transform: scale(0.9) translateY(-20px);
+                    }
+                    to { 
+                        opacity: 1;
+                        transform: scale(1) translateY(0);
+                    }
+                }
+            `}</style>
         </div>
     );
 };
