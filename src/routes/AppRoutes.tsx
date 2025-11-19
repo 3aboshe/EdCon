@@ -5,8 +5,8 @@ import LoginScreen from '../screens/LoginScreen';
 import StudentDashboard from '../screens/StudentDashboard';
 import ParentDashboard from '../screens/ParentDashboard';
 import TeacherDashboard from '../screens/TeacherDashboard';
-import AdminDashboard from '../screens/AdminDashboard';
-import NewAdminDashboard from '../screens/NewAdminDashboard';
+import SuperAdminDashboard from '../screens/SuperAdminDashboard';
+import SchoolAdminDashboard from '../screens/SchoolAdminDashboard';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ 
@@ -117,10 +117,28 @@ const AppRoutes: React.FC = () => {
       />
       
       <Route 
+        path="/super_admin" 
+        element={
+          <ProtectedRoute allowedRoles={['super_admin']}>
+            <SuperAdminDashboard />
+          </ProtectedRoute>
+        } 
+      />
+
+      <Route 
+        path="/school_admin" 
+        element={
+          <ProtectedRoute allowedRoles={['school_admin']}>
+            <SchoolAdminDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
         path="/admin" 
         element={
-          <ProtectedRoute allowedRoles={['admin']}>
-            <NewAdminDashboard />
+          <ProtectedRoute allowedRoles={['admin', 'school_admin', 'super_admin']}>
+             {user?.backendRole === 'SUPER_ADMIN' ? <SuperAdminDashboard /> : <SchoolAdminDashboard />}
           </ProtectedRoute>
         } 
       />
