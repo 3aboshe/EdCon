@@ -130,7 +130,7 @@ router.post('/', async (req, res) => {
 router.get('/:userId/credentials', async (req, res) => {
   try {
     const { userId } = req.params;
-    const schoolId = req.schoolId;
+    const schoolId = req.school.id;
 
     // Verify user belongs to this school
     const user = await prisma.user.findFirst({
@@ -163,7 +163,7 @@ router.get('/:userId/credentials', async (req, res) => {
 router.post('/:userId/reset-password', async (req, res) => {
   try {
     const { userId } = req.params;
-    const schoolId = req.schoolId;
+    const schoolId = req.school.id;
 
     // Verify user belongs to this school
     const user = await prisma.user.findFirst({
@@ -175,7 +175,8 @@ router.post('/:userId/reset-password', async (req, res) => {
     }
 
     // Generate new temporary password
-    const { plainPassword, hashedPassword } = await generateTempPassword();
+    const plainPassword = generateTempPassword(12);
+    const hashedPassword = await hashPassword(plainPassword);
 
     // Update user with new temporary password
     const updatedUser = await prisma.user.update({
