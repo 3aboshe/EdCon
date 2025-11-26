@@ -126,4 +126,84 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Get user credentials (access code and temp password status) - for admin viewing
+router.get('/:userId/credentials', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const schoolId = req.schoolId;
+
+    // Verify user belongs to this school
+    const user = await prisma.user.findFirst({
+      where: { id: userId, schoolId },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found in this school' });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        userId: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        accessCode: user.accessCode,
+        hasTemporaryPassword: !!user.temporaryPasswordHash,
+        createdAt: user.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error('Get user credentials error:', error);
+    res.status(500).json({ message: 'Unable to fetch user credentials' });
+  }
+});
+
+// Reset user password (admin action) - generates new temporary password
+router.post('/:userId/reset-password', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const schoolId = req.schoolId;
+
+    // Verify user belongs to this school
+    const user = await prisma.user.findFirst({
+      where: { id: userId, schoolId },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found in this school' });
+    }
+
+    // Generate new temporary password
+    const { plainPassword, hashedPassword } = await generateTempPassword();
+
+    // Update user with new temporary password
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        temporaryPasswordHash: hashedPassword,
+        passwordHash: null, // Clear permanent password
+      },
+    });
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully',
+      data: {
+        userId: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        accessCode: updatedUser.accessCode,
+        temporaryPassword: plainPassword,
+        hasTemporaryPassword: true,
+        createdAt: updatedUser.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error('Reset user password error:', error);
+    res.status(500).json({ message: 'Unable to reset password' });
+  }
+});
+
 export default router;

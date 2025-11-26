@@ -5,6 +5,7 @@ import { useTutorial } from '../contexts/TutorialContext';
 import Header from '../components/ui/Header';
 import Card from '../components/ui/Card';
 import Modal from '../components/ui/Modal';
+import Button from '../components/ui/Button';
 import TutorialAlertModal from '../components/tutorial/TutorialAlertModal';
 import TutorialWizard from '../components/tutorial/TutorialWizard';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
@@ -14,10 +15,22 @@ import LoadingSpinner from '../components/ui/LoadingSpinner';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import apiService from '../services/apiService';
 import { allAvatars } from '../data/avatars';
+import { CheckCircle, AlertCircle, Eye } from 'lucide-react';
 
 type AdminSection = 'dashboard' | 'analytics' | 'users' | 'academic' | 'system' | 'reports';
 type UserManagementTab = 'students' | 'teachers' | 'parents';
 type AcademicTab = 'classes' | 'subjects';
+
+// User Credentials Modal State
+interface UserCredentials {
+    userId: string;
+    name: string;
+    email: string;
+    role: string;
+    accessCode?: string;
+    hasTemporaryPassword: boolean;
+    createdAt?: string;
+}
 
 const AdminDashboard: React.FC = () => {
     const { classes: classList, users, students, teachers, subjects, grades, homework, announcements, attendance, messages, user, logout } = useContext(AppContext);
@@ -28,6 +41,12 @@ const AdminDashboard: React.FC = () => {
     const [successMessage, setSuccessMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [showTutorialAlert, setShowTutorialAlert] = useState(false);
+    
+    // Credentials modal state (shared across all user management tabs)
+    const [showCredentialsModal, setShowCredentialsModal] = useState(false);
+    const [selectedUserCredentials, setSelectedUserCredentials] = useState<UserCredentials | null>(null);
+    const [isLoadingCredentials, setIsLoadingCredentials] = useState(false);
+    const [isResettingPassword, setIsResettingPassword] = useState(false);
 
     useEffect(() => {
         if (successMessage) {
@@ -47,6 +66,48 @@ const AdminDashboard: React.FC = () => {
         }
     }, [user, dontShowAgain]);
 
+    // Handler to view user credentials
+    const handleViewCredentials = async (userId: string) => {
+        setIsLoadingCredentials(true);
+        setShowCredentialsModal(true);
+        try {
+            const response = await apiService.getUserCredentials(userId);
+            if (response.success && response.data) {
+                setSelectedUserCredentials(response.data);
+            } else {
+                setSuccessMessage('Failed to load user credentials');
+                setShowCredentialsModal(false);
+            }
+        } catch (error) {
+            console.error('Error fetching credentials:', error);
+            setSuccessMessage('Error loading user credentials');
+            setShowCredentialsModal(false);
+        } finally {
+            setIsLoadingCredentials(false);
+        }
+    };
+
+    // Handler to reset user password
+    const handleResetPassword = async () => {
+        if (!selectedUserCredentials) return;
+        
+        setIsResettingPassword(true);
+        try {
+            const response = await apiService.resetUserPasswordAdmin(selectedUserCredentials.userId);
+            if (response.success && response.data) {
+                setSelectedUserCredentials(response.data);
+                setSuccessMessage(`Password reset successfully for ${selectedUserCredentials.name}`);
+            } else {
+                setSuccessMessage('Failed to reset password');
+            }
+        } catch (error) {
+            console.error('Error resetting password:', error);
+            setSuccessMessage('Error resetting password');
+        } finally {
+            setIsResettingPassword(false);
+        }
+    };
+
     const sections = [
         { id: 'dashboard', label: t('dashboard'), icon: 'fa-tachometer-alt', color: 'blue' },
         { id: 'analytics', label: t('analytics'), icon: 'fa-chart-bar', color: 'purple' },
@@ -63,7 +124,7 @@ const AdminDashboard: React.FC = () => {
             case 'analytics':
                 return <AnalyticsSection selectedClassId={selectedClassId} />;
             case 'users':
-                return <UserManagementSection setSuccessMessage={setSuccessMessage} />;
+                return <UserManagementSection setSuccessMessage={setSuccessMessage} onViewCredentials={handleViewCredentials} />;
             case 'academic':
                 return <AcademicManagement selectedClassId={selectedClassId} setSuccessMessage={setSuccessMessage} />;
             case 'system':
@@ -83,6 +144,104 @@ const AdminDashboard: React.FC = () => {
                     <p className="font-semibold">{successMessage}</p>
                 </div>
             )}
+            
+            {/* User Credentials Modal */}
+            <Modal isOpen={showCredentialsModal} onClose={() => setShowCredentialsModal(false)} title="User Credentials">
+                {isLoadingCredentials ? (
+                    <div className="flex justify-center items-center py-8">
+                        <LoadingSpinner />
+                    </div>
+                ) : selectedUserCredentials ? (
+                    <div className="space-y-6">
+                        {/* User Info */}
+                        <div className="bg-blue-50 p-4 rounded-lg">
+                            <h3 className="font-semibold text-lg mb-2">{selectedUserCredentials.name}</h3>
+                            <div className="space-y-1 text-sm">
+                                <p className="text-gray-600">Email: {selectedUserCredentials.email || 'N/A'}</p>
+                                <p className="text-gray-600">Role: {selectedUserCredentials.role}</p>
+                                <p className="text-gray-600">Created: {selectedUserCredentials.createdAt ? new Date(selectedUserCredentials.createdAt).toLocaleDateString() : 'N/A'}</p>
+                            </div>
+                        </div>
+
+                        {/* Access Code */}
+                        <div className="border border-gray-200 p-4 rounded-lg">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Access Code</label>
+                            <div className="flex items-center space-x-2">
+                                <code className="flex-1 bg-gray-100 px-4 py-3 rounded font-mono text-lg border border-gray-300">
+                                    {selectedUserCredentials.accessCode || 'N/A'}
+                                </code>
+                                {selectedUserCredentials.accessCode && (
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(selectedUserCredentials.accessCode!);
+                                            setSuccessMessage('Access code copied to clipboard!');
+                                        }}
+                                        className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                                        title="Copy to clipboard"
+                                    >
+                                        <i className="fas fa-copy"></i>
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Temporary Password Status */}
+                        <div className="border border-gray-200 p-4 rounded-lg">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Password Status</label>
+                            <div className="flex items-center space-x-2 mb-3">
+                                {selectedUserCredentials.hasTemporaryPassword ? (
+                                    <>
+                                        <AlertCircle className="w-5 h-5 text-yellow-500" />
+                                        <span className="text-yellow-700 font-medium">Temporary Password Active</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <CheckCircle className="w-5 h-5 text-green-500" />
+                                        <span className="text-green-700 font-medium">Permanent Password Set</span>
+                                    </>
+                                )}
+                            </div>
+                            <Button
+                                onClick={handleResetPassword}
+                                disabled={isResettingPassword}
+                                className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                            >
+                                {isResettingPassword ? (
+                                    <>
+                                        <LoadingSpinner />
+                                        <span className="ml-2">Resetting Password...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <i className="fas fa-key mr-2"></i>
+                                        Reset Password
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+
+                        {/* Instructions */}
+                        <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-600">
+                            <p className="font-medium mb-2">Instructions:</p>
+                            <ul className="list-disc list-inside space-y-1">
+                                <li>Share the access code with the user for login</li>
+                                <li>Reset password will generate a new temporary password</li>
+                                <li>User must change temporary password on first login</li>
+                            </ul>
+                        </div>
+
+                        <div className="flex justify-end">
+                            <Button onClick={() => setShowCredentialsModal(false)} variant="secondary">
+                                Close
+                            </Button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="text-center py-8 text-gray-500">
+                        No credentials data available
+                    </div>
+                )}
+            </Modal>
             
             {/* Manual Tutorial Trigger Button */}
             <div className="fixed bottom-4 right-4 z-50">
@@ -336,7 +495,7 @@ const AnalyticsSection: React.FC<{ selectedClassId: string }> = ({ selectedClass
 };
 
 // User Management Section
-const UserManagementSection: React.FC<{ setSuccessMessage: (msg: string) => void }> = ({ setSuccessMessage }) => {
+const UserManagementSection: React.FC<{ setSuccessMessage: (msg: string) => void; onViewCredentials: (userId: string) => Promise<void> }> = ({ setSuccessMessage, onViewCredentials }) => {
     const [activeTab, setActiveTab] = useState<UserManagementTab>('students');
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -381,9 +540,9 @@ const UserManagementSection: React.FC<{ setSuccessMessage: (msg: string) => void
             </div>
 
             {/* Tab Content */}
-            {activeTab === 'students' && <StudentsManagement searchTerm={searchTerm} setSuccessMessage={setSuccessMessage} />}
-            {activeTab === 'teachers' && <TeachersManagement searchTerm={searchTerm} setSuccessMessage={setSuccessMessage} />}
-            {activeTab === 'parents' && <ParentsManagement searchTerm={searchTerm} setSuccessMessage={setSuccessMessage} />}
+            {activeTab === 'students' && <StudentsManagement searchTerm={searchTerm} setSuccessMessage={setSuccessMessage} onViewCredentials={onViewCredentials} />}
+            {activeTab === 'teachers' && <TeachersManagement searchTerm={searchTerm} setSuccessMessage={setSuccessMessage} onViewCredentials={onViewCredentials} />}
+            {activeTab === 'parents' && <ParentsManagement searchTerm={searchTerm} setSuccessMessage={setSuccessMessage} onViewCredentials={onViewCredentials} />}
         </div>
     );
 };
@@ -707,7 +866,7 @@ const StatCard: React.FC<{ title: string; value: number; icon: string; color: st
 };
 
 // Placeholder components for detailed management sections
-const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg: string) => void }> = ({ searchTerm, setSuccessMessage }) => {
+const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg: string) => void; onViewCredentials: (userId: string) => Promise<void> }> = ({ searchTerm, setSuccessMessage, onViewCredentials }) => {
     const { students, users, classes, subjects, setUsers, setStudents } = useContext(AppContext);
     const { t } = useTranslation();
     const [showAddModal, setShowAddModal] = useState(false);
@@ -979,6 +1138,13 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                                     )}
                                 </div>
                                 <div className="mt-3 flex justify-end space-x-2">
+                                    <button 
+                                        onClick={() => onViewCredentials(student.id)}
+                                        className="text-green-600 hover:text-green-800 transition"
+                                        title="View credentials"
+                                    >
+                                        <Eye className="w-4 h-4" />
+                                    </button>
                                     <button 
                                         onClick={() => startEditStudent(student)}
                                         className="text-blue-600 hover:text-blue-800 transition"
@@ -1255,7 +1421,7 @@ const StudentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
     );
 };
 
-const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg: string) => void }> = ({ searchTerm, setSuccessMessage }) => {
+const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg: string) => void; onViewCredentials: (userId: string) => Promise<void> }> = ({ searchTerm, setSuccessMessage, onViewCredentials }) => {
     const { teachers, users, subjects, classes, setUsers, setTeachers } = useContext(AppContext);
     const { t } = useTranslation();
     const [showAddModal, setShowAddModal] = useState(false);
@@ -1440,6 +1606,13 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
                                     </div>
                                 </div>
                                 <div className="mt-3 flex justify-end space-x-2">
+                                    <button 
+                                        onClick={() => onViewCredentials(teacher.id)}
+                                        className="text-green-600 hover:text-green-800 transition"
+                                        title="View credentials"
+                                    >
+                                        <Eye className="w-4 h-4" />
+                                    </button>
                                     <button 
                                         onClick={() => startEditTeacher(teacher)}
                                         className="text-blue-600 hover:text-blue-800 transition"
@@ -1632,7 +1805,7 @@ const TeachersManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg
     );
 };
 
-const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg: string) => void }> = ({ searchTerm, setSuccessMessage }) => {
+const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg: string) => void; onViewCredentials: (userId: string) => Promise<void> }> = ({ searchTerm, setSuccessMessage, onViewCredentials }) => {
     const { users, students, setUsers } = useContext(AppContext);
     const { t } = useTranslation();
     const [showAddModal, setShowAddModal] = useState(false);
@@ -1764,6 +1937,13 @@ const ParentsManagement: React.FC<{ searchTerm: string; setSuccessMessage: (msg:
                                     </div>
                                 </div>
                                 <div className="mt-3 flex justify-end space-x-2">
+                                    <button 
+                                        onClick={() => onViewCredentials(parent.id)}
+                                        className="text-green-600 hover:text-green-800 transition"
+                                        title="View credentials"
+                                    >
+                                        <Eye className="w-4 h-4" />
+                                    </button>
                                     <button 
                                         onClick={() => startEditParent(parent)}
                                         className="text-blue-600 hover:text-blue-800 transition"
