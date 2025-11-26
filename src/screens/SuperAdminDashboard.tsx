@@ -63,6 +63,15 @@ const SuperAdminDashboard: React.FC = () => {
   });
   const [isSendingNotification, setIsSendingNotification] = useState(false);
 
+  // User Details State
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [showUserDetailsModal, setShowUserDetailsModal] = useState(false);
+  const [userDetails, setUserDetails] = useState<any>(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(false);
+  const [resetCredentials, setResetCredentials] = useState<{accessCode: string, temporaryPassword: string} | null>(null);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -76,6 +85,12 @@ const SuperAdminDashboard: React.FC = () => {
         if (statsRes.success) setStats(statsRes.data);
         if (schoolsRes.success) setSchools(schoolsRes.data || []);
         if (activityRes.success) setActivities(activityRes.data || []);
+        
+        // Fetch all users for the user browser
+        const usersRes = await apiService.getAllUsers();
+        if (Array.isArray(usersRes)) {
+          setAllUsers(usersRes);
+        }
       } catch (error) {
         console.error('Failed to fetch dashboard data', error);
       } finally {
@@ -192,6 +207,45 @@ const SuperAdminDashboard: React.FC = () => {
       alert('Failed to send notification');
     } finally {
       setIsSendingNotification(false);
+    }
+  };
+
+  const handleViewUser = async (userId: string) => {
+    setIsLoadingUser(true);
+    setShowUserDetailsModal(true);
+    setResetCredentials(null);
+    
+    try {
+      const res = await apiService.getUserCredentials(userId);
+      if (res.success) {
+        setUserDetails(res.data?.user || res.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user details', error);
+      alert('Failed to fetch user details');
+    } finally {
+      setIsLoadingUser(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!userDetails?.id) return;
+    
+    if (!confirm(`Reset password for ${userDetails.name}? A new temporary password will be generated.`)) {
+      return;
+    }
+
+    setIsResettingPassword(true);
+    try {
+      const res = await apiService.resetUserPasswordAdmin(userDetails.id);
+      if (res.success && res.data) {
+        setResetCredentials(res.data.credentials || res.data);
+      }
+    } catch (error) {
+      console.error('Failed to reset password', error);
+      alert('Failed to reset password');
+    } finally {
+      setIsResettingPassword(false);
     }
   };
 
@@ -379,7 +433,183 @@ const SuperAdminDashboard: React.FC = () => {
             </Card>
           </div>
         </div>
+
+        {/* Users Browser */}
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold text-slate-900 mb-4">All Users</h2>
+          <Card className="overflow-hidden border border-purple-50 shadow-sm bg-white">
+            <div className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Name</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Role</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">School</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Access Code</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {allUsers.slice(0, 20).map((user) => (
+                      <tr key={user.id} className="hover:bg-purple-50/30 transition-colors">
+                        <td className="px-4 py-3 text-sm font-medium text-slate-900">{user.name}</td>
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            user.role === 'TEACHER' ? 'bg-blue-100 text-blue-700' :
+                            user.role === 'PARENT' ? 'bg-green-100 text-green-700' :
+                            user.role === 'STUDENT' ? 'bg-purple-100 text-purple-700' :
+                            user.role === 'SCHOOL_ADMIN' ? 'bg-orange-100 text-orange-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {user.role}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">{user.school?.name || 'N/A'}</td>
+                        <td className="px-4 py-3 text-sm font-mono text-slate-600">{user.accessCode}</td>
+                        <td className="px-4 py-3 text-sm">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            user.status === 'ACTIVE' ? 'bg-green-100 text-green-700' :
+                            user.status === 'INVITED' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            {user.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <button
+                            onClick={() => handleViewUser(user.id)}
+                            className="text-indigo-600 hover:text-indigo-900 font-medium"
+                          >
+                            View Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </Card>
+        </div>
       </main>
+
+      {/* User Details Modal */}
+      <Modal
+        isOpen={showUserDetailsModal}
+        onClose={() => {
+          setShowUserDetailsModal(false);
+          setUserDetails(null);
+          setResetCredentials(null);
+        }}
+        title="User Details"
+      >
+        {isLoadingUser ? (
+          <div className="p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+            <p className="text-slate-600">Loading user details...</p>
+          </div>
+        ) : resetCredentials ? (
+          <div className="space-y-6">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start space-x-3">
+              <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-green-900">Password Reset Successfully!</h3>
+                <p className="text-green-700 text-sm mt-1">Please share these new credentials with the user.</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Access Code</label>
+                <div className="flex items-center justify-between mt-1">
+                  <code className="text-lg font-mono font-bold text-slate-900">{resetCredentials.accessCode}</code>
+                </div>
+              </div>
+              <div className="pt-3 border-t border-slate-200">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">New Temporary Password</label>
+                <div className="flex items-center justify-between mt-1">
+                  <code className="text-lg font-mono font-bold text-slate-900">{resetCredentials.temporaryPassword}</code>
+                </div>
+              </div>
+            </div>
+
+            <Button 
+              onClick={() => {
+                setResetCredentials(null);
+                setShowUserDetailsModal(false);
+              }}
+              className="w-full bg-indigo-600 text-white hover:bg-indigo-700"
+            >
+              Done
+            </Button>
+          </div>
+        ) : userDetails ? (
+          <div className="space-y-6">
+            <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</label>
+                  <p className="text-sm font-medium text-slate-900 mt-1">{userDetails.name}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Role</label>
+                  <p className="text-sm font-medium text-slate-900 mt-1">{userDetails.role}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</label>
+                  <p className="text-sm font-medium text-slate-900 mt-1">{userDetails.email || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Phone</label>
+                  <p className="text-sm font-medium text-slate-900 mt-1">{userDetails.phone || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">School</label>
+                  <p className="text-sm font-medium text-slate-900 mt-1">{userDetails.school?.name || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</label>
+                  <p className="text-sm font-medium text-slate-900 mt-1">{userDetails.status}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Access Code</label>
+              <div className="flex items-center justify-between mt-1">
+                <code className="text-lg font-mono font-bold text-slate-900">{userDetails.accessCode}</code>
+              </div>
+              {userDetails.hasTemporaryPassword && (
+                <div className="mt-3 pt-3 border-t border-slate-300">
+                  <div className="flex items-center text-sm text-amber-700 bg-amber-50 px-3 py-2 rounded">
+                    <AlertCircle className="w-4 h-4 mr-2" />
+                    User has a temporary password that requires reset
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex space-x-3">
+              <Button
+                onClick={handleResetPassword}
+                className="flex-1 bg-amber-600 text-white hover:bg-amber-700"
+                disabled={isResettingPassword}
+              >
+                {isResettingPassword ? 'Resetting...' : 'Reset Password'}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowUserDetailsModal(false)}
+                className="flex-1"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </Modal>
 
       {/* Create School Modal */}
       <Modal

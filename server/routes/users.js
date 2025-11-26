@@ -126,4 +126,82 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Get user details with credentials (Super Admin only)
+router.get('/:userId/credentials', requireRole(['SUPER_ADMIN']), async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        school: true,
+        class: true,
+        parent: true,
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Return user details with access code (password is never returned)
+    const userDetails = {
+      ...sanitize(user),
+      hasTemporaryPassword: !!user.temporaryPasswordHash,
+      temporaryPasswordIssuedAt: user.temporaryPasswordIssuedAt,
+      requiresPasswordReset: user.requiresPasswordReset,
+    };
+
+    res.json({ success: true, user: userDetails });
+  } catch (error) {
+    console.error('Get user credentials error:', error);
+    res.status(500).json({ message: error.message || 'Unable to fetch user details' });
+  }
+});
+
+// Reset user password (Super Admin or School Admin)
+router.post('/:userId/reset-password', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // School admins can only reset passwords in their school
+    if (req.user.role === 'SCHOOL_ADMIN' && user.schoolId !== req.school.id) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    // Generate new temporary password
+    const newTempPassword = generateTempPassword();
+    const passwordHash = await hashPassword(newTempPassword);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        temporaryPasswordHash: passwordHash,
+        temporaryPasswordIssuedAt: new Date(),
+        requiresPasswordReset: true,
+        passwordHash, // Also update main password hash
+      }
+    });
+
+    res.json({
+      success: true,
+      credentials: {
+        accessCode: user.accessCode,
+        temporaryPassword: newTempPassword,
+      }
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: error.message || 'Unable to reset password' });
+  }
+});
+
 export default router;
