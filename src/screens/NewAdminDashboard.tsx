@@ -28,6 +28,7 @@ interface UserCredentials {
     email: string;
     role: string;
     accessCode?: string;
+    temporaryPassword?: string;
     hasTemporaryPassword: boolean;
     createdAt?: string;
 }
@@ -146,7 +147,7 @@ const AdminDashboard: React.FC = () => {
             )}
             
             {/* User Credentials Modal */}
-            <Modal isOpen={showCredentialsModal} onClose={() => setShowCredentialsModal(false)} title="User Credentials">
+            <Modal isOpen={showCredentialsModal} onClose={() => setShowCredentialsModal(false)} title="User Credentials" className="max-w-2xl">
                 {isLoadingCredentials ? (
                     <div className="flex justify-center items-center py-8">
                         <LoadingSpinner />
@@ -176,7 +177,7 @@ const AdminDashboard: React.FC = () => {
                                             navigator.clipboard.writeText(selectedUserCredentials.accessCode!);
                                             setSuccessMessage('Access code copied to clipboard!');
                                         }}
-                                        className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                                        className="px-3 py-2 bg-blue-800 text-white rounded hover:bg-blue-900 transition"
                                         title="Copy to clipboard"
                                     >
                                         <i className="fas fa-copy"></i>
@@ -185,7 +186,36 @@ const AdminDashboard: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Temporary Password Status */}
+                        {/* Temporary Password Display */}
+                        {selectedUserCredentials.temporaryPassword && (
+                            <div className="border-2 border-blue-800 bg-blue-50 p-4 rounded-lg">
+                                <label className="block text-sm font-medium text-blue-900 mb-2">
+                                    <i className="fas fa-key mr-2"></i>
+                                    New Temporary Password
+                                </label>
+                                <div className="flex items-center space-x-2">
+                                    <code className="flex-1 bg-white px-4 py-3 rounded font-mono text-xl font-bold border-2 border-blue-800 text-blue-900">
+                                        {selectedUserCredentials.temporaryPassword}
+                                    </code>
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(selectedUserCredentials.temporaryPassword!);
+                                            setSuccessMessage('Temporary password copied to clipboard!');
+                                        }}
+                                        className="px-3 py-2 bg-blue-800 text-white rounded hover:bg-blue-900 transition"
+                                        title="Copy to clipboard"
+                                    >
+                                        <i className="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <p className="text-sm text-blue-800 mt-2">
+                                    <i className="fas fa-info-circle mr-1"></i>
+                                    Share this password with the user. They must change it on first login.
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Password Status & Reset Button */}
                         <div className="border border-gray-200 p-4 rounded-lg">
                             <label className="block text-sm font-medium text-gray-700 mb-2">Password Status</label>
                             <div className="flex items-center space-x-2 mb-3">
@@ -204,7 +234,7 @@ const AdminDashboard: React.FC = () => {
                             <Button
                                 onClick={handleResetPassword}
                                 disabled={isResettingPassword}
-                                className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                                className="w-full bg-blue-800 hover:bg-blue-900 text-white"
                             >
                                 {isResettingPassword ? (
                                     <>
