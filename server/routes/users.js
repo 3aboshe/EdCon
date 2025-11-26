@@ -183,7 +183,8 @@ router.post('/:userId/reset-password', async (req, res) => {
       where: { id: userId },
       data: {
         temporaryPasswordHash: hashedPassword,
-        passwordHash: null, // Clear permanent password
+        temporaryPasswordIssuedAt: new Date(),
+        requiresPasswordReset: true,
       },
     });
 
