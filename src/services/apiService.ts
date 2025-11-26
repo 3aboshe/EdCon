@@ -614,6 +614,16 @@ class ApiService {
     });
   }
 
+  async getUserCredentials(userId: string): Promise<ApiResponse<any>> {
+    return this.request<any>(`/users/${userId}/credentials`);
+  }
+
+  async resetUserPasswordAdmin(userId: string): Promise<ApiResponse<any>> {
+    return this.request<any>(`/users/${userId}/reset-password`, {
+      method: 'POST'
+    });
+  }
+
 }
 
 export default new ApiService();
