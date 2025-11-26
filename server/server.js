@@ -19,6 +19,7 @@ import backupRoutes from './routes/backup.js';
 import schoolRoutes from './routes/schools.js';
 import userManagementRoutes from './routes/users.js';
 import analyticsRoutes from './routes/analytics.js';
+import globalNotificationRoutes from './routes/global-notifications.js';
 
 dotenv.config();
 
@@ -34,20 +35,20 @@ console.log('🔧 Port configuration:', {
 
 // CORS configuration for production - more flexible
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production'
+  origin: process.env.NODE_ENV === 'production' 
     ? [
-      'https://ed-co.vercel.app',
-      'https://ed-co-3aboshes-projects.vercel.app',
-      'https://edcon-app.vercel.app',
-      'https://edcon-app.netlify.app',
-      'https://ed-eb22y6x9n-3aboshes-projects.vercel.app',
-      process.env.FRONTEND_URL
-    ].filter(Boolean)
+        'https://ed-co.vercel.app',
+        'https://ed-co-3aboshes-projects.vercel.app',
+        'https://edcon-app.vercel.app',
+        'https://edcon-app.netlify.app',
+        'https://ed-eb22y6x9n-3aboshes-projects.vercel.app',
+        process.env.FRONTEND_URL
+      ].filter(Boolean)
     : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:5176', 'http://localhost:5177', 'http://localhost:5179'],
   credentials: true,
   optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-edcon-school-code']
+  allowedHeaders: ['Content-Type', 'Authorization']
 };
 
 // Middleware
@@ -74,6 +75,7 @@ app.use('/api/parent-child', parentChildRoutes);
 app.use('/api/schools', schoolRoutes);
 app.use('/api/users', userManagementRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/global-notifications', globalNotificationRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/backup', backupRoutes);
 
@@ -82,18 +84,18 @@ app.get('/uploads/:filename', (req, res) => {
   try {
     const { filename } = req.params;
     const filePath = path.join(process.cwd(), 'uploads', filename);
-
+    
     console.log('=== FILE DOWNLOAD DEBUG ===');
     console.log('Requested filename:', filename);
     console.log('File path:', filePath);
     console.log('File exists:', fs.existsSync(filePath));
-
+    
     // Check if file exists
     if (!fs.existsSync(filePath)) {
       console.error('File not found:', filePath);
       return res.status(404).json({ message: 'File not found' });
     }
-
+    
     // Get file stats
     const stats = fs.statSync(filePath);
     console.log('File stats:', {
@@ -101,12 +103,12 @@ app.get('/uploads/:filename', (req, res) => {
       created: stats.birthtime,
       modified: stats.mtime
     });
-
+    
     // Set appropriate headers
     res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     res.setHeader('Content-Type', 'application/octet-stream');
     res.setHeader('Content-Length', stats.size);
-
+    
     console.log('Serving file:', filename);
     res.sendFile(filePath);
   } catch (error) {
@@ -138,7 +140,7 @@ app.get('/ping', (req, res) => {
 
 // Debug route to check environment
 app.get('/api/debug', (req, res) => {
-  res.json({
+  res.json({ 
     message: 'Debug info',
     nodeEnv: process.env.NODE_ENV,
     hasDatabaseUrl: !!process.env.DATABASE_URL,
@@ -152,11 +154,11 @@ app.get('/api/debug', (req, res) => {
 app.get('/api/test-db', async (req, res) => {
   try {
     const { prisma } = await import('./config/db.js');
-
+    
     // Test connection by running a simple query
     const userCount = await prisma.user.count();
-
-    res.json({
+    
+    res.json({ 
       message: 'Database connection test',
       status: 'connected',
       connected: true,
@@ -165,7 +167,7 @@ app.get('/api/test-db', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(500).json({ 
       message: 'Database test failed',
       status: 'disconnected',
       connected: false,
@@ -184,21 +186,21 @@ const startServer = async () => {
     console.log('🌍 Environment:', process.env.NODE_ENV);
     console.log('🔌 Port:', PORT);
     console.log('🔑 Database URL set:', !!process.env.DATABASE_URL);
-
+    
     // Connect to PostgreSQL and run migrations
     if (process.env.DATABASE_URL) {
       console.log('🔄 Attempting to connect to PostgreSQL...');
       try {
         await connectDB();
         console.log('✅ PostgreSQL connected successfully');
-
+        
         console.log('⏭️ Skipping automatic schema sync; run prisma migrate deploy during CI/CD');
       } catch (dbError) {
         console.error('❌ PostgreSQL connection failed:', dbError.message);
         console.log('⚠️ Server will start without database');
       }
     }
-
+    
     // Start server with proper Railway configuration
     const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`✅ Server running on port ${PORT}`);
@@ -207,7 +209,7 @@ const startServer = async () => {
       console.log('🚀 EdCon API is ready!');
       console.log(`📡 Health check: http://localhost:${PORT}/api/health`);
     });
-
+    
     // Handle server errors
     server.on('error', (error) => {
       console.error('❌ Server error:', error);
@@ -234,4 +236,4 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-startServer(); 
+startServer();
