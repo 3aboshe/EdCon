@@ -40,7 +40,7 @@ router.post('/', async (req, res) => {
       },
     });
 
-    const tempPassword = generateTempPassword();
+    const tempPassword = generateTempPassword(14);
     const hashedPassword = await hashPassword(tempPassword);
     const adminAccessCode = buildAccessCode('SCHOOL_ADMIN', school.code);
 
@@ -107,7 +107,7 @@ router.delete('/:id', async (req, res) => {
       // 1. Delete all related data that might have foreign keys
       // Note: This is a simplified cleanup. In a production app with many relations, 
       // you'd need to be very thorough or use database-level CASCADE DELETE.
-
+      
       // Delete related records in order of dependency
       await tx.grade.deleteMany({ where: { student: { schoolId: id } } });
       await tx.attendance.deleteMany({ where: { student: { schoolId: id } } });
@@ -117,14 +117,14 @@ router.delete('/:id', async (req, res) => {
       // Based on schema, Homework relates to User (teacher). 
       // Let's try deleting users and let Prisma/DB handle if possible, or delete via relation.
       // For now, let's focus on the main entities we know have schoolId
-
+      
       await tx.announcement.deleteMany({ where: { schoolId: id } });
       await tx.exam.deleteMany({ where: { schoolId: id } });
-
+      
       // Delete Users (Students, Parents, Teachers, Admins)
       // We need to handle the self-relations (parent-child) carefully or just delete all
       await tx.user.deleteMany({ where: { schoolId: id } });
-
+      
       // Delete Classes and Subjects
       await tx.class.deleteMany({ where: { schoolId: id } });
       await tx.subject.deleteMany({ where: { schoolId: id } });
