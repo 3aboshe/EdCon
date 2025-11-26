@@ -103,6 +103,7 @@ export interface School {
 
 class ApiService {
   private authToken: string | null = null;
+  private schoolCode: string | null = null;
 
   setAuthToken(token: string | null) {
     this.authToken = token;
@@ -110,6 +111,10 @@ class ApiService {
 
   getAuthToken() {
     return this.authToken;
+  }
+
+  setSchoolCode(code: string | null) {
+    this.schoolCode = code;
   }
 
   private async request<T>(
@@ -126,11 +131,14 @@ class ApiService {
 
       const defaultHeaders = options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' };
       const authHeader = this.authToken ? { Authorization: `Bearer ${this.authToken}` } : {};
+      const schoolCodeHeader = this.schoolCode ? { 'x-edcon-school-code': this.schoolCode } : {};
+      
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
         headers: {
           ...defaultHeaders,
           ...authHeader,
+          ...schoolCodeHeader,
           ...options.headers,
         },
       });
