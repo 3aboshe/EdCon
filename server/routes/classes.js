@@ -257,6 +257,95 @@ router.put('/:id', requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res
   }
 });
 
+// Sync teacher's class assignments based on their subject
+// This ensures teachers are properly assigned to all classes that have their subject
+router.post('/sync-teacher/:teacherId', async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+    
+    // Get the teacher
+    const teacher = await prisma.user.findFirst({
+      where: { id: teacherId, role: 'TEACHER', schoolId: req.school.id }
+    });
+    
+    if (!teacher) {
+      return res.status(404).json({ message: 'Teacher not found' });
+    }
+    
+    if (!teacher.subject) {
+      return res.json({ 
+        success: true, 
+        message: 'Teacher has no subject assigned',
+        classIds: teacher.classIds || []
+      });
+    }
+    
+    // Find the subject by name
+    const subject = await prisma.subject.findFirst({
+      where: { name: teacher.subject, schoolId: req.school.id }
+    });
+    
+    if (!subject) {
+      console.log(`Subject "${teacher.subject}" not found for teacher ${teacher.name}`);
+      return res.json({ 
+        success: true, 
+        message: `Subject "${teacher.subject}" not found in school`,
+        classIds: teacher.classIds || []
+      });
+    }
+    
+    // Find all classes that have this subject
+    const classesWithSubject = await prisma.class.findMany({
+      where: {
+        schoolId: req.school.id,
+        subjectIds: { has: subject.id }
+      }
+    });
+    
+    // Combine existing classIds with newly found ones
+    const existingClassIds = teacher.classIds || [];
+    const newClassIds = classesWithSubject.map(c => c.id);
+    const mergedClassIds = [...new Set([...existingClassIds, ...newClassIds])];
+    
+    // Update teacher's classIds if changed
+    if (JSON.stringify(existingClassIds.sort()) !== JSON.stringify(mergedClassIds.sort())) {
+      await prisma.user.update({
+        where: { id: teacher.id },
+        data: { classIds: mergedClassIds }
+      });
+      console.log(`Synced teacher ${teacher.name}: added ${mergedClassIds.length - existingClassIds.length} classes`);
+    }
+    
+    // Get the updated classes with student counts
+    const classes = await prisma.class.findMany({
+      where: {
+        id: { in: mergedClassIds },
+        schoolId: req.school.id
+      },
+      include: {
+        _count: {
+          select: { students: true }
+        }
+      }
+    });
+    
+    const formattedClasses = classes.map(c => ({
+      ...c,
+      studentCount: c._count.students
+    }));
+    
+    res.json({
+      success: true,
+      message: `Teacher synced with ${mergedClassIds.length} classes`,
+      classIds: mergedClassIds,
+      classes: formattedClasses
+    });
+  } catch (error) {
+    console.error('Error syncing teacher classes:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // Delete a class
 router.delete('/:id', requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
   try {
