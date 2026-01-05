@@ -97,6 +97,11 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async 
       }
     }
 
+    // Require classId since it's a required field in the schema
+    if (!classId) {
+      return res.status(400).json({ message: 'Class is required for exam creation' });
+    }
+
     // Generate a unique ID for the exam
     const examId = `EX${Date.now()}`;
 
@@ -108,7 +113,7 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async 
         maxScore: parseInt(maxScore),
         teacherId: resolvedTeacherId,
         classId,
-        subject,
+        subject: subject || teacher.subject || 'General',
         schoolId: req.school.id
       }
     });
