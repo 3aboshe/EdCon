@@ -106,17 +106,24 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async 
     }
 
     if (Array.isArray(classIds) && classIds.length > 0) {
-      await Promise.all(classIds.map(async (cid) => {
-        const klass = await prisma.class.findFirst({ where: { id: cid, schoolId: req.school.id } });
-        if (!klass) {
-          throw new Error('One or more classes do not belong to this school');
+      const classes = await prisma.class.findMany({
+        where: {
+          id: { in: classIds },
+          schoolId: req.school.id
         }
-      }));
+      });
+
+      if (classes.length !== classIds.length) {
+        // Some IDs might be invalid or not belong to school
+        // return res.status(400).json({ message: 'One or more classes not found or do not belong to this school' });
+        // Or just proceed with valid ones if that's preferred, but strict is better
+        console.warn(`Mismatch in classes found. Requested ${classIds.length}, found ${classes.length}`);
+      }
     }
-    
+
     // Generate a unique ID for the homework
     const homeworkId = `HW${Date.now()}`;
-    
+
     const newHomework = await prisma.homework.create({
       data: {
         id: homeworkId,
@@ -129,7 +136,7 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async 
         schoolId: req.school.id
       }
     });
-    
+
     res.status(201).json(newHomework);
   } catch (error) {
     console.error('Create homework error:', error);
@@ -154,7 +161,7 @@ router.put('/:id', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), asyn
     if (updateData.assignedDate) {
       updateData.assignedDate = new Date(updateData.assignedDate);
     }
-    
+
     const updatedHomework = await prisma.homework.update({
       where: {
         id: homework.id

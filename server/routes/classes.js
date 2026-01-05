@@ -10,6 +10,55 @@ router.use(authenticate);
 router.use(resolveSchoolContext);
 router.use(requireRole(['SCHOOL_ADMIN', 'TEACHER', 'SUPER_ADMIN']));
 
+// Get classes by teacher
+router.get('/teacher/:teacherId', async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+
+    // First verify the teacher exists and get their classIds
+    const teacher = await prisma.user.findFirst({
+      where: { id: teacherId, role: 'TEACHER', schoolId: req.school.id },
+      select: { classIds: true }
+    });
+
+    if (!teacher) {
+      return res.status(404).json({ message: 'Teacher not found' });
+    }
+
+    const classIds = teacher.classIds || [];
+
+    if (classIds.length === 0) {
+      return res.json([]);
+    }
+
+    const classes = await prisma.class.findMany({
+      where: {
+        id: { in: classIds },
+        schoolId: req.school.id
+      },
+      include: {
+        _count: {
+          select: { users: true }
+        }
+      },
+      orderBy: {
+        name: 'asc' // or grade/section
+      }
+    });
+
+    // Format response to include student count compatible with frontend expectation
+    const formattedClasses = classes.map(c => ({
+      ...c,
+      studentCount: c._count.users
+    }));
+
+    res.json(formattedClasses);
+  } catch (error) {
+    console.error('Error fetching teacher classes:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // Get all classes
 router.get('/', async (req, res) => {
   try {
@@ -31,10 +80,10 @@ router.post('/', requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) 
   try {
     const { name, subjectIds = [] } = req.body;
     console.log('Creating class:', name, 'with subjects:', subjectIds);
-    
+
     // Generate a unique ID for the class
     const classId = `C${Date.now()}`;
-    
+
     const classData = await prisma.class.create({
       data: {
         id: classId,
@@ -43,16 +92,16 @@ router.post('/', requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) 
         schoolId: req.school.id
       }
     });
-    
+
     // If subjects were assigned, update teachers' classIds
     if (subjectIds.length > 0) {
       console.log('Updating teacher class assignments for new class:', classId);
-      
+
       // Get all teachers
       const teachers = await prisma.user.findMany({
         where: { role: 'TEACHER', schoolId: req.school.id }
       });
-      
+
       // For each teacher, check if they teach any of the subjects in this class
       for (const teacher of teachers) {
         if (teacher.subject) {
@@ -60,7 +109,7 @@ router.post('/', requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) 
           const subject = await prisma.subject.findFirst({
             where: { name: teacher.subject, schoolId: req.school.id }
           });
-          
+
           if (subject && subjectIds.includes(subject.id)) {
             // This teacher teaches a subject in this class
             const currentClassIds = teacher.classIds || [];
@@ -77,7 +126,7 @@ router.post('/', requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) 
         }
       }
     }
-    
+
     console.log('Created class:', classData);
     res.json({ success: true, class: classData });
   } catch (error) {
@@ -92,17 +141,17 @@ router.put('/:id', requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res
     const { id } = req.params;
     const { name, subjectIds } = req.body;
     console.log('Updating class:', id, 'with data:', { name, subjectIds });
-    
+
     // Check if class exists
     const existingClass = await prisma.class.findFirst({
       where: { id: id, schoolId: req.school.id }
     });
-    
+
     if (!existingClass) {
       console.log('Class not found:', id);
       return res.status(404).json({ message: 'Class not found' });
     }
-    
+
     // Prepare update data
     const updateData = {};
     if (name !== undefined) {
@@ -111,22 +160,22 @@ router.put('/:id', requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res
     if (subjectIds !== undefined) {
       updateData.subjectIds = subjectIds;
     }
-    
+
     // Update the class
     const updatedClass = await prisma.class.update({
       where: { id: id },
       data: updateData
     });
-    
+
     // If subjectIds were updated, update teachers' classIds
     if (subjectIds !== undefined) {
       console.log('Updating teacher class assignments for class:', id);
-      
+
       // Get all teachers
       const teachers = await prisma.user.findMany({
         where: { role: 'TEACHER', schoolId: req.school.id }
       });
-      
+
       // For each teacher, check if they teach any of the subjects in this class
       for (const teacher of teachers) {
         if (teacher.subject) {
@@ -134,7 +183,7 @@ router.put('/:id', requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res
           const subject = await prisma.subject.findFirst({
             where: { name: teacher.subject, schoolId: req.school.id }
           });
-          
+
           if (subject && subjectIds.includes(subject.id)) {
             // This teacher teaches a subject in this class
             const currentClassIds = teacher.classIds || [];
@@ -163,7 +212,7 @@ router.put('/:id', requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res
         }
       }
     }
-    
+
     console.log('Successfully updated class:', updatedClass);
     res.json({ success: true, class: updatedClass });
   } catch (error) {
@@ -177,34 +226,34 @@ router.delete('/:id', requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, 
   try {
     const { id } = req.params;
     console.log('Deleting class:', id);
-    
+
     // Check if class exists
     const existingClass = await prisma.class.findFirst({
       where: { id: id, schoolId: req.school.id }
     });
-    
+
     if (!existingClass) {
       console.log('Class not found:', id);
       return res.status(404).json({ message: 'Class not found' });
     }
-    
+
     // Check if class has students
     const studentsInClass = await prisma.user.findMany({
       where: { classId: id, schoolId: req.school.id }
     });
-    
+
     if (studentsInClass.length > 0) {
       console.log('Cannot delete class with students:', studentsInClass.length, 'students');
-      return res.status(400).json({ 
-        message: 'Cannot delete class with students. Please remove all students first.' 
+      return res.status(400).json({
+        message: 'Cannot delete class with students. Please remove all students first.'
       });
     }
-    
+
     // Delete the class
     await prisma.class.delete({
       where: { id: id }
     });
-    
+
     console.log('Successfully deleted class:', id);
     res.json({ success: true, message: 'Class deleted successfully' });
   } catch (error) {

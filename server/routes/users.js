@@ -77,9 +77,17 @@ router.post('/', async (req, res) => {
     let useTempPassword = false;
 
     // Generate temp password for teachers/parents or when no password provided
-    if (normalizedRole === 'PARENT' || normalizedRole === 'TEACHER' || useOneTimePassword || !plainPassword) {
+    // STUDENTS should NOT get a password
+    if ((normalizedRole === 'PARENT' || normalizedRole === 'TEACHER') && (useOneTimePassword || !plainPassword)) {
       plainPassword = generateTempPassword(6);
       useTempPassword = true;
+    } else if (normalizedRole === 'STUDENT') {
+      // Explicitly no password for students unless manually provided (which shouldn't happen based on reqs)
+      // If logic requires existing password, we keep what was passed, but we don't auto-gen temp one.
+      useTempPassword = false;
+    } else if (!plainPassword) {
+      // Fallback for other roles if needed, though they usually have passwords
+      plainPassword = generateTempPassword(8);
     }
 
     const passwordHash = await hashPassword(plainPassword);
