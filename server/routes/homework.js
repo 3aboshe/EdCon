@@ -87,8 +87,11 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async 
   try {
     const { title, subject, dueDate, assignedDate, teacherId, classIds } = req.body;
 
-    if (!title || !subject || !dueDate) {
-      return res.status(400).json({ message: 'Title, subject, and due date are required' });
+    console.log('=== CREATE HOMEWORK DEBUG ===');
+    console.log('Request body:', req.body);
+
+    if (!title || !dueDate) {
+      return res.status(400).json({ message: 'Title and due date are required' });
     }
 
     let resolvedTeacherId = teacherId;
@@ -114,9 +117,6 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async 
       });
 
       if (classes.length !== classIds.length) {
-        // Some IDs might be invalid or not belong to school
-        // return res.status(400).json({ message: 'One or more classes not found or do not belong to this school' });
-        // Or just proceed with valid ones if that's preferred, but strict is better
         console.warn(`Mismatch in classes found. Requested ${classIds.length}, found ${classes.length}`);
       }
     }
@@ -128,7 +128,7 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async 
       data: {
         id: homeworkId,
         title,
-        subject,
+        subject: subject || teacher.subject || 'General',
         dueDate: new Date(dueDate),
         assignedDate: assignedDate ? new Date(assignedDate) : new Date(),
         teacherId: resolvedTeacherId,
@@ -137,6 +137,7 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async 
       }
     });
 
+    console.log('Created homework:', newHomework);
     res.status(201).json(newHomework);
   } catch (error) {
     console.error('Create homework error:', error);

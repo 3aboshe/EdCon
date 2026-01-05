@@ -59,6 +59,42 @@ router.get('/teacher/:teacherId', async (req, res) => {
   }
 });
 
+// Get students in a class
+router.get('/:classId/students', async (req, res) => {
+  try {
+    const { classId } = req.params;
+
+    // Verify class exists
+    const classExists = await prisma.class.findFirst({
+      where: { id: classId, schoolId: req.school.id }
+    });
+
+    if (!classExists) {
+      return res.status(404).json({ message: 'Class not found' });
+    }
+
+    // Get all students in this class
+    const students = await prisma.user.findMany({
+      where: {
+        classId: classId,
+        role: 'STUDENT',
+        schoolId: req.school.id
+      },
+      orderBy: {
+        name: 'asc'
+      }
+    });
+
+    // Remove sensitive fields
+    const sanitizedStudents = students.map(({ passwordHash, temporaryPasswordHash, ...student }) => student);
+
+    res.json(sanitizedStudents);
+  } catch (error) {
+    console.error('Error fetching class students:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // Get all classes
 router.get('/', async (req, res) => {
   try {

@@ -30,6 +30,11 @@ router.post('/login', async (req, res) => {
       return res.status(404).json({ message: 'Invalid credentials' });
     }
 
+    // Students are not allowed to login - they don't have credentials
+    if (user.role === 'STUDENT') {
+      return res.status(403).json({ message: 'Students cannot login directly. Please contact your parent or school administrator.' });
+    }
+
     if (user.status === 'DISABLED' || user.status === 'SUSPENDED') {
       return res.status(403).json({ message: 'Account is not active' });
     }
@@ -105,6 +110,45 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
+// Get parent's children - mobile app endpoint
+router.get('/parent/:parentId/children', resolveSchoolContext, async (req, res) => {
+  try {
+    const { parentId } = req.params;
+    
+    // Get parent to verify and get childrenIds
+    const parent = await prisma.user.findFirst({
+      where: {
+        id: parentId,
+        schoolId: req.school?.id || req.user.schoolId,
+        role: 'PARENT'
+      }
+    });
+
+    if (!parent) {
+      return res.status(404).json({ message: 'Parent not found' });
+    }
+
+    const childrenIds = parent.childrenIds || [];
+    
+    if (childrenIds.length === 0) {
+      return res.json([]);
+    }
+
+    // Get all children
+    const children = await prisma.user.findMany({
+      where: {
+        id: { in: childrenIds },
+        role: 'STUDENT'
+      }
+    });
+
+    res.json(children.map(sanitizeUser));
+  } catch (error) {
+    console.error('Error fetching parent children:', error);
+    res.status(500).json({ message: 'Unable to fetch children' });
+  }
+});
+
 router.get('/users', resolveSchoolContext, async (req, res) => {
   try {
     const { role } = req.query;
@@ -127,7 +171,8 @@ router.get('/users', resolveSchoolContext, async (req, res) => {
       orderBy: { name: 'asc' },
     });
 
-    res.json({ success: true, data: users.map(sanitizeUser) });
+    // Return direct array for mobile app compatibility
+    res.json(users.map(sanitizeUser));
   } catch (error) {
     console.error('Error fetching users:', error);
     res.status(500).json({ message: 'Unable to fetch users' });
@@ -150,22 +195,37 @@ router.get('/users/teachers', resolveSchoolContext, async (req, res) => {
   }
 });
 
-router.get('/user/:code', resolveSchoolContext, async (req, res) => {
+// Get user by ID (primary lookup method)
+router.get('/user/:identifier', resolveSchoolContext, async (req, res) => {
   try {
-    const user = await prisma.user.findFirst({
+    const { identifier } = req.params;
+    
+    // First try to find by ID
+    let user = await prisma.user.findFirst({
       where: {
-        accessCode: req.params.code,
+        id: identifier,
         schoolId: req.school?.id || req.user.schoolId,
       },
     });
+
+    // If not found by ID, try accessCode
+    if (!user) {
+      user = await prisma.user.findFirst({
+        where: {
+          accessCode: identifier,
+          schoolId: req.school?.id || req.user.schoolId,
+        },
+      });
+    }
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.json({ success: true, user: sanitizeUser(user) });
+    // Return direct user object (not wrapped) for mobile app compatibility
+    res.json(sanitizeUser(user));
   } catch (error) {
-    console.error('Error fetching user by code:', error);
+    console.error('Error fetching user:', error);
     res.status(500).json({ message: 'Unable to fetch user' });
   }
 });
@@ -201,6 +261,79 @@ router.get('/codes', resolveSchoolContext, async (req, res) => {
   } catch (error) {
     console.error('Get codes error:', error);
     res.status(500).json({ message: 'Unable to fetch codes' });
+  }
+});
+
+// Update user
+router.put('/users/:id', resolveSchoolContext, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    // Find the user
+    const user = await prisma.user.findFirst({
+      where: {
+        id: id,
+        schoolId: req.school?.id || req.user.schoolId,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Build update data
+    const updateData = {};
+    if (updates.name) updateData.name = updates.name;
+    if (updates.email !== undefined) updateData.email = updates.email;
+    if (updates.phone !== undefined) updateData.phone = updates.phone;
+    if (updates.avatar !== undefined) updateData.avatar = updates.avatar;
+    if (updates.messagingAvailability !== undefined) updateData.messagingAvailability = updates.messagingAvailability;
+    if (updates.classId !== undefined) updateData.classId = updates.classId;
+    if (updates.parentId !== undefined) updateData.parentId = updates.parentId;
+
+    // Handle teacher subject update - auto-assign classes
+    if (updates.subject !== undefined && user.role === 'TEACHER') {
+      updateData.subject = updates.subject;
+
+      // Find all classes that have subjects matching this teacher's new subject
+      const subjectRecord = await prisma.subject.findFirst({
+        where: { name: updates.subject, schoolId: user.schoolId }
+      });
+
+      if (subjectRecord) {
+        const classesWithSubject = await prisma.class.findMany({
+          where: {
+            schoolId: user.schoolId,
+            subjectIds: { has: subjectRecord.id }
+          }
+        });
+
+        // Merge with existing classIds (don't remove existing assignments)
+        const existingClassIds = user.classIds || [];
+        const newClassIds = classesWithSubject.map(c => c.id);
+        updateData.classIds = [...new Set([...existingClassIds, ...newClassIds])];
+        
+        console.log(`Auto-assigned classes to teacher ${user.name} with subject ${updates.subject}:`, updateData.classIds);
+      }
+    }
+
+    // Handle explicit classIds update
+    if (updates.classIds !== undefined) {
+      updateData.classIds = updates.classIds;
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: updateData,
+    });
+
+    // Sanitize response
+    const { passwordHash, temporaryPasswordHash, ...safeUser } = updatedUser;
+    res.json(safeUser);
+  } catch (error) {
+    console.error('Update user error:', error);
+    res.status(500).json({ message: 'Unable to update user' });
   }
 });
 

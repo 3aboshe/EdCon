@@ -93,6 +93,31 @@ router.post('/', async (req, res) => {
     }
 
     const passwordHash = await hashPassword(plainPassword);
+    
+    // For teachers with a subject, find all classes that have this subject and auto-assign
+    let resolvedClassIds = classIds || [];
+    if (normalizedRole === 'TEACHER' && subject) {
+      // Find the subject by name
+      const subjectRecord = await prisma.subject.findFirst({
+        where: { name: subject, schoolId: req.school.id }
+      });
+
+      if (subjectRecord) {
+        // Find all classes that have this subject in their subjectIds
+        const classesWithSubject = await prisma.class.findMany({
+          where: {
+            schoolId: req.school.id,
+            subjectIds: { has: subjectRecord.id }
+          }
+        });
+
+        // Add these classes to the teacher's classIds
+        const classIdsFromSubject = classesWithSubject.map(c => c.id);
+        resolvedClassIds = [...new Set([...resolvedClassIds, ...classIdsFromSubject])];
+        console.log(`Auto-assigned classes to teacher with subject ${subject}:`, resolvedClassIds);
+      }
+    }
+
     const user = await prisma.user.create({
       data: {
         accessCode,
@@ -109,7 +134,7 @@ router.post('/', async (req, res) => {
         status: normalizedRole === 'PARENT' ? 'INVITED' : 'ACTIVE',
         subject: subject || null,
         classId: classId || null,
-        classIds: classIds || [],
+        classIds: resolvedClassIds,
         parentId: parentId || null,
         metadata: metadata || null,
         createdById: req.user.id,
