@@ -40,9 +40,10 @@ router.post('/', async (req, res) => {
       },
     });
 
-    const tempPassword = generateTempPassword(14);
+    const tempPassword = generateTempPassword(6);
     const hashedPassword = await hashPassword(tempPassword);
-    const adminAccessCode = buildAccessCode('SCHOOL_ADMIN', school.code);
+    // Use custom access code if provided, otherwise generate one
+    const adminAccessCode = admin.accessCode?.trim() || buildAccessCode('SCHOOL_ADMIN', school.code);
 
     const schoolAdmin = await prisma.user.create({
       data: {
@@ -56,7 +57,7 @@ router.post('/', async (req, res) => {
         passwordHash: hashedPassword,
         temporaryPasswordHash: hashedPassword,
         temporaryPasswordIssuedAt: new Date(),
-        requiresPasswordReset: true,
+        requiresPasswordReset: false,
         status: 'ACTIVE',
         createdById: req.user.id,
       },
@@ -155,9 +156,10 @@ router.post('/:id/admins', async (req, res) => {
       return res.status(404).json({ message: 'School not found' });
     }
 
-    const tempPassword = generateTempPassword(14);
+    const tempPassword = generateTempPassword(6);
     const hashedPassword = await hashPassword(tempPassword);
-    const adminAccessCode = buildAccessCode('SCHOOL_ADMIN', school.code);
+    // Use custom access code if provided, otherwise generate one
+    const adminAccessCode = req.body.accessCode?.trim() || buildAccessCode('SCHOOL_ADMIN', school.code);
 
     const schoolAdmin = await prisma.user.create({
       data: {
@@ -170,7 +172,7 @@ router.post('/:id/admins', async (req, res) => {
         passwordHash: hashedPassword,
         temporaryPasswordHash: hashedPassword,
         temporaryPasswordIssuedAt: new Date(),
-        requiresPasswordReset: true,
+        requiresPasswordReset: false,
         status: 'ACTIVE',
         createdById: req.user.id,
       },

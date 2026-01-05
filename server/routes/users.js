@@ -70,13 +70,14 @@ router.post('/', async (req, res) => {
       }
     }
 
-    const accessCode = buildAccessCode(normalizedRole, req.school.code);
+    // Use custom access code if provided, otherwise generate one
+    const accessCode = req.body.accessCode?.trim() || buildAccessCode(normalizedRole, req.school.code);
 
     let plainPassword = password;
     let requireReset = normalizedRole === 'PARENT';
 
     if (normalizedRole === 'PARENT' || useOneTimePassword || !plainPassword) {
-      plainPassword = generateTempPassword(12);
+      plainPassword = generateTempPassword(6);
       requireReset = true;
     }
 
@@ -174,8 +175,8 @@ router.post('/:userId/reset-password', async (req, res) => {
       return res.status(404).json({ message: 'User not found in this school' });
     }
 
-    // Generate new temporary password
-    const plainPassword = generateTempPassword(12);
+    // Generate new temporary password (shorter for usability)
+    const plainPassword = generateTempPassword(6);
     const hashedPassword = await hashPassword(plainPassword);
 
     // Update user with new temporary password
