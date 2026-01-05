@@ -35,20 +35,41 @@ console.log('🔧 Port configuration:', {
 
 // CORS configuration for production - more flexible
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? [
-        'https://ed-co.vercel.app',
-        'https://ed-co-3aboshes-projects.vercel.app',
-        'https://edcon-app.vercel.app',
-        'https://edcon-app.netlify.app',
-        'https://ed-eb22y6x9n-3aboshes-projects.vercel.app',
-        process.env.FRONTEND_URL
-      ].filter(Boolean)
-    : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:5176', 'http://localhost:5177', 'http://localhost:5179'],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    // In development, allow all localhost origins
+    if (process.env.NODE_ENV !== 'production') {
+      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        return callback(null, true);
+      }
+    }
+    
+    // Production allowed origins
+    const allowedOrigins = [
+      'https://ed-co.vercel.app',
+      'https://ed-co-3aboshes-projects.vercel.app',
+      'https://edcon-app.vercel.app',
+      'https://edcon-app.netlify.app',
+      'https://ed-eb22y6x9n-3aboshes-projects.vercel.app',
+      process.env.FRONTEND_URL
+    ].filter(Boolean);
+    
+    if (allowedOrigins.includes(origin) || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return callback(null, true);
+    }
+    
+    // For Flutter web in debug mode, allow any origin temporarily
+    // You can remove this in production if needed
+    return callback(null, true);
+  },
   credentials: true,
   optionsSuccessStatus: 200,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-edcon-school-code']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-edcon-school-code', 'Origin', 'Accept']
 };
 
 // Middleware
