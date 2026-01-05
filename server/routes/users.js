@@ -82,8 +82,10 @@ router.post('/', async (req, res) => {
       plainPassword = generateTempPassword(6);
       useTempPassword = true;
     } else if (normalizedRole === 'STUDENT') {
-      // Explicitly no password for students unless manually provided (which shouldn't happen based on reqs)
-      // If logic requires existing password, we keep what was passed, but we don't auto-gen temp one.
+      // Explicitly no password for students.
+      // Schema requires passwordHash, so we generate a random 32-char dummy password
+      // that nobody knows. This satisfies DB constraint while effectively disabling login.
+      plainPassword = generateTempPassword(32);
       useTempPassword = false;
     } else if (!plainPassword) {
       // Fallback for other roles if needed, though they usually have passwords
