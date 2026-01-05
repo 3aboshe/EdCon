@@ -38,7 +38,7 @@ router.get('/teacher/:teacherId', async (req, res) => {
       },
       include: {
         _count: {
-          select: { users: true }
+          select: { students: true }
         }
       },
       orderBy: {
@@ -49,7 +49,7 @@ router.get('/teacher/:teacherId', async (req, res) => {
     // Format response to include student count compatible with frontend expectation
     const formattedClasses = classes.map(c => ({
       ...c,
-      studentCount: c._count.users
+      studentCount: c._count.students
     }));
 
     res.json(formattedClasses);
