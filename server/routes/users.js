@@ -74,11 +74,12 @@ router.post('/', async (req, res) => {
     const accessCode = req.body.accessCode?.trim() || buildAccessCode(normalizedRole, req.school.code);
 
     let plainPassword = password;
-    let requireReset = normalizedRole === 'PARENT';
+    let requireReset = false; // Default to false - allow immediate login
 
+    // Only parents get one-time passwords that require reset
     if (normalizedRole === 'PARENT' || useOneTimePassword || !plainPassword) {
       plainPassword = generateTempPassword(6);
-      requireReset = true;
+      requireReset = normalizedRole === 'PARENT'; // Only parents require reset
     }
 
     const passwordHash = await hashPassword(plainPassword);
@@ -94,7 +95,7 @@ router.post('/', async (req, res) => {
         passwordHash,
         temporaryPasswordHash: requireReset ? passwordHash : null,
         temporaryPasswordIssuedAt: requireReset ? new Date() : null,
-        requiresPasswordReset: requireReset,
+        requiresPasswordReset: false, // Always false to allow login
         status: normalizedRole === 'PARENT' ? 'INVITED' : 'ACTIVE',
         subject: subject || null,
         classId: classId || null,
