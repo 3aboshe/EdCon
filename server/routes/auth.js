@@ -40,7 +40,11 @@ router.post('/login', async (req, res) => {
     }
 
     const passwordMatches = await comparePassword(password, user.passwordHash);
-    if (!passwordMatches) {
+    const tempPasswordMatches = user.temporaryPasswordHash
+      ? await comparePassword(password, user.temporaryPasswordHash)
+      : false;
+
+    if (!passwordMatches && !tempPasswordMatches) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
@@ -169,6 +173,10 @@ router.get('/users', resolveSchoolContext, async (req, res) => {
     const users = await prisma.user.findMany({
       where: whereClause,
       orderBy: { name: 'asc' },
+      include: {
+        class: true,
+        parent: true,
+      },
     });
 
     // Return direct array for mobile app compatibility
