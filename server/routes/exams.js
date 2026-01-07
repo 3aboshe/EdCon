@@ -164,6 +164,13 @@ router.delete('/:id', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), a
       return res.status(404).json({ message: 'Exam not found' });
     }
 
+    // Delete all grades associated with this exam first (cascade delete)
+    const deletedGrades = await prisma.grade.deleteMany({
+      where: { examId: exam.id, schoolId: req.school.id }
+    });
+
+    console.log(`Deleted ${deletedGrades.count} grades associated with exam ${exam.id}`);
+
     await prisma.exam.delete({
       where: { id: exam.id }
     });

@@ -29,38 +29,29 @@ router.get('/', async (req, res) => {
 router.get('/student/:studentId', async (req, res) => {
   try {
     const { studentId } = req.params;
+
+    // Get all grades with their associated exams in a single query (optimized)
     const grades = await prisma.grade.findMany({
       where: {
         studentId,
-        schoolId: req.school.id,
-        // Only include grades that either don't have an examId OR reference an existing exam
-        OR: [
-          { examId: null },
-          { examId: { not: null } } // Will be filtered below
-        ]
+        schoolId: req.school.id
+      },
+      include: {
+        exam: true
       },
       orderBy: {
         date: 'desc'
       }
     });
 
-    // Filter out grades that reference deleted exams
-    const validGrades = [];
-    for (const grade of grades) {
-      if (grade.examId) {
-        // Check if the exam still exists
-        const exam = await prisma.exam.findFirst({
-          where: { id: grade.examId, schoolId: req.school.id }
-        });
-        if (exam) {
-          validGrades.push(grade);
-        }
-        // If exam doesn't exist, skip this grade (it's deleted)
-      } else {
-        // Grade without examId, include it
-        validGrades.push(grade);
-      }
-    }
+    // Filter: include grades without examId OR with valid (non-deleted) exam
+    // Then remove the exam object from response to maintain API compatibility
+    const validGrades = grades
+      .filter(grade => {
+        if (!grade.examId) return true; // No exam reference, include it
+        return grade.exam !== null; // Has exam reference, only include if exam exists
+      })
+      .map(({ exam, ...gradeData }) => gradeData); // Remove exam from response
 
     res.json(validGrades);
   } catch (error) {
@@ -115,7 +106,7 @@ router.put('/:id', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), asyn
   try {
     const { id } = req.params;
     const updateData = req.body;
-    
+
     const grade = await prisma.grade.findFirst({ where: { id, schoolId: req.school.id } });
     if (!grade) {
       return res.status(404).json({ message: 'Grade not found' });
@@ -137,7 +128,7 @@ router.put('/:id', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), asyn
 router.delete('/:id', requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const grade = await prisma.grade.findFirst({ where: { id, schoolId: req.school.id } });
     if (!grade) {
       return res.status(404).json({ message: 'Grade not found' });
