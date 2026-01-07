@@ -30,12 +30,39 @@ router.get('/student/:studentId', async (req, res) => {
   try {
     const { studentId } = req.params;
     const grades = await prisma.grade.findMany({
-      where: { studentId, schoolId: req.school.id },
+      where: {
+        studentId,
+        schoolId: req.school.id,
+        // Only include grades that either don't have an examId OR reference an existing exam
+        OR: [
+          { examId: null },
+          { examId: { not: null } } // Will be filtered below
+        ]
+      },
       orderBy: {
         date: 'desc'
       }
     });
-    res.json(grades);
+
+    // Filter out grades that reference deleted exams
+    const validGrades = [];
+    for (const grade of grades) {
+      if (grade.examId) {
+        // Check if the exam still exists
+        const exam = await prisma.exam.findFirst({
+          where: { id: grade.examId, schoolId: req.school.id }
+        });
+        if (exam) {
+          validGrades.push(grade);
+        }
+        // If exam doesn't exist, skip this grade (it's deleted)
+      } else {
+        // Grade without examId, include it
+        validGrades.push(grade);
+      }
+    }
+
+    res.json(validGrades);
   } catch (error) {
     console.error('Get grades error:', error);
     res.status(500).json({ message: 'Server error' });
