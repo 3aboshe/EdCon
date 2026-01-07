@@ -55,13 +55,22 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async 
     if (!resolvedTeacherId) {
       return res.status(400).json({ message: 'Teacher ID is required' });
     }
-    
+
     // Generate a unique ID for the announcement
     const announcementId = `ANN${Date.now()}`;
-    
-    // Convert priority to uppercase to match Prisma enum
-    const priorityValue = priority ? priority.toUpperCase() : 'MEDIUM';
-    
+
+    // Map frontend priority values to Prisma enum values
+    // Frontend: normal, high, urgent
+    // Prisma: LOW, MEDIUM, HIGH
+    const priorityMap = {
+      'normal': 'MEDIUM',
+      'high': 'HIGH',
+      'urgent': 'HIGH',
+      'low': 'LOW',
+      'medium': 'MEDIUM'
+    };
+    const priorityValue = priorityMap[priority?.toLowerCase()] || 'MEDIUM';
+
     const newAnnouncement = await prisma.announcement.create({
       data: {
         id: announcementId,
@@ -74,7 +83,7 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async 
         schoolId: req.school.id
       }
     });
-    
+
     res.status(201).json(newAnnouncement);
   } catch (error) {
     console.error('Add announcement error:', error);
@@ -87,12 +96,19 @@ router.put('/:id', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), asyn
   try {
     const { id } = req.params;
     const updateData = { ...req.body };
-    
-    // Convert priority to uppercase if it exists in the update data
+
+    // Map frontend priority values to Prisma enum values
     if (updateData.priority) {
-      updateData.priority = updateData.priority.toUpperCase();
+      const priorityMap = {
+        'normal': 'MEDIUM',
+        'high': 'HIGH',
+        'urgent': 'HIGH',
+        'low': 'LOW',
+        'medium': 'MEDIUM'
+      };
+      updateData.priority = priorityMap[updateData.priority.toLowerCase()] || 'MEDIUM';
     }
-    
+
     if (updateData.date) {
       updateData.date = new Date(updateData.date);
     }
@@ -115,7 +131,7 @@ router.put('/:id', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), asyn
 });
 
 // Delete announcement
-router.delete('/:id', requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
+router.delete('/:id', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
   try {
     const { id } = req.params;
 
