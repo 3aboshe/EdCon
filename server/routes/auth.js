@@ -143,11 +143,14 @@ router.get('/parent/:parentId/children', resolveSchoolContext, async (req, res) 
       return res.json([]);
     }
 
-    // Get all children
+    // Get all children with their class information
     const children = await prisma.user.findMany({
       where: {
         id: { in: childrenIds },
         role: 'STUDENT'
+      },
+      include: {
+        class: true
       }
     });
 
