@@ -627,21 +627,45 @@ const ParentMessaging: React.FC<{ student: Student }> = ({ student }) => {
         
         // Find the student's class
         const studentClass = classes.find(c => c.id === student.classId);
-        if (!studentClass || !studentClass.subjectIds) {
+        
+        // If no class found, return all teachers
+        if (!studentClass) {
             return users.filter(u => u.role?.toLowerCase() === 'teacher');
         }
         
-        // Get subject names for the student's class
-        const classSubjects = subjects.filter(s => studentClass.subjectIds.includes(s.id));
-        const classSubjectNames = classSubjects.map(s => s.name);
-        
-        // Filter teachers who teach subjects in this student's class
-        return users.filter(u => 
+        // Check if the teacher's class assignment includes the student's class
+        // Teachers should have the student's classId in their classIds array
+        const classTeachers = users.filter(u => 
             u.role?.toLowerCase() === 'teacher' && 
-            u.subject && 
-            classSubjectNames.includes(u.subject)
+            u.classIds && 
+            u.classIds.includes(student.classId)
         );
+        
+        // If no teachers found via classIds, fall back to subject-based matching
+        if (classTeachers.length === 0 && studentClass.subjectIds && studentClass.subjectIds.length > 0) {
+            const classSubjects = subjects.filter(s => studentClass.subjectIds.includes(s.id));
+            const classSubjectNames = classSubjects.map(s => s.name);
+            
+            return users.filter(u => 
+                u.role?.toLowerCase() === 'teacher' && 
+                u.subject && 
+                classSubjectNames.includes(u.subject)
+            );
+        }
+        
+        return classTeachers;
     }, [users, student, classes, subjects]);
+
+    useEffect(() => {
+        console.log('=== ParentMessaging DEBUG ===');
+        console.log('Student:', student);
+        console.log('Student classId:', student?.classId);
+        console.log('All users count:', users.length);
+        console.log('Teachers found:', teachers.length);
+        console.log('Teachers:', teachers);
+        console.log('Classes:', classes);
+    }, [student, users, teachers, classes]);
+
 
     const conversations = useMemo(() => {
         if (!user) return [];
