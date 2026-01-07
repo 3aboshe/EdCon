@@ -5,6 +5,7 @@ import requireRole from '../middleware/requireRole.js';
 import resolveSchoolContext from '../middleware/schoolContext.js';
 import { hashPassword, generateTempPassword } from '../utils/password.js';
 import { buildAccessCode } from '../utils/codeGenerator.js';
+import { validateAccessCode, validateName, validateAndSanitizeAccessCode } from '../utils/validation.js';
 
 const router = express.Router();
 
@@ -47,6 +48,12 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Role and name are required' });
     }
 
+    // Validate name (supports all languages)
+    const nameValidation = validateName(name);
+    if (!nameValidation.valid) {
+      return res.status(400).json({ message: nameValidation.error });
+    }
+
     const normalizedRole = role.toString().toUpperCase();
 
     if (!['TEACHER', 'PARENT', 'STUDENT'].includes(normalizedRole)) {
@@ -70,8 +77,27 @@ router.post('/', async (req, res) => {
       }
     }
 
-    // Use custom access code if provided, otherwise generate one
-    const accessCode = req.body.accessCode?.trim() || buildAccessCode(normalizedRole, req.school.code);
+    // Validate or generate access code
+    let accessCode;
+    if (req.body.accessCode && req.body.accessCode.trim()) {
+      // Custom access code provided - validate it
+      const accessCodeValidation = validateAndSanitizeAccessCode(req.body.accessCode);
+      if (!accessCodeValidation.valid) {
+        return res.status(400).json({ message: accessCodeValidation.error });
+      }
+      accessCode = accessCodeValidation.sanitized;
+      
+      // Check if access code already exists
+      const existing = await prisma.user.findFirst({
+        where: { accessCode: accessCode }
+      });
+      if (existing) {
+        return res.status(400).json({ message: 'This access code is already taken. Please choose another.' });
+      }
+    } else {
+      // Auto-generate access code
+      accessCode = buildAccessCode(normalizedRole, req.school.code);
+    }
 
     let plainPassword = password;
     let useTempPassword = false;
@@ -159,6 +185,22 @@ router.post('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Create scoped user error:', error);
+
+    // Handle Prisma unique constraint violations
+    if (error.code === 'P2002') {
+      // Unique constraint violation
+      const fieldName = error.meta?.target?.[0] || 'field';
+      if (fieldName === 'accessCode') {
+        return res.status(409).json({ message: 'This access code is already taken. Please choose another.' });
+      }
+      return res.status(409).json({ message: 'This user already exists.' });
+    }
+
+    // Handle validation errors
+    if (error.code === 'P2003') {
+      return res.status(400).json({ message: 'Invalid data provided. Please check your input.' });
+    }
+
     res.status(500).json({ message: error.message || 'Unable to create user' });
   }
 });
