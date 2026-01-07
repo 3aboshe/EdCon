@@ -90,8 +90,13 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json({ message: 'New password must be at least 8 characters' });
     }
 
-    const matches = await comparePassword(currentPassword, req.user.passwordHash);
-    if (!matches) {
+    // Check if current password matches either regular password or temporary password
+    const matchesRegular = await comparePassword(currentPassword, req.user.passwordHash);
+    const matchesTemporary = req.user.temporaryPasswordHash
+      ? await comparePassword(currentPassword, req.user.temporaryPasswordHash)
+      : false;
+
+    if (!matchesRegular && !matchesTemporary) {
       return res.status(400).json({ message: 'Current password is incorrect' });
     }
 
