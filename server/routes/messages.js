@@ -61,7 +61,7 @@ router.get('/', async (req, res) => {
     const messages = await prisma.message.findMany({
       where: { schoolId: req.school.id },
       orderBy: {
-        createdAt: 'desc'
+        createdAt: 'asc'
       }
     });
     res.json(messages);
@@ -107,7 +107,7 @@ router.get('/user/:userId', async (req, res) => {
         schoolId: req.school.id
       },
       orderBy: {
-        createdAt: 'desc'
+        createdAt: 'asc'
       }
     });
     res.json(messages);
