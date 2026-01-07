@@ -86,14 +86,6 @@ router.post('/', async (req, res) => {
         return res.status(400).json({ message: accessCodeValidation.error });
       }
       accessCode = accessCodeValidation.sanitized;
-      
-      // Check if access code already exists
-      const existing = await prisma.user.findFirst({
-        where: { accessCode: accessCode }
-      });
-      if (existing) {
-        return res.status(400).json({ message: 'This access code is already taken. Please choose another.' });
-      }
     } else {
       // Auto-generate access code
       accessCode = buildAccessCode(normalizedRole, req.school.code);
@@ -109,39 +101,43 @@ router.post('/', async (req, res) => {
       useTempPassword = true;
     } else if (normalizedRole === 'STUDENT') {
       // Explicitly no password for students.
-      // Schema requires passwordHash, so we generate a random 32-char dummy password
-      // that nobody knows. This satisfies DB constraint while effectively disabling login.
       plainPassword = generateTempPassword(32);
       useTempPassword = false;
     } else if (!plainPassword) {
-      // Fallback for other roles if needed, though they usually have passwords
       plainPassword = generateTempPassword(8);
     }
 
-    const passwordHash = await hashPassword(plainPassword);
-    
+    // Run password hashing and access code check in parallel for speed
+    const [passwordHash, existingUser, subjectRecord] = await Promise.all([
+      hashPassword(plainPassword),
+      // Only check custom access codes
+      req.body.accessCode && req.body.accessCode.trim()
+        ? prisma.user.findFirst({ where: { accessCode: accessCode } })
+        : Promise.resolve(null),
+      // Pre-fetch subject for teachers to parallelize
+      (normalizedRole === 'TEACHER' && subject)
+        ? prisma.subject.findFirst({ where: { name: subject, schoolId: req.school.id } })
+        : Promise.resolve(null)
+    ]);
+
+    if (existingUser) {
+      return res.status(400).json({ message: 'This access code is already taken. Please choose another.' });
+    }
+
     // For teachers with a subject, find all classes that have this subject and auto-assign
     let resolvedClassIds = classIds || [];
-    if (normalizedRole === 'TEACHER' && subject) {
-      // Find the subject by name
-      const subjectRecord = await prisma.subject.findFirst({
-        where: { name: subject, schoolId: req.school.id }
+    if (normalizedRole === 'TEACHER' && subject && subjectRecord) {
+      // Find all classes that have this subject in their subjectIds
+      const classesWithSubject = await prisma.class.findMany({
+        where: {
+          schoolId: req.school.id,
+          subjectIds: { has: subjectRecord.id }
+        }
       });
 
-      if (subjectRecord) {
-        // Find all classes that have this subject in their subjectIds
-        const classesWithSubject = await prisma.class.findMany({
-          where: {
-            schoolId: req.school.id,
-            subjectIds: { has: subjectRecord.id }
-          }
-        });
-
-        // Add these classes to the teacher's classIds
-        const classIdsFromSubject = classesWithSubject.map(c => c.id);
-        resolvedClassIds = [...new Set([...resolvedClassIds, ...classIdsFromSubject])];
-        console.log(`Auto-assigned classes to teacher with subject ${subject}:`, resolvedClassIds);
-      }
+      // Add these classes to the teacher's classIds
+      const classIdsFromSubject = classesWithSubject.map(c => c.id);
+      resolvedClassIds = [...new Set([...resolvedClassIds, ...classIdsFromSubject])];
     }
 
     const user = await prisma.user.create({
