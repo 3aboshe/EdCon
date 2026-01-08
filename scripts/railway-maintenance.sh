@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SERVER_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SERVER_DIR="$(cd "$(dirname "$0")/.." && pwd)/server"
 API_HEALTH_URL="${API_HEALTH_URL:-https://edcon-production.up.railway.app/api/health}"
 SEED_CONFIRMATION="${SEED_CONFIRMATION:-ask}"
 

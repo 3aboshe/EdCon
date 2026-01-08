@@ -13,10 +13,11 @@ Express + Prisma service that powers the multi‑school EdCon experience. The ba
 1. **Install dependencies**
 
 	```bash
+	cd server
 	npm install
 	```
 
-2. **Configure environment** – create `.env`:
+2. **Configure environment** – create `server/.env`:
 
 	```env
 	PORT=5005
