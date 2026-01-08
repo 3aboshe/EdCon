@@ -28,6 +28,45 @@ router.use(authenticate);
 router.use(requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']));
 router.use(resolveSchoolContext);
 
+// Get all users for the school (with optional role filter)
+router.get('/', async (req, res) => {
+  try {
+    const { role } = req.query;
+
+    const whereClause = {
+      schoolId: req.school.id,
+    };
+
+    // Add role filter if provided
+    if (role && ['STUDENT', 'TEACHER', 'PARENT', 'ADMIN', 'SCHOOL_ADMIN'].includes(role.toUpperCase())) {
+      whereClause.role = role.toUpperCase();
+    }
+
+    const users = await prisma.user.findMany({
+      where: whereClause,
+      include: {
+        class: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+
+    // Remove sensitive fields
+    const sanitizedUsers = users.map(user => sanitize(user));
+
+    res.json(sanitizedUsers);
+  } catch (error) {
+    console.error('Get users error:', error);
+    res.status(500).json({ message: 'Unable to fetch users' });
+  }
+});
+
 router.post('/', async (req, res) => {
   try {
     const {
