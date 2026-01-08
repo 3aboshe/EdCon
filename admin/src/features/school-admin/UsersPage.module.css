@@ -1,0 +1,223 @@
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+}
+
+.header h1 {
+    font-size: var(--text-2xl);
+}
+
+.header p {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+}
+
+.controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.searchWrapper {
+    flex: 1;
+    max-width: 400px;
+}
+
+.tabs {
+    display: flex;
+    gap: var(--space-2);
+    background: var(--color-bg-secondary);
+    padding: var(--space-1);
+    border-radius: var(--radius-lg);
+}
+
+.tab {
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--color-text-secondary);
+    transition: all var(--transition-fast);
+}
+
+.tab:hover {
+    color: var(--color-text);
+}
+
+.activeTab {
+    background: var(--color-surface);
+    color: var(--color-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.tableContainer {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.table th {
+    padding: var(--space-4);
+    background: var(--color-bg-secondary);
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.table td {
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+}
+
+.table tr:last-child td {
+    border-bottom: none;
+}
+
+.userInfo {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.avatar {
+    width: 32px;
+    height: 32px;
+    background: var(--color-bg-secondary);
+    color: var(--color-primary);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: var(--font-bold);
+    font-size: var(--text-xs);
+}
+
+.userName {
+    font-weight: var(--font-medium);
+    color: var(--color-text);
+}
+
+.userCode {
+    font-family: var(--font-mono);
+    color: var(--color-primary);
+    font-weight: var(--font-semibold);
+}
+
+.badge {
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+}
+
+.activeBadge {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.inactiveBadge {
+    background: rgba(107, 114, 128, 0.1);
+    color: #6b7280;
+}
+
+.actions {
+    display: flex;
+    gap: var(--space-1);
+    justify-content: flex-end;
+}
+
+/* Modal Overlay Styles (should be consistent across app) */
+.modalOverlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 200;
+}
+
+.modal {
+    width: 100%;
+    max-width: 480px;
+    background: var(--color-surface);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    overflow: hidden;
+}
+
+.modalBody {
+    padding: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-5) var(--space-6);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.modalHeader h2 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+}
+
+.closeBtn {
+    color: var(--color-text-muted);
+    padding: var(--space-1);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+
+.closeBtn:hover {
+    background: var(--color-bg-secondary);
+    color: var(--color-text);
+}
+
+.empty {
+    padding: var(--space-12);
+    text-align: center;
+    color: var(--color-text-muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+@media (max-width: 768px) {
+    .controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .searchWrapper {
+        max-width: none;
+    }
+}

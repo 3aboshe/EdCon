@@ -703,6 +703,8 @@
     "error_occurred": "An error occurred",
     "email_optional": "Email (Optional)",
     "school_code": "School Code",
+    "add_admin_short": "Add Admin",
+    "admin_created": "Admin Created Successfully",
     "admin_management_info": "Create admins with custom usernames to manage this school. Each admin will receive login credentials."
   },
   "days": {

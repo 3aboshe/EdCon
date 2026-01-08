@@ -11,8 +11,13 @@ const LoginPage = lazy(() => import('./features/auth/LoginPage'));
 const SuperAdminLayout = lazy(() => import('./features/super-admin/SuperAdminLayout'));
 const OverviewPage = lazy(() => import('./features/super-admin/OverviewPage'));
 const SchoolsPage = lazy(() => import('./features/super-admin/SchoolsPage'));
+const NotificationsPage = lazy(() => import('./features/super-admin/NotificationsPage'));
 const SchoolAdminLayout = lazy(() => import('./features/school-admin/SchoolAdminLayout'));
 const DashboardPage = lazy(() => import('./features/school-admin/DashboardPage'));
+const UsersPage = lazy(() => import('./features/school-admin/UsersPage'));
+const AcademicPage = lazy(() => import('./features/school-admin/AcademicPage'));
+const AnalyticsPage = lazy(() => import('./features/school-admin/AnalyticsPage'));
+const ToolsPage = lazy(() => import('./features/school-admin/ToolsPage'));
 
 // Loading Fallback
 function LoadingFallback() {
@@ -89,25 +94,7 @@ function PlaceholderPage({ title }: { title: string }) {
   );
 }
 
-function NotificationsPage() {
-  return <PlaceholderPage title="Notifications" />;
-}
 
-function UsersPage() {
-  return <PlaceholderPage title="User Management" />;
-}
-
-function AcademicPage() {
-  return <PlaceholderPage title="Academic Management" />;
-}
-
-function AnalyticsPage() {
-  return <PlaceholderPage title="Analytics" />;
-}
-
-function ToolsPage() {
-  return <PlaceholderPage title="System Tools" />;
-}
 
 function App() {
   return (

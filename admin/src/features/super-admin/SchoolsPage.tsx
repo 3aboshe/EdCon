@@ -3,10 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Plus, Search, Building2, Users, Trash2,
-    X, Copy, Check, AlertCircle
+    X, Copy, Check, AlertCircle, ShieldCheck
 } from 'lucide-react';
 import { schoolService } from '../../services/schoolService';
-import type { School, CreateSchoolData } from '../../services/schoolService';
+import type { School, CreateSchoolData, AddAdminData } from '../../services/schoolService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import styles from './SchoolsPage.module.css';
@@ -17,6 +17,7 @@ export function SchoolsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showAddAdminModal, setShowAddAdminModal] = useState<{ schoolId: string; schoolName: string } | null>(null);
     const [showCredentialsModal, setShowCredentialsModal] = useState(false);
     const [credentials, setCredentials] = useState<{ accessCode: string; temporaryPassword: string } | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -45,6 +46,20 @@ export function SchoolsPage() {
             setShowCredentialsModal(true);
         } catch (error) {
             console.error('Failed to create school:', error);
+            throw error;
+        }
+    };
+
+    const handleAddAdmin = async (schoolId: string, adminData: AddAdminData) => {
+        try {
+            const response = await schoolService.addAdmin(schoolId, adminData);
+            setCredentials(response.credentials);
+            setShowAddAdminModal(null);
+            setShowCredentialsModal(true);
+            // Refresh schools to update admin count or details if we were showing them
+            loadSchools();
+        } catch (error) {
+            console.error('Failed to add school admin:', error);
             throw error;
         }
     };
@@ -121,6 +136,10 @@ export function SchoolsPage() {
                                     <Users size={16} />
                                     <span>{school._count?.users || 0} {t('super_admin.users_count')}</span>
                                 </div>
+                                <div className={styles.stat}>
+                                    <ShieldCheck size={16} />
+                                    <span>{t('admin.administrators')}</span>
+                                </div>
                             </div>
 
                             {school.address && (
@@ -131,6 +150,15 @@ export function SchoolsPage() {
                                 <Button
                                     variant="ghost"
                                     size="sm"
+                                    onClick={() => setShowAddAdminModal({ schoolId: school.id, schoolName: school.name })}
+                                >
+                                    <Plus size={16} />
+                                    {t('super_admin.add_admin_short')}
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className={styles.deleteBtn}
                                     onClick={() => setDeleteConfirm(school.id)}
                                 >
                                     <Trash2 size={16} />
@@ -177,6 +205,17 @@ export function SchoolsPage() {
                     <CreateSchoolModal
                         onClose={() => setShowCreateModal(false)}
                         onSubmit={handleCreateSchool}
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* Add Admin Modal */}
+            <AnimatePresence>
+                {showAddAdminModal && (
+                    <AddAdminModal
+                        schoolName={showAddAdminModal.schoolName}
+                        onClose={() => setShowAddAdminModal(null)}
+                        onSubmit={(data) => handleAddAdmin(showAddAdminModal.schoolId, data)}
                     />
                 )}
             </AnimatePresence>
@@ -318,6 +357,109 @@ function CreateSchoolModal({
     );
 }
 
+// Add Admin Modal
+function AddAdminModal({
+    schoolName,
+    onClose,
+    onSubmit
+}: {
+    schoolName: string;
+    onClose: () => void;
+    onSubmit: (data: AddAdminData) => Promise<void>;
+}) {
+    const { t } = useTranslation();
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+    });
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+
+        if (!formData.name.trim()) {
+            setError(t('super_admin.fill_required'));
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            await onSubmit({
+                name: formData.name.trim(),
+                email: formData.email.trim() || undefined,
+            });
+        } catch (err) {
+            setError(err instanceof Error ? err.message : t('super_admin.failed_add_admin'));
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <motion.div
+            className={styles.modalOverlay}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+        >
+            <motion.div
+                className={styles.modal}
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className={styles.modalHeader}>
+                    <div>
+                        <h2>{t('super_admin.add_school_admin')}</h2>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{schoolName}</p>
+                    </div>
+                    <button className={styles.closeBtn} onClick={onClose}>
+                        <X size={20} />
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className={styles.modalBody}>
+                    {error && (
+                        <div className={styles.error}>
+                            <AlertCircle size={16} />
+                            <span>{error}</span>
+                        </div>
+                    )}
+
+                    <Input
+                        label={t('super_admin.admin_name') + ' *'}
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder={t('super_admin.admin_name')}
+                        autoFocus
+                    />
+
+                    <Input
+                        label={t('super_admin.email_optional')}
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        placeholder={t('super_admin.admin_email')}
+                    />
+
+                    <div className={styles.modalFooter}>
+                        <Button variant="ghost" type="button" onClick={onClose}>
+                            {t('super_admin.cancel')}
+                        </Button>
+                        <Button type="submit" isLoading={isLoading}>
+                            {t('super_admin.add_admin')}
+                        </Button>
+                    </div>
+                </form>
+            </motion.div>
+        </motion.div>
+    );
+}
+
 // Credentials Modal
 function CredentialsModal({
     credentials,
@@ -349,7 +491,7 @@ function CredentialsModal({
                 exit={{ scale: 0.95, opacity: 0 }}
             >
                 <div className={styles.modalHeader}>
-                    <h2>{t('super_admin.school_created')}</h2>
+                    <h2>{t('super_admin.admin_created')}</h2>
                 </div>
 
                 <div className={styles.modalBody}>

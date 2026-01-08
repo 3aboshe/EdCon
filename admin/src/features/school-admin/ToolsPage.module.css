@@ -1,0 +1,103 @@
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+.header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.header h1 {
+    font-size: var(--text-2xl);
+}
+
+.header p {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+}
+
+.toolsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: var(--space-6);
+}
+
+.toolCard {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.toolHeader {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.iconWrapper {
+    width: 44px;
+    height: 44px;
+    background: rgba(13, 71, 161, 0.1);
+    color: var(--color-primary);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toolTitle h2 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+}
+
+.toolTitle p {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+}
+
+.toolActions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.actionButton {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    transition: all var(--transition-fast);
+}
+
+.actionButton:hover {
+    background: var(--color-surface);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.actionButton svg {
+    color: var(--color-text-muted);
+}
+
+.actionButton:hover svg {
+    color: var(--color-primary);
+}
+
+@media (max-width: 640px) {
+    .toolsGrid {
+        grid-template-columns: 1fr;
+    }
+}
