@@ -209,6 +209,7 @@ function CreateUserModal({ role, classes, onClose, onSubmit }: {
 
         const submitData = { ...formData };
         if (!submitData.email) delete submitData.email; // Send clean data
+        if (!submitData.accessCode) delete submitData.accessCode; // Let backend generate if empty
 
         setIsLoading(true);
         try {
