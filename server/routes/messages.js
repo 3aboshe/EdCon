@@ -27,7 +27,7 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB limit
@@ -43,7 +43,7 @@ const upload = multer({
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'text/plain'
     ];
-    
+
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
@@ -102,10 +102,18 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Get messages between two users
+// Get messages between two users - SECURED
 router.get('/conversation/:user1Id/:user2Id', async (req, res) => {
   try {
     const { user1Id, user2Id } = req.params;
+
+    // SECURITY: User must be part of this conversation
+    if (req.user.id !== user1Id && req.user.id !== user2Id) {
+      return res.status(403).json({
+        message: 'Access denied: You can only view your own conversations'
+      });
+    }
+
     const messages = await prisma.message.findMany({
       where: {
         OR: [
@@ -121,14 +129,22 @@ router.get('/conversation/:user1Id/:user2Id', async (req, res) => {
     res.json(messages);
   } catch (error) {
     console.error('Error fetching conversation messages:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Get messages for a user
+// Get messages for a user - SECURED
 router.get('/user/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
+
+    // SECURITY: User can only access their own messages
+    if (req.user.id !== userId) {
+      return res.status(403).json({
+        message: 'Access denied: You can only view your own messages'
+      });
+    }
+
     const messages = await prisma.message.findMany({
       where: {
         OR: [
@@ -144,7 +160,7 @@ router.get('/user/:userId', async (req, res) => {
     res.json(messages);
   } catch (error) {
     console.error('Error fetching user messages:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -154,7 +170,7 @@ router.post('/', upload.array('files', 5), async (req, res) => {
     const { senderId, receiverId, timestamp, content, type } = req.body;
     const isRead = req.body.isRead === 'true' || req.body.isRead === true;
     const files = req.files || [];
-    
+
     console.log('=== FILE UPLOAD DEBUG ===');
     console.log('Request body:', req.body);
     console.log('Files:', files);
@@ -167,12 +183,12 @@ router.post('/', upload.array('files', 5), async (req, res) => {
       fileCount: files.length,
       isRead
     });
-    
+
     // Validate message data
     if (!senderId || !receiverId) {
       return res.status(400).json({ message: 'senderId and receiverId are required' });
     }
-    
+
     // Validate that sender and receiver users exist
     const sender = await prisma.user.findFirst({ where: { id: senderId, schoolId: req.school.id } });
     if (!sender) {
@@ -192,9 +208,9 @@ router.post('/', upload.array('files', 5), async (req, res) => {
       console.error('Receiver not found:', receiverId);
       return res.status(400).json({ message: 'Receiver user not found' });
     }
-    
+
     console.log('Validated users - Sender:', sender.name, 'Receiver:', receiver.name);
-    
+
     // Process uploaded files
     let attachments = null;
     if (files.length > 0) {
@@ -208,13 +224,13 @@ router.post('/', upload.array('files', 5), async (req, res) => {
       console.log('Processed attachments:', attachments.length, 'files');
       console.log('Attachment details:', attachments);
     }
-    
+
     // Determine message type
     let messageType = 'TEXT';
     if (files.length > 0) {
       messageType = 'FILE';
     }
-    
+
     console.log('About to create message with type:', messageType);
     console.log('Message data:', {
       id: `M${Date.now()}`,
@@ -226,7 +242,7 @@ router.post('/', upload.array('files', 5), async (req, res) => {
       content,
       attachments: attachments
     });
-    
+
     const newMessage = await prisma.message.create({
       data: {
         id: `M${Date.now()}`,
@@ -241,7 +257,7 @@ router.post('/', upload.array('files', 5), async (req, res) => {
         schoolId: req.school.id
       }
     });
-    
+
     console.log('Created message successfully:', {
       id: newMessage.id,
       type: newMessage.type,
@@ -318,41 +334,32 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// Serve uploaded files
+// Serve uploaded files - SECURED against path traversal
 router.get('/uploads/:filename', (req, res) => {
   try {
     const { filename } = req.params;
-    const filePath = path.join(__dirname, '../uploads', filename);
-    
-    console.log('=== FILE DOWNLOAD DEBUG ===');
-    console.log('Requested filename:', filename);
-    console.log('File path:', filePath);
-    console.log('File exists:', fs.existsSync(filePath));
-    
+
+    // SECURITY: Prevent path traversal by using basename
+    const sanitizedFilename = path.basename(filename);
+    const filePath = path.join(__dirname, '../uploads', sanitizedFilename);
+
     // Check if file exists
     if (!fs.existsSync(filePath)) {
-      console.error('File not found:', filePath);
       return res.status(404).json({ message: 'File not found' });
     }
-    
+
     // Get file stats
     const stats = fs.statSync(filePath);
-    console.log('File stats:', {
-      size: stats.size,
-      created: stats.birthtime,
-      modified: stats.mtime
-    });
-    
+
     // Set appropriate headers
-    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+    res.setHeader('Content-Disposition', `inline; filename="${sanitizedFilename}"`);
     res.setHeader('Content-Type', 'application/octet-stream');
     res.setHeader('Content-Length', stats.size);
-    
-    console.log('Serving file:', filename);
+
     res.sendFile(filePath);
   } catch (error) {
     console.error('File serving error:', error);
-    res.status(500).json({ message: 'Error serving file', error: error.message });
+    res.status(500).json({ message: 'Error serving file' });
   }
 });
 

@@ -123,7 +123,7 @@ router.post('/reset-password', async (req, res) => {
 router.get('/parent/:parentId/children', resolveSchoolContext, async (req, res) => {
   try {
     const { parentId } = req.params;
-    
+
     // Get parent to verify and get childrenIds
     const parent = await prisma.user.findFirst({
       where: {
@@ -138,7 +138,7 @@ router.get('/parent/:parentId/children', resolveSchoolContext, async (req, res) 
     }
 
     const childrenIds = parent.childrenIds || [];
-    
+
     if (childrenIds.length === 0) {
       return res.json([]);
     }
@@ -215,7 +215,7 @@ router.get('/users/teachers', resolveSchoolContext, async (req, res) => {
 router.get('/user/:identifier', resolveSchoolContext, async (req, res) => {
   try {
     const { identifier } = req.params;
-    
+
     // First try to find by ID
     let user = await prisma.user.findFirst({
       where: {
@@ -280,11 +280,19 @@ router.get('/codes', resolveSchoolContext, async (req, res) => {
   }
 });
 
-// Update user
+// Update user - SECURED with authorization check
 router.put('/users/:id', resolveSchoolContext, async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
+
+    // SECURITY: Check authorization - self-update OR admin only
+    const isAdmin = ['SCHOOL_ADMIN', 'SUPER_ADMIN'].includes(req.user.role);
+    const isSelfUpdate = req.user.id === id;
+
+    if (!isSelfUpdate && !isAdmin) {
+      return res.status(403).json({ message: 'You can only update your own profile' });
+    }
 
     // Find the user
     const user = await prisma.user.findFirst({
@@ -300,16 +308,23 @@ router.put('/users/:id', resolveSchoolContext, async (req, res) => {
 
     // Build update data
     const updateData = {};
+
+    // Safe fields - any user can update these on their own profile
     if (updates.name) updateData.name = updates.name;
     if (updates.email !== undefined) updateData.email = updates.email;
     if (updates.phone !== undefined) updateData.phone = updates.phone;
     if (updates.avatar !== undefined) updateData.avatar = updates.avatar;
     if (updates.messagingAvailability !== undefined) updateData.messagingAvailability = updates.messagingAvailability;
-    if (updates.classId !== undefined) updateData.classId = updates.classId;
-    if (updates.parentId !== undefined) updateData.parentId = updates.parentId;
 
-    // Handle teacher subject update - auto-assign classes
-    if (updates.subject !== undefined && user.role === 'TEACHER') {
+    // Sensitive fields - ADMIN ONLY (or self for teacher subject)
+    if (isAdmin) {
+      if (updates.classId !== undefined) updateData.classId = updates.classId;
+      if (updates.parentId !== undefined) updateData.parentId = updates.parentId;
+      if (updates.classIds !== undefined) updateData.classIds = updates.classIds;
+    }
+
+    // Handle teacher subject update - auto-assign classes (self or admin)
+    if (updates.subject !== undefined && user.role === 'TEACHER' && (isSelfUpdate || isAdmin)) {
       updateData.subject = updates.subject;
 
       // Find all classes that have subjects matching this teacher's new subject
@@ -329,14 +344,7 @@ router.put('/users/:id', resolveSchoolContext, async (req, res) => {
         const existingClassIds = user.classIds || [];
         const newClassIds = classesWithSubject.map(c => c.id);
         updateData.classIds = [...new Set([...existingClassIds, ...newClassIds])];
-        
-        console.log(`Auto-assigned classes to teacher ${user.name} with subject ${updates.subject}:`, updateData.classIds);
       }
-    }
-
-    // Handle explicit classIds update
-    if (updates.classIds !== undefined) {
-      updateData.classIds = updates.classIds;
     }
 
     const updatedUser = await prisma.user.update({

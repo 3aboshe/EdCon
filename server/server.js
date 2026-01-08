@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
@@ -26,46 +28,69 @@ import encryptionRoutes from './routes/encryption.js';
 dotenv.config();
 
 const app = express();
-// Railway provides PORT environment variable, fallback to 5005 for local dev
 const PORT = process.env.PORT || 5005;
+const isProduction = process.env.NODE_ENV === 'production';
 
-console.log('🔧 Port configuration:', {
-  PORT_ENV: process.env.PORT,
-  FINAL_PORT: PORT,
-  NODE_ENV: process.env.NODE_ENV
+// Security: Helmet adds various HTTP headers for security
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow file serving
+  contentSecurityPolicy: false, // Disable CSP for API server
+}));
+
+// Rate limiting for authentication endpoints (brute-force protection)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 attempts per window
+  message: { message: 'Too many login attempts, please try again in 15 minutes' },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
-// CORS configuration for production - more flexible
+// General API rate limiting
+const apiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 100, // 100 requests per minute
+  message: { message: 'Too many requests, please slow down' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// CORS configuration - secure in production, flexible in development
+const allowedOrigins = [
+  'https://ed-co.vercel.app',
+  'https://ed-co-3aboshes-projects.vercel.app',
+  'https://edcon-app.vercel.app',
+  'https://edcon-app.netlify.app',
+  'https://ed-eb22y6x9n-3aboshes-projects.vercel.app',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
+    // Allow requests with no origin (mobile apps, Postman, curl)
     if (!origin) {
       return callback(null, true);
     }
 
-    // In development, allow all localhost origins
-    if (process.env.NODE_ENV !== 'production') {
+    // In development, allow localhost
+    if (!isProduction) {
       if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
         return callback(null, true);
       }
     }
 
-    // Production allowed origins
-    const allowedOrigins = [
-      'https://ed-co.vercel.app',
-      'https://ed-co-3aboshes-projects.vercel.app',
-      'https://edcon-app.vercel.app',
-      'https://edcon-app.netlify.app',
-      'https://ed-eb22y6x9n-3aboshes-projects.vercel.app',
-      process.env.FRONTEND_URL
-    ].filter(Boolean);
-
-    if (allowedOrigins.includes(origin) || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+    // Check against whitelist
+    if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
-    // For Flutter web in debug mode, allow any origin temporarily
-    // You can remove this in production if needed
+    // In production, reject unknown web origins
+    if (isProduction) {
+      console.warn(`CORS blocked origin: ${origin}`);
+      return callback(new Error('Not allowed by CORS'), false);
+    }
+
+    // Development fallback
     return callback(null, true);
   },
   credentials: true,
@@ -76,12 +101,20 @@ const corsOptions = {
 
 // Middleware
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
-// Add error handling middleware
+// Apply general rate limiting to all API routes
+app.use('/api/', apiLimiter);
+
+// Apply stricter rate limiting to auth endpoints
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/reset-password', authLimiter);
+
+// Error handling middleware - hide details in production
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
-  res.status(500).json({ message: 'Server error', error: err.message });
+  const message = isProduction ? 'Server error' : err.message;
+  res.status(500).json({ message });
 });
 
 // Routes
@@ -104,45 +137,37 @@ app.use('/api/backup', backupRoutes);
 app.use('/api/admin/dashboard', dashboardRoutes);
 app.use('/api/encryption', encryptionRoutes);
 
-// File serving route
+// File serving route - secured against path traversal
 app.get('/uploads/:filename', (req, res) => {
   try {
     const { filename } = req.params;
-    const filePath = path.join(process.cwd(), 'uploads', filename);
 
-    console.log('=== FILE DOWNLOAD DEBUG ===');
-    console.log('Requested filename:', filename);
-    console.log('File path:', filePath);
-    console.log('File exists:', fs.existsSync(filePath));
+    // SECURITY: Prevent path traversal by using basename
+    const sanitizedFilename = path.basename(filename);
+    const filePath = path.join(process.cwd(), 'uploads', sanitizedFilename);
 
     // Check if file exists
     if (!fs.existsSync(filePath)) {
-      console.error('File not found:', filePath);
       return res.status(404).json({ message: 'File not found' });
     }
 
     // Get file stats
     const stats = fs.statSync(filePath);
-    console.log('File stats:', {
-      size: stats.size,
-      created: stats.birthtime,
-      modified: stats.mtime
-    });
 
     // Set appropriate headers
-    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+    res.setHeader('Content-Disposition', `inline; filename="${sanitizedFilename}"`);
     res.setHeader('Content-Type', 'application/octet-stream');
     res.setHeader('Content-Length', stats.size);
 
-    console.log('Serving file:', filename);
     res.sendFile(filePath);
   } catch (error) {
     console.error('File serving error:', error);
-    res.status(500).json({ message: 'Error serving file', error: error.message });
+    const message = isProduction ? 'Error serving file' : error.message;
+    res.status(500).json({ message });
   }
 });
 
-// Health check routes
+// Health check routes (public)
 app.get('/', (req, res) => {
   res.json({ message: 'EdCon API Server is running!', status: 'ok', timestamp: new Date().toISOString() });
 });
@@ -163,45 +188,47 @@ app.get('/ping', (req, res) => {
   res.status(200).send('pong');
 });
 
-// Debug route to check environment
-app.get('/api/debug', (req, res) => {
-  res.json({
-    message: 'Debug info',
-    nodeEnv: process.env.NODE_ENV,
-    hasDatabaseUrl: !!process.env.DATABASE_URL,
-    port: PORT,
-    corsOrigins: corsOptions.origin,
-    database: 'PostgreSQL'
-  });
-});
-
-// PostgreSQL connection test route
-app.get('/api/test-db', async (req, res) => {
-  try {
-    const { prisma } = await import('./config/db.js');
-
-    // Test connection by running a simple query
-    const userCount = await prisma.user.count();
-
+// Debug routes - DISABLED in production
+if (!isProduction) {
+  app.get('/api/debug', (req, res) => {
     res.json({
-      message: 'Database connection test',
-      status: 'connected',
-      connected: true,
-      userCount: userCount,
-      database: 'PostgreSQL',
-      timestamp: new Date().toISOString()
+      message: 'Debug info (development only)',
+      nodeEnv: process.env.NODE_ENV,
+      hasDatabaseUrl: !!process.env.DATABASE_URL,
+      port: PORT,
+      database: 'PostgreSQL'
     });
-  } catch (error) {
-    res.status(500).json({
-      message: 'Database test failed',
-      status: 'disconnected',
-      connected: false,
-      error: error.message,
-      database: 'PostgreSQL',
-      timestamp: new Date().toISOString()
-    });
-  }
-});
+  });
+
+  app.get('/api/test-db', async (req, res) => {
+    try {
+      const { prisma } = await import('./config/db.js');
+      const userCount = await prisma.user.count();
+
+      res.json({
+        message: 'Database connection test',
+        status: 'connected',
+        connected: true,
+        userCount: userCount,
+        database: 'PostgreSQL',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: 'Database test failed',
+        status: 'disconnected',
+        connected: false,
+        error: error.message,
+        database: 'PostgreSQL',
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+} else {
+  // In production, these routes return 404
+  app.get('/api/debug', (req, res) => res.status(404).json({ message: 'Not found' }));
+  app.get('/api/test-db', (req, res) => res.status(404).json({ message: 'Not found' }));
+}
 
 // Start server
 const startServer = async () => {
