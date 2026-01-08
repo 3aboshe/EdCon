@@ -72,16 +72,13 @@ const corsOptions = {
       return callback(null, true);
     }
 
-    // In development, allow localhost
-    if (!isProduction) {
-      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-        return callback(null, true);
-      }
+    // In development or if from vercel, allow 
+    if (origin.includes('localhost') || origin.includes('127.0.0.1') || origin.endsWith('.vercel.app')) {
+      return callback(null, true);
     }
 
-    // Check against whitelist
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
     }
 
     // In production, reject unknown web origins
