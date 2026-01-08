@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Plus, Search, User, Trash2, Edit2,
-    X, AlertCircle, Check, Copy, Link as LinkIcon
+    Plus, Search, User, Trash2,
+    X, AlertCircle
 } from 'lucide-react';
 import { userService } from '../../services/userService';
 import type { User as UserType, CreateUserData } from '../../services/userService';

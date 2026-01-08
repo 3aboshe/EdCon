@@ -5,7 +5,8 @@ import {
     BarChart3, TrendingUp, Users, GraduationCap,
     BookOpen, CheckCircle2
 } from 'lucide-react';
-import { dashboardService, DashboardStats } from '../../services/dashboardService';
+import { dashboardService } from '../../services/dashboardService';
+import type { DashboardStats } from '../../services/dashboardService';
 import styles from './AnalyticsPage.module.css';
 
 export function AnalyticsPage() {

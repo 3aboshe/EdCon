@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Plus, Search, Book, GraduationCap, FileText, BookOpen,
-    Trash2, X, AlertCircle, Calendar
+    Trash2, X, Calendar
 } from 'lucide-react';
 import { academicService } from '../../services/academicService';
 import type { Class, Subject, Exam, Homework } from '../../services/academicService';

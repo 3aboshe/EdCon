@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Send, History, AlertCircle, Bell } from 'lucide-react';
+import { History, AlertCircle, Bell } from 'lucide-react';
 import { systemService } from '../../services/systemService';
 import type { Announcement } from '../../services/systemService';
 import { Button } from '../../components/ui/Button';

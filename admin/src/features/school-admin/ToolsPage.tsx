@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
-    Bell, Calendar, ClipboardCheck,
+    Bell, ClipboardCheck,
     Settings, MessageSquare, ChevronRight,
     Users, BookOpen
 } from 'lucide-react';

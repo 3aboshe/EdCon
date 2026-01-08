@@ -1,6 +1,5 @@
 import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 import './i18n';
@@ -79,20 +78,6 @@ function RootRedirect() {
   return <Navigate to="/admin" replace />;
 }
 
-// Placeholder pages (to be implemented)
-function PlaceholderPage({ title }: { title: string }) {
-  const { t } = useTranslation();
-  return (
-    <div style={{ padding: 'var(--space-6)' }}>
-      <h1 style={{ fontSize: 'var(--text-2xl)', marginBottom: 'var(--space-4)' }}>
-        {title}
-      </h1>
-      <p style={{ color: 'var(--color-text-muted)' }}>
-        {t('common.loading')}
-      </p>
-    </div>
-  );
-}
 
 
 
