@@ -16,6 +16,7 @@ export interface User {
         id: string;
         name: string;
     };
+    subject?: string;
 }
 
 export interface CreateUserData {

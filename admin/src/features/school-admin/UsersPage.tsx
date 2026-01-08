@@ -1,13 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Plus, Search, User, Trash2,
     X, AlertCircle
 } from 'lucide-react';
-import { userService } from '../../services/userService';
+import { useUsers, useClasses, useCreateUser, useDeleteUser } from '../../hooks/useSchoolData';
 import type { User as UserType, CreateUserData } from '../../services/userService';
-import { academicService } from '../../services/academicService';
 import type { Class } from '../../services/academicService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -18,45 +17,33 @@ type UserTab = 'STUDENT' | 'TEACHER' | 'PARENT';
 export function UsersPage() {
     const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<UserTab>('STUDENT');
-    const [users, setUsers] = useState<UserType[]>([]);
-    const [classes, setClasses] = useState<Class[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showCredentialsModal, setShowCredentialsModal] = useState(false);
-    const [credentials, setCredentials] = useState<{ accessCode: string; temporaryPassword: string } | null>(null);
+    const [credentials, setCredentials] = useState<{ accessCode: string; temporaryPassword?: string } | null>(null);
 
-    useEffect(() => {
-        loadData();
-    }, [activeTab]);
+    // Data Hooks
+    const { data: users = [], isLoading } = useUsers(activeTab);
+    const { data: classes = [] } = useClasses();
 
-    const loadData = async () => {
-        setIsLoading(true);
-        try {
-            const [usersData, classesData] = await Promise.all([
-                userService.getUsers({ role: activeTab }),
-                academicService.getClasses()
-            ]);
-            setUsers(usersData);
-            setClasses(classesData);
-        } catch (error) {
-            console.error('Failed to load users data:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    // Mutations
+    const createUser = useCreateUser();
+    const deleteUser = useDeleteUser();
 
     const handleCreateUser = async (data: CreateUserData) => {
         try {
-            const response = await userService.createUser(data);
-            setUsers([...users, response.data]);
+            const response = await createUser.mutateAsync(data);
             if (response.credentials) {
-                setCredentials(response.credentials);
+                setCredentials({
+                    accessCode: response.credentials.accessCode,
+                    temporaryPassword: response.credentials.temporaryPassword
+                });
                 setShowCredentialsModal(true);
             }
             setShowCreateModal(false);
         } catch (error) {
             console.error('Failed to create user:', error);
+            // Error handling is managed inside the modal or toast could be added here
             throw error;
         }
     };
@@ -64,16 +51,15 @@ export function UsersPage() {
     const handleDeleteUser = async (id: string) => {
         if (!confirm(t('admin.delete_user_confirm', { role: activeTab.toLowerCase() }))) return;
         try {
-            await userService.deleteUser(id);
-            setUsers(users.filter(u => u.id !== id));
+            await deleteUser.mutateAsync(id);
         } catch (error) {
             console.error('Failed to delete user:', error);
         }
     };
 
-    const filteredUsers = users.filter(user =>
-        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.accessCode.toLowerCase().includes(searchQuery.toLowerCase())
+    const filteredUsers = users.filter((user: UserType) =>
+        (user.name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+        (user.accessCode?.toLowerCase() || '').includes(searchQuery.toLowerCase())
     );
 
     return (
@@ -132,7 +118,7 @@ export function UsersPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredUsers.map((user) => (
+                            {filteredUsers.map((user: UserType) => (
                                 <tr key={user.id}>
                                     <td>
                                         <div className={styles.userInfo}>
@@ -149,7 +135,7 @@ export function UsersPage() {
                                         <td>{user.class?.name || t('common.na')}</td>
                                     )}
                                     {activeTab === 'TEACHER' && (
-                                        <td>{/* Subjects logic if available */}</td>
+                                        <td>{user.subject || '-'}</td>
                                     )}
                                     <td>
                                         <span className={`${styles.badge} ${user.status === 'ACTIVE' ? styles.activeBadge : styles.inactiveBadge}`}>
@@ -207,7 +193,7 @@ function CreateUserModal({ role, classes, onClose, onSubmit }: {
     const [error, setError] = useState('');
     const [formData, setFormData] = useState<CreateUserData>({
         name: '',
-        email: '',
+        email: undefined,
         phone: '',
         role: role,
         classId: '',
@@ -220,11 +206,15 @@ function CreateUserModal({ role, classes, onClose, onSubmit }: {
             setError(t('admin.name_error'));
             return;
         }
+
+        const submitData = { ...formData };
+        if (!submitData.email) delete submitData.email; // Send clean data
+
         setIsLoading(true);
         try {
-            await onSubmit(formData);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : t('admin.create_user_error'));
+            await onSubmit(submitData);
+        } catch (err: any) {
+            setError(err.response?.data?.message || t('admin.create_user_error'));
         } finally {
             setIsLoading(false);
         }
@@ -249,8 +239,9 @@ function CreateUserModal({ role, classes, onClose, onSubmit }: {
                     <Input
                         label={t('admin.email_optional')}
                         type="email"
-                        value={formData.email}
+                        value={formData.email || ''}
                         onChange={e => setFormData({ ...formData, email: e.target.value })}
+                        placeholder="john@example.com"
                     />
                     {role === 'STUDENT' && (
                         <div className={styles.inputGroup}>
@@ -268,7 +259,7 @@ function CreateUserModal({ role, classes, onClose, onSubmit }: {
                     )}
                     <Input
                         label={t('admin.access_code') + ' (Optional)'}
-                        value={formData.accessCode}
+                        value={formData.accessCode || ''}
                         onChange={e => setFormData({ ...formData, accessCode: e.target.value })}
                         placeholder="e.g. S12345"
                     />
@@ -282,13 +273,17 @@ function CreateUserModal({ role, classes, onClose, onSubmit }: {
     );
 }
 
-// Credentials Modal (Similar to Super Admin version)
-function CredentialsModal({ credentials, onClose }: { credentials: { accessCode: string, temporaryPassword: string }, onClose: () => void }) {
+// Credentials Modal
+function CredentialsModal({ credentials, onClose }: { credentials: { accessCode: string, temporaryPassword?: string }, onClose: () => void }) {
     const { t } = useTranslation();
     const [copied, setCopied] = useState(false);
 
     const handleCopy = () => {
-        navigator.clipboard.writeText(`Code: ${credentials.accessCode}\nPassword: ${credentials.temporaryPassword}`);
+        let text = `Code: ${credentials.accessCode}`;
+        if (credentials.temporaryPassword) {
+            text += `\nPassword: ${credentials.temporaryPassword}`;
+        }
+        navigator.clipboard.writeText(text);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
@@ -310,12 +305,14 @@ function CredentialsModal({ credentials, onClose }: { credentials: { accessCode:
                             <code>{credentials.accessCode}</code>
                         </div>
                     </div>
-                    <div className={styles.credentialField}>
-                        <label>{t('admin.temporary_password')}</label>
-                        <div className={styles.credentialValue}>
-                            <code>{credentials.temporaryPassword}</code>
+                    {credentials.temporaryPassword && (
+                        <div className={styles.credentialField}>
+                            <label>{t('admin.temporary_password')}</label>
+                            <div className={styles.credentialValue}>
+                                <code>{credentials.temporaryPassword}</code>
+                            </div>
                         </div>
-                    </div>
+                    )}
                     <Button onClick={handleCopy} fullWidth variant="outline">
                         {copied ? t('admin.copied_to_clipboard') : t('common.copy')}
                     </Button>

@@ -602,7 +602,8 @@
     "class_update_error": "Failed to update class",
     "name_too_short": "Name must be at least 3 characters",
     "name_too_long": "Name must not exceed 50 characters",
-    "name_invalid_error": "Please enter a valid name"
+    "name_invalid_error": "Please enter a valid name",
+    "email_optional": "Email (Optional)"
   },
   "system": {
     "title": "System Settings & Maintenance",
