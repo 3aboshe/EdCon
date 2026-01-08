@@ -97,6 +97,9 @@ router.get('/', requireSuperAdmin, async (req, res) => {
     res.json({ success: true, data: announcements });
   } catch (error) {
     console.error('Fetch global notifications error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
 
 
-    export default router;
+export default router;
