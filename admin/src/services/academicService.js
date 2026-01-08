@@ -4,12 +4,13 @@ class AcademicService {
     // Classes
     async getClasses() {
         const { data } = await api.get('/classes');
-        return data.data;
+        // Backend returns array directly or wrapped in data property
+        return Array.isArray(data) ? data : (data.data || []);
     }
 
     async createClass(name) {
         const { data } = await api.post('/classes', { name });
-        return data.data;
+        return data.class || data;
     }
 
     async deleteClass(id) {
@@ -19,12 +20,13 @@ class AcademicService {
     // Subjects
     async getSubjects() {
         const { data } = await api.get('/subjects');
-        return data.data;
+        // Backend returns array directly or wrapped in data property
+        return Array.isArray(data) ? data : (data.data || []);
     }
 
     async createSubject(name) {
         const { data } = await api.post('/subjects', { name });
-        return data.data;
+        return data.subject || data;
     }
 
     async deleteSubject(id) {

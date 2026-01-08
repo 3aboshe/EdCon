@@ -25,12 +25,13 @@ class DashboardService {
 
     async getClasses() {
         const { data } = await api.get('/classes');
-        return data.data || [];
+        // Backend returns array directly
+        return Array.isArray(data) ? data : (data.data || []);
     }
 
     async createClass(name) {
         const { data } = await api.post('/classes', { name });
-        return data.data;
+        return data.class || data;
     }
 
     async deleteClass(classId) {
@@ -39,12 +40,13 @@ class DashboardService {
 
     async getSubjects() {
         const { data } = await api.get('/subjects');
-        return data.data || [];
+        // Backend returns array directly
+        return Array.isArray(data) ? data : (data.data || []);
     }
 
     async createSubject(name) {
         const { data } = await api.post('/subjects', { name });
-        return data.data;
+        return data.subject || data;
     }
 
     async deleteSubject(subjectId) {
@@ -53,8 +55,9 @@ class DashboardService {
 
     async getUsers(role) {
         const params = role ? `?role=${role}` : '';
-        const { data } = await api.get(`/classes/users${params}`);
-        return data.data || [];
+        const { data } = await api.get(`/users${params}`);
+        // Backend returns array directly
+        return Array.isArray(data) ? data : (data.data || data.users || []);
     }
 
     async createUser(userData) {
@@ -68,7 +71,7 @@ class DashboardService {
 
     async resetUserPassword(userId) {
         const { data } = await api.post(`/users/${userId}/reset-password`);
-        return data.data;
+        return data.data || data;
     }
 }
 

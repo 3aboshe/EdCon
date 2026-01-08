@@ -3,12 +3,13 @@ import api from './api';
 class UserService {
     async getUsers(params) {
         const { data } = await api.get('/users', { params });
-        return data.data;
+        // Backend returns array directly or wrapped in data property
+        return Array.isArray(data) ? data : (data.data || data.users || []);
     }
 
     async getUserById(id) {
         const { data } = await api.get(`/users/${id}`);
-        return data.data;
+        return data.user || data.data || data;
     }
 
     async createUser(userData) {
@@ -18,7 +19,7 @@ class UserService {
 
     async updateUser(id, userData) {
         const { data } = await api.put(`/users/${id}`, userData);
-        return data.data;
+        return data.user || data.data || data;
     }
 
     async deleteUser(id) {
