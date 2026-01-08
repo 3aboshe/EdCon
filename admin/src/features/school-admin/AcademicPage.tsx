@@ -65,10 +65,11 @@ export function AcademicPage() {
     const getFilteredData = () => {
         const query = searchQuery.toLowerCase();
         switch (activeTab) {
-            case 'CLASS': return data.classes.filter(c => c.name.toLowerCase().includes(query));
-            case 'SUBJECT': return data.subjects.filter(s => s.name.toLowerCase().includes(query));
-            case 'EXAM': return data.exams.filter(e => e.title.toLowerCase().includes(query));
-            case 'HOMEWORK': return data.homework.filter(h => h.title.toLowerCase().includes(query));
+            case 'CLASS': return (data.classes || []).filter(c => c.name.toLowerCase().includes(query));
+            case 'SUBJECT': return (data.subjects || []).filter(s => s.name.toLowerCase().includes(query));
+            case 'EXAM': return (data.exams || []).filter(e => e.title.toLowerCase().includes(query));
+            case 'HOMEWORK': return (data.homework || []).filter(h => h.title.toLowerCase().includes(query));
+            default: return [];
         }
     };
 

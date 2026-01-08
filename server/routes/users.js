@@ -28,6 +28,107 @@ router.use(authenticate);
 router.use(requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']));
 router.use(resolveSchoolContext);
 
+// GET /users - List users by role
+router.get('/', async (req, res) => {
+  try {
+    const { role, classId } = req.query;
+    const where = { schoolId: req.school.id };
+
+    if (role) {
+      where.role = role.toString().toUpperCase();
+    }
+
+    if (classId) {
+      where.classId = classId;
+    }
+
+    const users = await prisma.user.findMany({
+      where,
+      include: {
+        class: { select: { id: true, name: true } },
+        parent: { select: { id: true, name: true } },
+      },
+      orderBy: { name: 'asc' }
+    });
+
+    // Remove sensitive fields
+    const sanitizedUsers = users.map(sanitize);
+
+    res.json({ success: true, data: sanitizedUsers });
+  } catch (error) {
+    console.error('Get users error:', error);
+    res.status(500).json({ message: 'Failed to fetch users' });
+  }
+});
+
+// GET /users/:id - Get single user by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await prisma.user.findFirst({
+      where: { id, schoolId: req.school.id },
+      include: {
+        class: { select: { id: true, name: true } },
+        parent: { select: { id: true, name: true } },
+        children: { select: { id: true, name: true, classId: true } },
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ success: true, data: sanitize(user) });
+  } catch (error) {
+    console.error('Get user error:', error);
+    res.status(500).json({ message: 'Failed to fetch user' });
+  }
+});
+
+// DELETE /users/:id - Delete user
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await prisma.user.findFirst({
+      where: { id, schoolId: req.school.id }
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // If deleting a student, remove from parent's childrenIds
+    if (user.role === 'STUDENT' && user.parentId) {
+      const parent = await prisma.user.findUnique({ where: { id: user.parentId } });
+      if (parent && parent.childrenIds) {
+        await prisma.user.update({
+          where: { id: user.parentId },
+          data: {
+            childrenIds: parent.childrenIds.filter(cid => cid !== id)
+          }
+        });
+      }
+    }
+
+    // If deleting a parent, clear parentId from all their children
+    if (user.role === 'PARENT') {
+      await prisma.user.updateMany({
+        where: { parentId: id },
+        data: { parentId: null }
+      });
+    }
+
+    await prisma.user.delete({ where: { id } });
+
+    res.json({ success: true, message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ message: 'Failed to delete user' });
+  }
+});
+
 router.post('/', async (req, res) => {
   try {
     const {

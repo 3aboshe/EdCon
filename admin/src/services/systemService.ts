@@ -64,6 +64,32 @@ class SystemService {
     async restoreBackup(filename: string): Promise<void> {
         await api.post('/backup/restore', { filename });
     }
+
+    // Database Relation Checker
+    async checkRelations(): Promise<{
+        success: boolean;
+        issues?: string[];
+        fixes?: string[];
+        totalIssues?: number;
+        totalFixes?: number;
+    }> {
+        const { data } = await api.post<{
+            success: boolean;
+            issues?: string[];
+            fixes?: string[];
+            totalIssues?: number;
+            totalFixes?: number;
+        }>('/backup/check-relations');
+        return data;
+    }
+
+    // Export School Data
+    async exportData(): Promise<Blob> {
+        const response = await api.get('/backup/export', {
+            responseType: 'blob'
+        });
+        return response.data;
+    }
 }
 
 export const systemService = new SystemService();
