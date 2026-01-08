@@ -6,21 +6,20 @@ import {
     X, Copy, Check, AlertCircle, ShieldCheck
 } from 'lucide-react';
 import { schoolService } from '../../services/schoolService';
-import type { School, CreateSchoolData, AddAdminData } from '../../services/schoolService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import styles from './SchoolsPage.module.css';
 
 export function SchoolsPage() {
     const { t } = useTranslation();
-    const [schools, setSchools] = useState<School[]>([]);
+    const [schools, setSchools] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [showCreateModal, setShowCreateModal] = useState(false);
-    const [showAddAdminModal, setShowAddAdminModal] = useState<{ schoolId: string; schoolName: string } | null>(null);
+    const [showAddAdminModal, setShowAddAdminModal] = useState(null);
     const [showCredentialsModal, setShowCredentialsModal] = useState(false);
-    const [credentials, setCredentials] = useState<{ accessCode: string; temporaryPassword: string } | null>(null);
-    const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+    const [credentials, setCredentials] = useState(null);
+    const [deleteConfirm, setDeleteConfirm] = useState(null);
 
     useEffect(() => {
         loadSchools();
@@ -37,7 +36,7 @@ export function SchoolsPage() {
         }
     };
 
-    const handleCreateSchool = async (data: CreateSchoolData) => {
+    const handleCreateSchool = async (data) => {
         try {
             const response = await schoolService.createSchool(data);
             setSchools([...schools, response.school]);
@@ -50,7 +49,7 @@ export function SchoolsPage() {
         }
     };
 
-    const handleAddAdmin = async (schoolId: string, adminData: AddAdminData) => {
+    const handleAddAdmin = async (schoolId, adminData) => {
         try {
             const response = await schoolService.addAdmin(schoolId, adminData);
             setCredentials(response.credentials);
@@ -64,7 +63,7 @@ export function SchoolsPage() {
         }
     };
 
-    const handleDeleteSchool = async (schoolId: string) => {
+    const handleDeleteSchool = async (schoolId) => {
         try {
             await schoolService.deleteSchool(schoolId);
             setSchools(schools.filter(s => s.id !== schoolId));
@@ -237,13 +236,7 @@ export function SchoolsPage() {
 }
 
 // Create School Modal
-function CreateSchoolModal({
-    onClose,
-    onSubmit
-}: {
-    onClose: () => void;
-    onSubmit: (data: CreateSchoolData) => Promise<void>;
-}) {
+function CreateSchoolModal({ onClose, onSubmit }) {
     const { t } = useTranslation();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -254,7 +247,7 @@ function CreateSchoolModal({
         adminEmail: '',
     });
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
@@ -358,15 +351,7 @@ function CreateSchoolModal({
 }
 
 // Add Admin Modal
-function AddAdminModal({
-    schoolName,
-    onClose,
-    onSubmit
-}: {
-    schoolName: string;
-    onClose: () => void;
-    onSubmit: (data: AddAdminData) => Promise<void>;
-}) {
+function AddAdminModal({ schoolName, onClose, onSubmit }) {
     const { t } = useTranslation();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -375,7 +360,7 @@ function AddAdminModal({
         email: '',
     });
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
@@ -461,17 +446,11 @@ function AddAdminModal({
 }
 
 // Credentials Modal
-function CredentialsModal({
-    credentials,
-    onClose,
-}: {
-    credentials: { accessCode: string; temporaryPassword: string };
-    onClose: () => void;
-}) {
+function CredentialsModal({ credentials, onClose }) {
     const { t } = useTranslation();
-    const [copiedField, setCopiedField] = useState<string | null>(null);
+    const [copiedField, setCopiedField] = useState(null);
 
-    const copyToClipboard = async (text: string, field: string) => {
+    const copyToClipboard = async (text, field) => {
         await navigator.clipboard.writeText(text);
         setCopiedField(field);
         setTimeout(() => setCopiedField(null), 2000);

@@ -45,16 +45,10 @@ const authenticate = async (req, res, next) => {
     next();
   } catch (error) {
     console.error('Authentication error:', error);
-
-    // JWT specific errors should return 401
-    const isAuthError =
-      error.name === 'TokenExpiredError' ||
-      error.name === 'JsonWebTokenError' ||
-      error.name === 'NotBeforeError';
-
-    const status = isAuthError ? 401 : 500;
-    const message = isAuthError ? 'Session invalid or expired' : 'Authentication failed';
-
+    const status = error.name === 'TokenExpiredError' ? 401 : 500;
+    const message = error.name === 'TokenExpiredError'
+      ? 'Session expired, please login again'
+      : 'Authentication failed';
     return res.status(status).json({ message });
   }
 };

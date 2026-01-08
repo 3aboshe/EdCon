@@ -6,20 +6,14 @@ import {
     Trash2, X
 } from 'lucide-react';
 import { academicService } from '../../services/academicService';
-import type { Class, Subject } from '../../services/academicService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import styles from './AcademicPage.module.css';
 
-type AcademicTab = 'CLASS' | 'SUBJECT';
-
 export function AcademicPage() {
     const { t } = useTranslation();
-    const [activeTab, setActiveTab] = useState<AcademicTab>('CLASS');
-    const [data, setData] = useState<{
-        classes: Class[],
-        subjects: Subject[]
-    }>({ classes: [], subjects: [] });
+    const [activeTab, setActiveTab] = useState('CLASS');
+    const [data, setData] = useState({ classes: [], subjects: [] });
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -47,7 +41,7 @@ export function AcademicPage() {
         }
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = async (id) => {
         if (!confirm(t('common.confirm_delete'))) return;
         try {
             switch (activeTab) {
@@ -86,7 +80,7 @@ export function AcademicPage() {
 
             <div className={styles.controls}>
                 <div className={styles.tabs}>
-                    {(['CLASS', 'SUBJECT'] as AcademicTab[]).map((tab) => (
+                    {['CLASS', 'SUBJECT'].map((tab) => (
                         <button
                             key={tab}
                             className={`${styles.tab} ${activeTab === tab ? styles.activeTab : ''}`}
@@ -115,7 +109,7 @@ export function AcademicPage() {
                         <p>{t('common.no_content')}</p>
                     </div>
                 ) : (
-                    filteredItems.map((item: any) => (
+                    filteredItems.map((item) => (
                         <motion.div
                             key={item.id}
                             className={styles.card}
@@ -159,12 +153,12 @@ export function AcademicPage() {
     );
 }
 
-function CreateAcademicModal({ type, onClose, onSuccess }: any) {
+function CreateAcademicModal({ type, onClose, onSuccess }) {
     const { t } = useTranslation();
     const [isLoading, setIsLoading] = useState(false);
-    const [formData, setFormData] = useState<any>({ name: '' });
+    const [formData, setFormData] = useState({ name: '' });
 
-    const handleSubmit = async (e: any) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
         try {

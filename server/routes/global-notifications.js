@@ -25,7 +25,7 @@ router.post('/', requireSuperAdmin, async (req, res) => {
     if (target === 'ALL_USERS') {
       // Create announcement for all schools
       const schools = await prisma.school.findMany({ select: { id: true } });
-
+      
       if (schools.length === 0) {
         return res.json({ success: true, message: 'No schools found.' });
       }
@@ -82,22 +82,5 @@ router.post('/', requireSuperAdmin, async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
-
-router.get('/', requireSuperAdmin, async (req, res) => {
-  try {
-    // Fetch distinct announcements created by the super admin
-    const announcements = await prisma.announcement.findMany({
-      where: { teacherId: req.user.id },
-      distinct: ['title', 'content', 'createdAt'],
-      orderBy: { createdAt: 'desc' },
-      take: 50
-    });
-    res.json({ success: true, data: announcements });
-  } catch (error) {
-    console.error('Fetch global notifications error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
 
 export default router;

@@ -15,13 +15,13 @@ export const SUPPORTED_LANGUAGES = [
     { code: 'arc', name: 'Assyrian', nativeName: 'ܐܬܘܪܝܐ', dir: 'ltr' },
 ];
 
-export const isRTL = (lang: string): boolean => RTL_LANGUAGES.includes(lang);
+export const isRTL = (lang) => RTL_LANGUAGES.includes(lang);
 
-export const getLanguageDir = (lang: string): 'rtl' | 'ltr' =>
+export const getLanguageDir = (lang) =>
     isRTL(lang) ? 'rtl' : 'ltr';
 
 // Update document direction when language changes
-export const updateDocumentDirection = (lang: string) => {
+export const updateDocumentDirection = (lang) => {
     const dir = getLanguageDir(lang);
     document.documentElement.setAttribute('dir', dir);
     document.documentElement.setAttribute('lang', lang);

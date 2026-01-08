@@ -1,14 +1,5 @@
-import type React from 'react';
 import clsx from 'clsx';
 import styles from './Input.module.css';
-
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-    label?: string;
-    error?: string;
-    hint?: string;
-    startIcon?: React.ReactNode;
-    endIcon?: React.ReactNode;
-}
 
 export function Input({
     label,
@@ -19,7 +10,7 @@ export function Input({
     className,
     id,
     ...props
-}: InputProps) {
+}) {
     const inputId = id || `input-${Math.random().toString(36).slice(2)}`;
 
     return (

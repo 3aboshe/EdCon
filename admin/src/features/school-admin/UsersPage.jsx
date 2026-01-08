@@ -6,21 +6,17 @@ import {
     X, AlertCircle
 } from 'lucide-react';
 import { useUsers, useClasses, useCreateUser, useDeleteUser } from '../../hooks/useSchoolData';
-import type { User as UserType, CreateUserData } from '../../services/userService';
-import type { Class } from '../../services/academicService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import styles from './UsersPage.module.css';
 
-type UserTab = 'STUDENT' | 'TEACHER' | 'PARENT';
-
 export function UsersPage() {
     const { t } = useTranslation();
-    const [activeTab, setActiveTab] = useState<UserTab>('STUDENT');
+    const [activeTab, setActiveTab] = useState('STUDENT');
     const [searchQuery, setSearchQuery] = useState('');
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showCredentialsModal, setShowCredentialsModal] = useState(false);
-    const [credentials, setCredentials] = useState<{ accessCode: string; temporaryPassword?: string } | null>(null);
+    const [credentials, setCredentials] = useState(null);
 
     // Data Hooks
     const { data: users = [], isLoading } = useUsers(activeTab);
@@ -30,7 +26,7 @@ export function UsersPage() {
     const createUser = useCreateUser();
     const deleteUser = useDeleteUser();
 
-    const handleCreateUser = async (data: CreateUserData) => {
+    const handleCreateUser = async (data) => {
         try {
             const response = await createUser.mutateAsync(data);
             if (response.credentials) {
@@ -43,12 +39,11 @@ export function UsersPage() {
             setShowCreateModal(false);
         } catch (error) {
             console.error('Failed to create user:', error);
-            // Error handling is managed inside the modal or toast could be added here
             throw error;
         }
     };
 
-    const handleDeleteUser = async (id: string) => {
+    const handleDeleteUser = async (id) => {
         if (!confirm(t('admin.delete_user_confirm', { role: activeTab.toLowerCase() }))) return;
         try {
             await deleteUser.mutateAsync(id);
@@ -57,7 +52,7 @@ export function UsersPage() {
         }
     };
 
-    const filteredUsers = users.filter((user: UserType) =>
+    const filteredUsers = users.filter((user) =>
         (user.name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
         (user.accessCode?.toLowerCase() || '').includes(searchQuery.toLowerCase())
     );
@@ -77,7 +72,7 @@ export function UsersPage() {
 
             <div className={styles.controls}>
                 <div className={styles.tabs}>
-                    {(['STUDENT', 'TEACHER', 'PARENT'] as UserTab[]).map((tab) => (
+                    {['STUDENT', 'TEACHER', 'PARENT'].map((tab) => (
                         <button
                             key={tab}
                             className={`${styles.tab} ${activeTab === tab ? styles.activeTab : ''}`}
@@ -118,7 +113,7 @@ export function UsersPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredUsers.map((user: UserType) => (
+                            {filteredUsers.map((user) => (
                                 <tr key={user.id}>
                                     <td>
                                         <div className={styles.userInfo}>
@@ -182,16 +177,11 @@ export function UsersPage() {
 }
 
 // Create User Modal Component
-function CreateUserModal({ role, classes, onClose, onSubmit }: {
-    role: UserTab,
-    classes: Class[],
-    onClose: () => void,
-    onSubmit: (data: CreateUserData) => Promise<void>
-}) {
+function CreateUserModal({ role, classes, onClose, onSubmit }) {
     const { t } = useTranslation();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
-    const [formData, setFormData] = useState<CreateUserData>({
+    const [formData, setFormData] = useState({
         name: '',
         email: undefined,
         phone: '',
@@ -200,7 +190,7 @@ function CreateUserModal({ role, classes, onClose, onSubmit }: {
         accessCode: ''
     });
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.name) {
             setError(t('admin.name_error'));
@@ -213,13 +203,13 @@ function CreateUserModal({ role, classes, onClose, onSubmit }: {
         }
 
         const submitData = { ...formData };
-        if (!submitData.email) delete submitData.email; // Send clean data
-        if (!submitData.accessCode) delete submitData.accessCode; // Let backend generate if empty
+        if (!submitData.email) delete submitData.email;
+        if (!submitData.accessCode) delete submitData.accessCode;
 
         setIsLoading(true);
         try {
             await onSubmit(submitData);
-        } catch (err: any) {
+        } catch (err) {
             setError(err.response?.data?.message || t('admin.create_user_error'));
         } finally {
             setIsLoading(false);
@@ -280,7 +270,7 @@ function CreateUserModal({ role, classes, onClose, onSubmit }: {
 }
 
 // Credentials Modal
-function CredentialsModal({ credentials, onClose }: { credentials: { accessCode: string, temporaryPassword?: string }, onClose: () => void }) {
+function CredentialsModal({ credentials, onClose }) {
     const { t } = useTranslation();
     const [copied, setCopied] = useState(false);
 

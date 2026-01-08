@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { History, AlertCircle, Bell } from 'lucide-react';
 import { systemService } from '../../services/systemService';
-import type { Announcement } from '../../services/systemService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import styles from './NotificationsPage.module.css';
@@ -12,7 +11,7 @@ export function NotificationsPage() {
     const { t } = useTranslation();
     const [isLoading, setIsLoading] = useState(false);
     const [isFetching, setIsFetching] = useState(true);
-    const [history, setHistory] = useState<Announcement[]>([]);
+    const [history, setHistory] = useState([]);
     const [error, setError] = useState('');
     const [formData, setFormData] = useState({
         title: '',
@@ -35,7 +34,7 @@ export function NotificationsPage() {
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.title.trim() || !formData.content.trim()) {
             setError(t('super_admin.fill_all_fields'));
@@ -48,9 +47,6 @@ export function NotificationsPage() {
             await systemService.sendGlobalNotification({
                 title: formData.title.trim(),
                 content: formData.content.trim(),
-                // Based on systemService, it currently expects title, content, and optional targetSchoolId
-                // But the UI allows selecting a role for internal announcements too.
-                // Let's stick to global first.
             });
             setFormData({ title: '', content: '', targetRole: 'ALL' });
             loadNotifications();

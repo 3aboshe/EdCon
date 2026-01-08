@@ -1,35 +1,8 @@
 import api from './api';
 
-export interface LoginCredentials {
-    accessCode: string;
-    password: string;
-}
-
-export interface User {
-    id: string;
-    accessCode: string;
-    name: string;
-    email: string | null;
-    role: 'SUPER_ADMIN' | 'SCHOOL_ADMIN' | 'ADMIN';
-    schoolId: string | null;
-    schoolCode: string | null;
-    requiresPasswordReset: boolean;
-}
-
-export interface LoginResponse {
-    success: boolean;
-    token: string;
-    user: User;
-}
-
-export interface ResetPasswordData {
-    currentPassword: string;
-    newPassword: string;
-}
-
 class AuthService {
-    async login(credentials: LoginCredentials): Promise<LoginResponse> {
-        const { data } = await api.post<LoginResponse>('/auth/login', credentials);
+    async login(credentials) {
+        const { data } = await api.post('/auth/login', credentials);
 
         // Store token and user
         localStorage.setItem('edcon-token', data.token);
@@ -42,7 +15,7 @@ class AuthService {
         return data;
     }
 
-    async resetPassword(passwords: ResetPasswordData): Promise<void> {
+    async resetPassword(passwords) {
         await api.post('/auth/reset-password', passwords);
 
         // Update user state to not require password reset
@@ -53,17 +26,17 @@ class AuthService {
         }
     }
 
-    logout(): void {
+    logout() {
         localStorage.removeItem('edcon-token');
         localStorage.removeItem('edcon-user');
         localStorage.removeItem('edcon-school-code');
     }
 
-    getToken(): string | null {
+    getToken() {
         return localStorage.getItem('edcon-token');
     }
 
-    getUser(): User | null {
+    getUser() {
         const userStr = localStorage.getItem('edcon-user');
         if (!userStr) return null;
         try {
@@ -73,20 +46,20 @@ class AuthService {
         }
     }
 
-    isAuthenticated(): boolean {
+    isAuthenticated() {
         return !!this.getToken() && !!this.getUser();
     }
 
-    isAdmin(): boolean {
+    isAdmin() {
         const user = this.getUser();
         return user?.role === 'SUPER_ADMIN' || user?.role === 'SCHOOL_ADMIN' || user?.role === 'ADMIN';
     }
 
-    isSuperAdmin(): boolean {
+    isSuperAdmin() {
         return this.getUser()?.role === 'SUPER_ADMIN';
     }
 
-    isSchoolAdmin(): boolean {
+    isSchoolAdmin() {
         const user = this.getUser();
         return user?.role === 'SCHOOL_ADMIN' || user?.role === 'ADMIN';
     }

@@ -4,17 +4,13 @@ import { Globe } from 'lucide-react';
 import { SUPPORTED_LANGUAGES } from '../../i18n';
 import styles from './LanguageSelector.module.css';
 
-interface LanguageSelectorProps {
-    variant?: 'dropdown' | 'inline';
-}
-
-export function LanguageSelector({ variant = 'dropdown' }: LanguageSelectorProps) {
+export function LanguageSelector({ variant = 'dropdown' }) {
     const { i18n } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
 
     const currentLang = SUPPORTED_LANGUAGES.find(l => l.code === i18n.language) || SUPPORTED_LANGUAGES[0];
 
-    const handleLanguageChange = (langCode: string) => {
+    const handleLanguageChange = (langCode) => {
         i18n.changeLanguage(langCode);
         setIsOpen(false);
     };

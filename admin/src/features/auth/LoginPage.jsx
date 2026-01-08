@@ -19,7 +19,7 @@ export function LoginPage() {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = async (e: any) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
@@ -37,7 +37,7 @@ export function LoginPage() {
 
         try {
             await login({ accessCode: accessCode.trim(), password });
-            // Navigate based on role (handled in App.tsx routes)
+            // Navigate based on role (handled in App.jsx routes)
             navigate('/');
         } catch (err) {
             setError(err instanceof Error ? err.message : t('login.error_invalid'));

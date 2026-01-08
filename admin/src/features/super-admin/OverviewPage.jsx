@@ -6,15 +6,9 @@ import { Link } from 'react-router-dom';
 import { schoolService } from '../../services/schoolService';
 import styles from './OverviewPage.module.css';
 
-interface Stats {
-    totalSchools: number;
-    totalUsers: number;
-    activeNow: number;
-}
-
 export function OverviewPage() {
     const { t } = useTranslation();
-    const [stats, setStats] = useState<Stats>({ totalSchools: 0, totalUsers: 0, activeNow: 0 });
+    const [stats, setStats] = useState({ totalSchools: 0, totalUsers: 0, activeNow: 0 });
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
