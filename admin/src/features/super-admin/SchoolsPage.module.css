@@ -417,3 +417,23 @@
     color: var(--color-text-muted);
     text-align: center;
 }
+
+/* RTL Support */
+.credentialsModal.rtl {
+    direction: rtl;
+    text-align: right;
+}
+
+.credentialsModal.rtl .credentialsTitle,
+.credentialsModal.rtl .credentialsSubtitle {
+    text-align: center;
+}
+
+.credentialsModal.rtl .warningBanner {
+    flex-direction: row-reverse;
+    text-align: right;
+}
+
+.credentialsModal.rtl .credentialValue {
+    flex-direction: row-reverse;
+}

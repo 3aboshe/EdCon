@@ -8,6 +8,7 @@ import {
 import { schoolService } from '../../services/schoolService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { ConfirmModal } from '../../components/ui/ConfirmModal';
 import styles from './SchoolsPage.module.css';
 
 export function SchoolsPage() {
@@ -488,6 +489,7 @@ function ViewAdminsModal({ schoolId, schoolName, onClose, onPasswordReset }) {
     const [admins, setAdmins] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [resettingId, setResettingId] = useState(null);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, onConfirm: null, title: '', message: '' });
 
     useEffect(() => {
         loadAdmins();
@@ -504,23 +506,29 @@ function ViewAdminsModal({ schoolId, schoolName, onClose, onPasswordReset }) {
         }
     };
 
-    const handleResetPassword = async (adminId, adminName) => {
-        if (!confirm(t('admin.reset_password_confirm'))) return;
-
-        setResettingId(adminId);
-        try {
-            const result = await schoolService.resetAdminPassword(schoolId, adminId);
-            onPasswordReset({
-                accessCode: result.accessCode,
-                temporaryPassword: result.temporaryPassword,
-                userName: adminName,
-            });
-        } catch (error) {
-            console.error('Failed to reset password:', error);
-            alert(t('admin.password_reset_failed'));
-        } finally {
-            setResettingId(null);
-        }
+    const handleResetPassword = (adminId, adminName) => {
+        setConfirmModal({
+            isOpen: true,
+            title: t('admin.reset_password_title'),
+            message: t('admin.reset_password_confirm'),
+            variant: 'warning',
+            onConfirm: async () => {
+                setResettingId(adminId);
+                setConfirmModal({ isOpen: false });
+                try {
+                    const result = await schoolService.resetAdminPassword(schoolId, adminId);
+                    onPasswordReset({
+                        accessCode: result.accessCode,
+                        temporaryPassword: result.temporaryPassword,
+                        userName: adminName,
+                    });
+                } catch (error) {
+                    console.error('Failed to reset password:', error);
+                } finally {
+                    setResettingId(null);
+                }
+            }
+        });
     };
 
     return (
@@ -590,14 +598,29 @@ function ViewAdminsModal({ schoolId, schoolName, onClose, onPasswordReset }) {
                     </Button>
                 </div>
             </motion.div>
+
+            {/* Confirm Modal */}
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ isOpen: false })}
+                onConfirm={confirmModal.onConfirm}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                variant={confirmModal.variant}
+                isLoading={resettingId !== null}
+                confirmText={t('common.confirm')}
+                cancelText={t('common.cancel')}
+            />
         </motion.div>
     );
 }
 
-// Credentials Modal
+// Credentials Modal with RTL support
 function CredentialsModal({ credentials, onClose }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [copiedField, setCopiedField] = useState(null);
+
+    const isRTL = ['ar', 'he', 'fa'].includes(i18n.language);
 
     const copyToClipboard = async (text, field) => {
         await navigator.clipboard.writeText(text);
@@ -615,7 +638,7 @@ function CredentialsModal({ credentials, onClose }) {
             exit={{ opacity: 0 }}
         >
             <motion.div
-                className={styles.credentialsModal}
+                className={`${styles.credentialsModal} ${isRTL ? styles.rtl : ''}`}
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}

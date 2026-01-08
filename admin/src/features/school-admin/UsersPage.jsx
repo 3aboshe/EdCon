@@ -9,6 +9,7 @@ import { useUsers, useClasses, useCreateUser, useDeleteUser } from '../../hooks/
 import { userService } from '../../services/userService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { ConfirmModal } from '../../components/ui/ConfirmModal';
 import styles from './UsersPage.module.css';
 
 export function UsersPage() {
@@ -18,6 +19,8 @@ export function UsersPage() {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showCredentialsModal, setShowCredentialsModal] = useState(false);
     const [credentials, setCredentials] = useState(null);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, onConfirm: null, title: '', message: '' });
+    const [isResetting, setIsResetting] = useState(false);
 
     // Data Hooks
     const { data: users = [], isLoading, refetch } = useUsers(activeTab);
@@ -45,29 +48,49 @@ export function UsersPage() {
         }
     };
 
-    const handleDeleteUser = async (id) => {
-        if (!confirm(t('admin.delete_user_confirm', { role: activeTab.toLowerCase() }))) return;
-        try {
-            await deleteUser.mutateAsync(id);
-        } catch (error) {
-            console.error('Failed to delete user:', error);
-        }
+    const handleDeleteUser = (id) => {
+        setConfirmModal({
+            isOpen: true,
+            title: t('admin.delete_user_title'),
+            message: t('admin.delete_user_confirm', { role: t(`admin.tab_${activeTab.toLowerCase()}s`).toLowerCase() }),
+            variant: 'danger',
+            onConfirm: async () => {
+                try {
+                    await deleteUser.mutateAsync(id);
+                    setConfirmModal({ isOpen: false });
+                } catch (error) {
+                    console.error('Failed to delete user:', error);
+                    setConfirmModal({ isOpen: false });
+                }
+            }
+        });
     };
 
-    const handleResetPassword = async (userId, userName) => {
-        if (!confirm(t('admin.reset_password_confirm'))) return;
-        try {
-            const result = await userService.resetPassword(userId);
-            setCredentials({
-                accessCode: result.accessCode || result.data?.accessCode,
-                temporaryPassword: result.temporaryPassword || result.data?.temporaryPassword,
-                userName: userName
-            });
-            setShowCredentialsModal(true);
-        } catch (error) {
-            console.error('Failed to reset password:', error);
-            alert(t('admin.password_reset_failed'));
-        }
+    const handleResetPassword = (userId, userName) => {
+        setConfirmModal({
+            isOpen: true,
+            title: t('admin.reset_password_title'),
+            message: t('admin.reset_password_confirm'),
+            variant: 'warning',
+            onConfirm: async () => {
+                setIsResetting(true);
+                try {
+                    const result = await userService.resetPassword(userId);
+                    setCredentials({
+                        accessCode: result.accessCode || result.data?.accessCode,
+                        temporaryPassword: result.temporaryPassword || result.data?.temporaryPassword,
+                        userName: userName
+                    });
+                    setConfirmModal({ isOpen: false });
+                    setShowCredentialsModal(true);
+                } catch (error) {
+                    console.error('Failed to reset password:', error);
+                    setConfirmModal({ isOpen: false });
+                } finally {
+                    setIsResetting(false);
+                }
+            }
+        });
     };
 
     const filteredUsers = users.filter((user) =>
@@ -202,6 +225,19 @@ export function UsersPage() {
                     />
                 )}
             </AnimatePresence>
+
+            {/* Confirm Modal */}
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ isOpen: false })}
+                onConfirm={confirmModal.onConfirm}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                variant={confirmModal.variant}
+                isLoading={isResetting}
+                confirmText={t('common.confirm')}
+                cancelText={t('common.cancel')}
+            />
         </div>
     );
 }
@@ -360,11 +396,13 @@ function CreateUserModal({ role, classes, parents = [], onClose, onSubmit }) {
     );
 }
 
-// Credentials Modal - Redesigned
+// Credentials Modal - Redesigned with RTL support
 function CredentialsModal({ credentials, onClose }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [copiedCode, setCopiedCode] = useState(false);
     const [copiedPassword, setCopiedPassword] = useState(false);
+
+    const isRTL = ['ar', 'he', 'fa'].includes(i18n.language);
 
     const handleCopyCode = () => {
         navigator.clipboard.writeText(credentials.accessCode);
@@ -405,7 +443,7 @@ function CredentialsModal({ credentials, onClose }) {
             onClick={onClose}
         >
             <motion.div
-                className={styles.credentialsModal}
+                className={`${styles.credentialsModal} ${isRTL ? styles.rtl : ''}`}
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}

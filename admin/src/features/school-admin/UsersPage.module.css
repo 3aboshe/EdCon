@@ -343,6 +343,31 @@
     gap: var(--space-3);
 }
 
+/* RTL Support for Credentials Modal */
+.credentialsModal.rtl {
+    direction: rtl;
+    text-align: right;
+}
+
+.credentialsModal.rtl .credentialsTitle,
+.credentialsModal.rtl .credentialsSubtitle {
+    text-align: center;
+}
+
+.credentialsModal.rtl .warningBanner {
+    flex-direction: row-reverse;
+    text-align: right;
+}
+
+.credentialsModal.rtl .credentialValueRow {
+    flex-direction: row-reverse;
+}
+
+.credentialsModal.rtl .credentialsActions button svg {
+    margin-right: 0;
+    margin-left: 8px;
+}
+
 .modalFooter {
     display: flex;
     gap: var(--space-3);
