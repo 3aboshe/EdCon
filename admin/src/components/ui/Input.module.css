@@ -1,0 +1,87 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.label {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--color-text);
+}
+
+.inputWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    transition: all var(--transition-fast);
+}
+
+.inputWrapper:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(13, 71, 161, 0.1);
+}
+
+.hasError {
+    border-color: var(--color-error);
+}
+
+.hasError:focus-within {
+    border-color: var(--color-error);
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.input {
+    flex: 1;
+    height: 44px;
+    padding: 0 var(--space-4);
+    background: transparent;
+    border: none;
+    font-size: var(--text-base);
+    color: var(--color-text);
+    outline: none;
+}
+
+.input::placeholder {
+    color: var(--color-text-muted);
+}
+
+.hasStartIcon {
+    padding-inline-start: var(--space-10);
+}
+
+.hasEndIcon {
+    padding-inline-end: var(--space-10);
+}
+
+.startIcon,
+.endIcon {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+}
+
+.startIcon {
+    inset-inline-start: var(--space-3);
+}
+
+.endIcon {
+    inset-inline-end: var(--space-3);
+}
+
+.error {
+    font-size: var(--text-sm);
+    color: var(--color-error);
+}
+
+.hint {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+}
+
+/* RTL adjustments are handled via logical properties */

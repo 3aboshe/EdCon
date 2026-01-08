@@ -1,0 +1,213 @@
+.container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-6);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Animated Background */
+.background {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, #0D47A1 0%, #1565C0 50%, #0A3A85 100%);
+    z-index: -1;
+}
+
+.gradientOrb1 {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(30, 136, 229, 0.4) 0%, transparent 70%);
+    top: -200px;
+    right: -100px;
+    animation: float 20s ease-in-out infinite;
+}
+
+.gradientOrb2 {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(66, 165, 245, 0.3) 0%, transparent 70%);
+    bottom: -150px;
+    left: -100px;
+    animation: float 25s ease-in-out infinite reverse;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    33% {
+        transform: translate(30px, -30px) scale(1.05);
+    }
+
+    66% {
+        transform: translate(-20px, 20px) scale(0.95);
+    }
+}
+
+/* Language Bar */
+.languageBar {
+    position: absolute;
+    top: var(--space-6);
+    inset-inline-end: var(--space-6);
+    z-index: 10;
+}
+
+/* Login Card */
+.card {
+    width: 100%;
+    max-width: 420px;
+    padding: var(--space-8);
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-2xl);
+    box-shadow:
+        0 25px 50px -12px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+/* Logo */
+.logoWrapper {
+    text-align: center;
+    margin-bottom: var(--space-6);
+}
+
+.logoImage {
+    max-width: 340px;
+    height: auto;
+    margin: 0 auto var(--space-1);
+    display: block;
+}
+
+.logoIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+    border-radius: var(--radius-xl);
+    color: white;
+    margin-bottom: var(--space-4);
+    box-shadow: 0 10px 30px -5px rgba(13, 71, 161, 0.5);
+}
+
+.logoText {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    color: var(--color-text);
+    margin-bottom: var(--space-1);
+}
+
+.logoSubtext {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+/* Form */
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.welcome {
+    text-align: center;
+    margin-bottom: var(--space-2);
+}
+
+.welcome h2 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    color: var(--color-text);
+    margin-bottom: var(--space-1);
+}
+
+.welcome p {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+}
+
+/* Error */
+.error {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    background: rgba(220, 38, 38, 0.1);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    border-radius: var(--radius-lg);
+    color: var(--color-error);
+    font-size: var(--text-sm);
+}
+
+/* Spinner */
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Notice */
+.notice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    margin-top: var(--space-6);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--color-border);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Footer */
+.footer {
+    position: absolute;
+    bottom: var(--space-8);
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+    .container {
+        padding: var(--space-4);
+    }
+
+    .card {
+        padding: var(--space-6);
+    }
+
+    .languageBar {
+        top: var(--space-4);
+        inset-inline-end: var(--space-4);
+    }
+
+    .footer {
+        display: none;
+    }
+}

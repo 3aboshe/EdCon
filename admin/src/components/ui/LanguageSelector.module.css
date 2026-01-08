@@ -1,0 +1,129 @@
+.wrapper {
+    position: relative;
+}
+
+.trigger {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-lg);
+    color: white;
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    backdrop-filter: blur(4px);
+}
+
+.trigger:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.chevron {
+    transition: transform var(--transition-fast);
+}
+
+.chevronOpen {
+    transform: rotate(180deg);
+}
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+}
+
+.menu {
+    position: absolute;
+    top: calc(100% + var(--space-2));
+    inset-inline-end: 0;
+    min-width: 200px;
+    padding: var(--space-2);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    z-index: 51;
+    animation: slideDown 0.15s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.menuItem {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+    text-align: start;
+}
+
+.menuItem:hover {
+    background: var(--color-bg-secondary);
+}
+
+.selected {
+    background: rgba(13, 71, 161, 0.1);
+}
+
+.selected:hover {
+    background: rgba(13, 71, 161, 0.15);
+}
+
+.nativeName {
+    font-weight: var(--font-medium);
+    color: var(--color-text);
+}
+
+.englishName {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+}
+
+/* Inline variant */
+.inlineWrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    justify-content: center;
+}
+
+.inlineButton {
+    padding: var(--space-2) var(--space-4);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: var(--radius-full);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.inlineButton:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: white;
+}
+
+.inlineButton.active {
+    background: white;
+    border-color: white;
+    color: var(--color-primary);
+    font-weight: var(--font-medium);
+}
