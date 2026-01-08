@@ -207,6 +207,11 @@ function CreateUserModal({ role, classes, onClose, onSubmit }: {
             return;
         }
 
+        if (formData.accessCode && formData.accessCode.trim().length > 0 && formData.accessCode.trim().length < 3) {
+            setError(t('admin.access_code_too_short'));
+            return;
+        }
+
         const submitData = { ...formData };
         if (!submitData.email) delete submitData.email; // Send clean data
         if (!submitData.accessCode) delete submitData.accessCode; // Let backend generate if empty
