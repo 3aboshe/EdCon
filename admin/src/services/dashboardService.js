@@ -3,7 +3,13 @@ import api from './api';
 class DashboardService {
     async getSchoolDashboard() {
         const { data } = await api.get('/admin/dashboard');
-        return data;
+        // Backend returns { success: true, data: { counts: {...}, users: {...}, ... } }
+        // We need to extract the counts from the nested structure
+        if (data?.data?.counts) {
+            return data.data.counts;
+        }
+        // Fallback if structure is different
+        return data?.counts || data?.data || data;
     }
 
     async getSuperAdminStats() {

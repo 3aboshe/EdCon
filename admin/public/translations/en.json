@@ -604,7 +604,9 @@
     "name_too_long": "Name must not exceed 50 characters",
     "name_invalid_error": "Please enter a valid name",
     "email_optional": "Email (Optional)",
-    "access_code_too_short": "Access code must be at least 3 characters"
+    "access_code_too_short": "Access code must be at least 3 characters",
+    "user_created_success": "User Created Successfully!",
+    "copy_all": "Copy All Credentials"
   },
   "system": {
     "title": "System Settings & Maintenance",

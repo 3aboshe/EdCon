@@ -427,7 +427,13 @@
     "due": "تاريخ الاستحقاق",
     "assigned": "تاريخ التعيين",
     "submitted": "تاريخ التسليم",
-    "overdue": "متأخر"
+    "overdue": "متأخر",
+    "copy": "نسخ",
+    "confirm_delete": "هل أنت متأكد من حذف هذا العنصر؟",
+    "status": "الحالة",
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "invited": "مدعو"
   },
   "admin": {
     "panel_title": "لوحة الإدارة",
@@ -591,7 +597,11 @@
     "class_update_error": "فشل في تحديث الفصل",
     "name_too_short": "يجب أن يكون الاسم 3 أحرف على الأقل",
     "name_too_long": "يجب ألا يتجاوز الاسم 50 حرفاً",
-    "name_invalid_error": "يرجى إدخال اسم صحيح"
+    "name_invalid_error": "يرجى إدخال اسم صحيح",
+    "user_created_success": "تم إنشاء المستخدم بنجاح!",
+    "copy_all": "نسخ جميع البيانات",
+    "email_optional": "البريد الإلكتروني (اختياري)",
+    "access_code_too_short": "يجب أن يكون رمز الدخول 3 أحرف على الأقل"
   },
   "days": {
     "mon": "الإثنين",

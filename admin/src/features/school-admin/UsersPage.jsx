@@ -269,50 +269,136 @@ function CreateUserModal({ role, classes, onClose, onSubmit }) {
     );
 }
 
-// Credentials Modal
+// Credentials Modal - Redesigned
 function CredentialsModal({ credentials, onClose }) {
     const { t } = useTranslation();
-    const [copied, setCopied] = useState(false);
+    const [copiedCode, setCopiedCode] = useState(false);
+    const [copiedPassword, setCopiedPassword] = useState(false);
 
-    const handleCopy = () => {
-        let text = `Code: ${credentials.accessCode}`;
+    const handleCopyCode = () => {
+        navigator.clipboard.writeText(credentials.accessCode);
+        setCopiedCode(true);
+        setTimeout(() => setCopiedCode(false), 2000);
+    };
+
+    const handleCopyPassword = () => {
         if (credentials.temporaryPassword) {
-            text += `\nPassword: ${credentials.temporaryPassword}`;
+            navigator.clipboard.writeText(credentials.temporaryPassword);
+            setCopiedPassword(true);
+            setTimeout(() => setCopiedPassword(false), 2000);
+        }
+    };
+
+    const handleCopyAll = () => {
+        let text = `${t('admin.access_code')}: ${credentials.accessCode}`;
+        if (credentials.temporaryPassword) {
+            text += `\n${t('admin.temporary_password')}: ${credentials.temporaryPassword}`;
         }
         navigator.clipboard.writeText(text);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        setCopiedCode(true);
+        setCopiedPassword(true);
+        setTimeout(() => {
+            setCopiedCode(false);
+            setCopiedPassword(false);
+        }, 2000);
     };
 
     return (
-        <motion.div className={styles.modalOverlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <motion.div className={styles.modal}>
-                <div className={styles.modalHeader}>
-                    <h2>{t('admin.user_created_title', { role: '' })}</h2>
+        <motion.div
+            className={styles.modalOverlay}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+        >
+            <motion.div
+                className={styles.credentialsModal}
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                onClick={e => e.stopPropagation()}
+            >
+                {/* Success Icon */}
+                <div className={styles.successIcon}>
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="m9 12 2 2 4-4" />
+                    </svg>
                 </div>
-                <div className={styles.modalBody}>
-                    <div className={styles.warningBanner}>
-                        <AlertCircle size={20} />
-                        <p>{t('admin.save_credentials_warning')}</p>
-                    </div>
-                    <div className={styles.credentialField}>
-                        <label>{t('admin.access_code')}</label>
-                        <div className={styles.credentialValue}>
-                            <code>{credentials.accessCode}</code>
+
+                <h2 className={styles.credentialsTitle}>{t('admin.user_created_success')}</h2>
+
+                {/* Warning Banner */}
+                <div className={styles.warningBanner}>
+                    <AlertCircle size={18} />
+                    <span>{t('admin.save_credentials_warning')}</span>
+                </div>
+
+                {/* Credentials Cards */}
+                <div className={styles.credentialsGrid}>
+                    {/* Access Code Card */}
+                    <div className={styles.credentialCard}>
+                        <div className={styles.credentialLabel}>{t('admin.access_code')}</div>
+                        <div className={styles.credentialValueRow}>
+                            <code className={styles.credentialCode}>{credentials.accessCode}</code>
+                            <button
+                                className={`${styles.copyBtn} ${copiedCode ? styles.copied : ''}`}
+                                onClick={handleCopyCode}
+                                title={t('common.copy')}
+                            >
+                                {copiedCode ? (
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="m9 12 2 2 4-4" />
+                                    </svg>
+                                ) : (
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                    </svg>
+                                )}
+                            </button>
                         </div>
                     </div>
+
+                    {/* Password Card */}
                     {credentials.temporaryPassword && (
-                        <div className={styles.credentialField}>
-                            <label>{t('admin.temporary_password')}</label>
-                            <div className={styles.credentialValue}>
-                                <code>{credentials.temporaryPassword}</code>
+                        <div className={styles.credentialCard}>
+                            <div className={styles.credentialLabel}>{t('admin.temporary_password')}</div>
+                            <div className={styles.credentialValueRow}>
+                                <code className={styles.credentialCode}>{credentials.temporaryPassword}</code>
+                                <button
+                                    className={`${styles.copyBtn} ${copiedPassword ? styles.copied : ''}`}
+                                    onClick={handleCopyPassword}
+                                    title={t('common.copy')}
+                                >
+                                    {copiedPassword ? (
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="m9 12 2 2 4-4" />
+                                        </svg>
+                                    ) : (
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                        </svg>
+                                    )}
+                                </button>
                             </div>
                         </div>
                     )}
-                    <Button onClick={handleCopy} fullWidth variant="outline">
-                        {copied ? t('admin.copied_to_clipboard') : t('common.copy')}
+                </div>
+
+                {/* Action Buttons */}
+                <div className={styles.credentialsActions}>
+                    <Button variant="outline" onClick={handleCopyAll} fullWidth>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 8 }}>
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg>
+                        {t('admin.copy_all')}
                     </Button>
-                    <Button onClick={onClose} fullWidth>{t('admin.done')}</Button>
+                    <Button onClick={onClose} fullWidth>
+                        {t('admin.done')}
+                    </Button>
                 </div>
             </motion.div>
         </motion.div>
