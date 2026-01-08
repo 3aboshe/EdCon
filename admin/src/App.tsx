@@ -15,8 +15,6 @@ const SchoolAdminLayout = lazy(() => import('./features/school-admin/SchoolAdmin
 const DashboardPage = lazy(() => import('./features/school-admin/DashboardPage'));
 const UsersPage = lazy(() => import('./features/school-admin/UsersPage'));
 const AcademicPage = lazy(() => import('./features/school-admin/AcademicPage'));
-const AnalyticsPage = lazy(() => import('./features/school-admin/AnalyticsPage'));
-const ToolsPage = lazy(() => import('./features/school-admin/ToolsPage'));
 
 // Loading Fallback
 function LoadingFallback() {
@@ -108,8 +106,6 @@ function App() {
                 <Route index element={<DashboardPage />} />
                 <Route path="users" element={<UsersPage />} />
                 <Route path="academic" element={<AcademicPage />} />
-                <Route path="analytics" element={<AnalyticsPage />} />
-                <Route path="tools" element={<ToolsPage />} />
               </Route>
             </Route>
 

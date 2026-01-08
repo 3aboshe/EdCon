@@ -6,8 +6,6 @@ import {
     LayoutDashboard,
     Users,
     BookOpen,
-    BarChart3,
-    Settings,
     LogOut,
     Menu,
     X
@@ -31,8 +29,6 @@ export function SchoolAdminLayout() {
         { path: '/admin', icon: LayoutDashboard, label: t('admin.dashboard'), end: true },
         { path: '/admin/users', icon: Users, label: t('admin.users') },
         { path: '/admin/academic', icon: BookOpen, label: t('admin.academic') },
-        { path: '/admin/analytics', icon: BarChart3, label: t('admin.analytics') },
-        { path: '/admin/tools', icon: Settings, label: t('admin.tools') },
     ];
 
     return (

@@ -2,26 +2,24 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Plus, Search, Book, GraduationCap, FileText, BookOpen,
-    Trash2, X, Calendar
+    Plus, Search, Book, GraduationCap, BookOpen,
+    Trash2, X
 } from 'lucide-react';
 import { academicService } from '../../services/academicService';
-import type { Class, Subject, Exam, Homework } from '../../services/academicService';
+import type { Class, Subject } from '../../services/academicService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import styles from './AcademicPage.module.css';
 
-type AcademicTab = 'CLASS' | 'SUBJECT' | 'EXAM' | 'HOMEWORK';
+type AcademicTab = 'CLASS' | 'SUBJECT';
 
 export function AcademicPage() {
     const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<AcademicTab>('CLASS');
     const [data, setData] = useState<{
         classes: Class[],
-        subjects: Subject[],
-        exams: Exam[],
-        homework: Homework[]
-    }>({ classes: [], subjects: [], exams: [], homework: [] });
+        subjects: Subject[]
+    }>({ classes: [], subjects: [] });
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -33,15 +31,17 @@ export function AcademicPage() {
     const loadData = async () => {
         setIsLoading(true);
         try {
-            const [classes, subjects, exams, homework] = await Promise.all([
+            const [classesResult, subjectsResult] = await Promise.allSettled([
                 academicService.getClasses(),
-                academicService.getSubjects(),
-                academicService.getExams(),
-                academicService.getHomework()
+                academicService.getSubjects()
             ]);
-            setData({ classes, subjects, exams, homework });
+            setData({
+                classes: classesResult.status === 'fulfilled' ? classesResult.value : [],
+                subjects: subjectsResult.status === 'fulfilled' ? subjectsResult.value : []
+            });
         } catch (error) {
             console.error('Failed to load academic data:', error);
+            setData({ classes: [], subjects: [] });
         } finally {
             setIsLoading(false);
         }
@@ -53,8 +53,6 @@ export function AcademicPage() {
             switch (activeTab) {
                 case 'CLASS': await academicService.deleteClass(id); break;
                 case 'SUBJECT': await academicService.deleteSubject(id); break;
-                case 'EXAM': await academicService.deleteExam(id); break;
-                case 'HOMEWORK': await academicService.deleteHomework(id); break;
             }
             loadData();
         } catch (error) {
@@ -67,8 +65,6 @@ export function AcademicPage() {
         switch (activeTab) {
             case 'CLASS': return (data.classes || []).filter(c => c.name.toLowerCase().includes(query));
             case 'SUBJECT': return (data.subjects || []).filter(s => s.name.toLowerCase().includes(query));
-            case 'EXAM': return (data.exams || []).filter(e => e.title.toLowerCase().includes(query));
-            case 'HOMEWORK': return (data.homework || []).filter(h => h.title.toLowerCase().includes(query));
             default: return [];
         }
     };
@@ -90,7 +86,7 @@ export function AcademicPage() {
 
             <div className={styles.controls}>
                 <div className={styles.tabs}>
-                    {(['CLASS', 'SUBJECT', 'EXAM', 'HOMEWORK'] as AcademicTab[]).map((tab) => (
+                    {(['CLASS', 'SUBJECT'] as AcademicTab[]).map((tab) => (
                         <button
                             key={tab}
                             className={`${styles.tab} ${activeTab === tab ? styles.activeTab : ''}`}
@@ -130,29 +126,11 @@ export function AcademicPage() {
                                 <div className={styles.iconWrapper}>
                                     {activeTab === 'CLASS' && <GraduationCap size={20} />}
                                     {activeTab === 'SUBJECT' && <BookOpen size={20} />}
-                                    {activeTab === 'EXAM' && <FileText size={20} />}
-                                    {activeTab === 'HOMEWORK' && <Book size={20} />}
                                 </div>
                                 <div className={styles.cardTitle}>
-                                    <h3>{item.name || item.title}</h3>
-                                    <span className={styles.cardSubtitle}>
-                                        {activeTab === 'EXAM' || activeTab === 'HOMEWORK' ? item.subject?.name : ''}
-                                    </span>
+                                    <h3>{item.name}</h3>
                                 </div>
                             </div>
-
-                            {(activeTab === 'EXAM' || activeTab === 'HOMEWORK') && (
-                                <div className={styles.cardStats}>
-                                    <div className={styles.statItem}>
-                                        <Calendar size={14} />
-                                        <span>{new Date(item.date || item.dueDate).toLocaleDateString()}</span>
-                                    </div>
-                                    <div className={styles.statItem}>
-                                        <GraduationCap size={14} />
-                                        <span>{item.class?.name}</span>
-                                    </div>
-                                </div>
-                            )}
 
                             <div className={styles.cardActions}>
                                 <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)}>
@@ -169,8 +147,6 @@ export function AcademicPage() {
                 {showCreateModal && (
                     <CreateAcademicModal
                         type={activeTab}
-                        classes={data.classes}
-                        subjects={data.subjects}
                         onClose={() => setShowCreateModal(false)}
                         onSuccess={() => {
                             setShowCreateModal(false);
@@ -183,12 +159,10 @@ export function AcademicPage() {
     );
 }
 
-function CreateAcademicModal({ type, classes, subjects, onClose, onSuccess }: any) {
+function CreateAcademicModal({ type, onClose, onSuccess }: any) {
     const { t } = useTranslation();
     const [isLoading, setIsLoading] = useState(false);
-    const [formData, setFormData] = useState<any>({
-        name: '', title: '', subjectId: '', classId: '', date: '', dueDate: '', description: ''
-    });
+    const [formData, setFormData] = useState<any>({ name: '' });
 
     const handleSubmit = async (e: any) => {
         e.preventDefault();
@@ -197,8 +171,6 @@ function CreateAcademicModal({ type, classes, subjects, onClose, onSuccess }: an
             switch (type) {
                 case 'CLASS': await academicService.createClass(formData.name); break;
                 case 'SUBJECT': await academicService.createSubject(formData.name); break;
-                case 'EXAM': await academicService.createExam(formData); break;
-                case 'HOMEWORK': await academicService.createHomework(formData); break;
             }
             onSuccess();
         } catch (error) {
@@ -216,45 +188,12 @@ function CreateAcademicModal({ type, classes, subjects, onClose, onSuccess }: an
                     <button className={styles.closeBtn} onClick={onClose}><X size={20} /></button>
                 </div>
                 <form onSubmit={handleSubmit} className={styles.modalBody}>
-                    {(type === 'CLASS' || type === 'SUBJECT') && (
-                        <Input
-                            label={t('common.name')}
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            required
-                        />
-                    )}
-                    {(type === 'EXAM' || type === 'HOMEWORK') && (
-                        <>
-                            <Input
-                                label={t('common.title')}
-                                value={formData.title}
-                                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                required
-                            />
-                            <div className={styles.inputGroup}>
-                                <label className={styles.label}>{t('common.subject')}</label>
-                                <select className={styles.select} value={formData.subjectId} onChange={(e) => setFormData({ ...formData, subjectId: e.target.value })} required>
-                                    <option value="">{t('common.select')}</option>
-                                    {subjects.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                </select>
-                            </div>
-                            <div className={styles.inputGroup}>
-                                <label className={styles.label}>{t('common.class')}</label>
-                                <select className={styles.select} value={formData.classId} onChange={(e) => setFormData({ ...formData, classId: e.target.value })} required>
-                                    <option value="">{t('common.select')}</option>
-                                    {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                </select>
-                            </div>
-                            <Input
-                                label={type === 'EXAM' ? t('common.date') : t('common.due')}
-                                type="date"
-                                value={type === 'EXAM' ? formData.date : formData.dueDate}
-                                onChange={(e) => setFormData({ ...formData, [type === 'EXAM' ? 'date' : 'dueDate']: e.target.value })}
-                                required
-                            />
-                        </>
-                    )}
+                    <Input
+                        label={t('common.name')}
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        required
+                    />
                     <div className={styles.modalFooter}>
                         <Button variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
                         <Button type="submit" isLoading={isLoading}>{t('common.create')}</Button>

@@ -3,5 +3,11 @@
     "buildCommand": "cd admin && npm install && npm run build",
     "outputDirectory": "admin/dist",
     "installCommand": "echo 'skip'",
-    "framework": null
+    "framework": null,
+    "rewrites": [
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
+        }
+    ]
 }
