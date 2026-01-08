@@ -60,7 +60,7 @@ export function useDeleteUser() {
 // -- ACADEMIC --
 
 export function useClasses() {
-    return useQuery({
+    return useQuery<Class[]>({
         queryKey: QUERY_KEYS.classes,
         queryFn: async () => {
             try {
@@ -75,7 +75,7 @@ export function useClasses() {
 }
 
 export function useSubjects() {
-    return useQuery({
+    return useQuery<Subject[]>({
         queryKey: QUERY_KEYS.subjects,
         queryFn: async () => {
             try {
