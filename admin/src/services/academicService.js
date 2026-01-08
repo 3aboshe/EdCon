@@ -8,8 +8,8 @@ class AcademicService {
         return Array.isArray(data) ? data : (data.data || []);
     }
 
-    async createClass(name) {
-        const { data } = await api.post('/classes', { name });
+    async createClass(name, subjectIds = []) {
+        const { data } = await api.post('/classes', { name, subjectIds });
         return data.class || data;
     }
 

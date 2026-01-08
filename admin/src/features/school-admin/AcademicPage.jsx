@@ -141,6 +141,7 @@ export function AcademicPage() {
                 {showCreateModal && (
                     <CreateAcademicModal
                         type={activeTab}
+                        subjects={data.subjects}
                         onClose={() => setShowCreateModal(false)}
                         onSuccess={() => {
                             setShowCreateModal(false);
@@ -153,18 +154,31 @@ export function AcademicPage() {
     );
 }
 
-function CreateAcademicModal({ type, onClose, onSuccess }) {
+function CreateAcademicModal({ type, onClose, onSuccess, subjects = [] }) {
     const { t } = useTranslation();
     const [isLoading, setIsLoading] = useState(false);
-    const [formData, setFormData] = useState({ name: '' });
+    const [formData, setFormData] = useState({ name: '', subjectIds: [] });
+
+    const handleSubjectToggle = (subjectId) => {
+        setFormData(prev => ({
+            ...prev,
+            subjectIds: prev.subjectIds.includes(subjectId)
+                ? prev.subjectIds.filter(id => id !== subjectId)
+                : [...prev.subjectIds, subjectId]
+        }));
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
         try {
             switch (type) {
-                case 'CLASS': await academicService.createClass(formData.name); break;
-                case 'SUBJECT': await academicService.createSubject(formData.name); break;
+                case 'CLASS':
+                    await academicService.createClass(formData.name, formData.subjectIds);
+                    break;
+                case 'SUBJECT':
+                    await academicService.createSubject(formData.name);
+                    break;
             }
             onSuccess();
         } catch (error) {
@@ -186,8 +200,29 @@ function CreateAcademicModal({ type, onClose, onSuccess }) {
                         label={t('common.name')}
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder={type === 'CLASS' ? t('admin.class_name_hint_2') : t('admin.subject_name_hint_2')}
                         required
                     />
+
+                    {/* Subject checkboxes for Class creation */}
+                    {type === 'CLASS' && subjects.length > 0 && (
+                        <div className={styles.subjectSelection}>
+                            <label className={styles.fieldLabel}>{t('admin.select_subjects')}</label>
+                            <div className={styles.checkboxGrid}>
+                                {subjects.map(subject => (
+                                    <label key={subject.id} className={styles.checkboxItem}>
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.subjectIds.includes(subject.id)}
+                                            onChange={() => handleSubjectToggle(subject.id)}
+                                        />
+                                        <span>{subject.name}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     <div className={styles.modalFooter}>
                         <Button variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
                         <Button type="submit" isLoading={isLoading}>{t('common.create')}</Button>

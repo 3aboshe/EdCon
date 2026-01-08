@@ -29,6 +29,11 @@ class UserService {
     async linkParentToStudent(parentId, studentId) {
         await api.post('/parent-child/link', { parentId, studentId });
     }
+
+    async resetPassword(userId) {
+        const { data } = await api.post(`/users/${userId}/reset-password`);
+        return data.data || data;
+    }
 }
 
 export const userService = new UserService();

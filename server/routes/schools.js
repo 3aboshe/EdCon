@@ -145,7 +145,7 @@ router.delete('/:id', async (req, res) => {
 router.post('/:id/admins', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email } = req.body;
+    const { name, email, accessCode } = req.body;
 
     if (!name) {
       return res.status(400).json({ message: 'Admin name is required' });
@@ -159,7 +159,7 @@ router.post('/:id/admins', async (req, res) => {
     const tempPassword = generateTempPassword(6);
     const hashedPassword = await hashPassword(tempPassword);
     // Use custom access code if provided, otherwise generate one
-    const adminAccessCode = req.body.accessCode?.trim() || buildAccessCode('SCHOOL_ADMIN', school.code);
+    const adminAccessCode = accessCode?.trim() || buildAccessCode('SCHOOL_ADMIN', school.code);
 
     const schoolAdmin = await prisma.user.create({
       data: {
@@ -192,4 +192,75 @@ router.post('/:id/admins', async (req, res) => {
   }
 });
 
+// Get all admins for a school
+router.get('/:id/admins', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const school = await prisma.school.findUnique({ where: { id } });
+    if (!school) {
+      return res.status(404).json({ message: 'School not found' });
+    }
+
+    const admins = await prisma.user.findMany({
+      where: {
+        schoolId: id,
+        role: 'SCHOOL_ADMIN',
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    res.json({
+      success: true,
+      data: admins.map(stripSensitive),
+    });
+  } catch (error) {
+    console.error('Get school admins error:', error);
+    res.status(500).json({ message: 'Unable to fetch school admins' });
+  }
+});
+
+// Reset password for a school admin
+router.post('/:id/admins/:adminId/reset-password', async (req, res) => {
+  try {
+    const { id, adminId } = req.params;
+
+    const admin = await prisma.user.findFirst({
+      where: {
+        id: adminId,
+        schoolId: id,
+        role: 'SCHOOL_ADMIN',
+      },
+    });
+
+    if (!admin) {
+      return res.status(404).json({ message: 'Admin not found' });
+    }
+
+    const tempPassword = generateTempPassword(6);
+    const hashedPassword = await hashPassword(tempPassword);
+
+    await prisma.user.update({
+      where: { id: adminId },
+      data: {
+        temporaryPasswordHash: hashedPassword,
+        temporaryPasswordIssuedAt: new Date(),
+        requiresPasswordReset: true,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        accessCode: admin.accessCode,
+        temporaryPassword: tempPassword,
+      },
+    });
+  } catch (error) {
+    console.error('Reset admin password error:', error);
+    res.status(500).json({ message: 'Unable to reset password' });
+  }
+});
+
 export default router;
+

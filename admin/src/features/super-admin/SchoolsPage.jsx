@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Plus, Search, Building2, Users, Trash2,
-    X, Copy, Check, AlertCircle, ShieldCheck
+    Plus, Search, Building2, Users, Trash2, Eye,
+    X, Copy, Check, AlertCircle, ShieldCheck, RefreshCw
 } from 'lucide-react';
 import { schoolService } from '../../services/schoolService';
 import { Button } from '../../components/ui/Button';
@@ -17,6 +17,7 @@ export function SchoolsPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showAddAdminModal, setShowAddAdminModal] = useState(null);
+    const [showAdminsModal, setShowAdminsModal] = useState(null);
     const [showCredentialsModal, setShowCredentialsModal] = useState(false);
     const [credentials, setCredentials] = useState(null);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -55,7 +56,6 @@ export function SchoolsPage() {
             setCredentials(response.credentials);
             setShowAddAdminModal(null);
             setShowCredentialsModal(true);
-            // Refresh schools to update admin count or details if we were showing them
             loadSchools();
         } catch (error) {
             console.error('Failed to add school admin:', error);
@@ -135,10 +135,6 @@ export function SchoolsPage() {
                                     <Users size={16} />
                                     <span>{school._count?.users || 0} {t('super_admin.users_count')}</span>
                                 </div>
-                                <div className={styles.stat}>
-                                    <ShieldCheck size={16} />
-                                    <span>{t('admin.administrators')}</span>
-                                </div>
                             </div>
 
                             {school.address && (
@@ -146,6 +142,14 @@ export function SchoolsPage() {
                             )}
 
                             <div className={styles.cardActions}>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setShowAdminsModal({ schoolId: school.id, schoolName: school.name })}
+                                >
+                                    <Eye size={16} />
+                                    {t('super_admin.view_admins')}
+                                </Button>
                                 <Button
                                     variant="ghost"
                                     size="sm"
@@ -219,6 +223,21 @@ export function SchoolsPage() {
                 )}
             </AnimatePresence>
 
+            {/* View Admins Modal */}
+            <AnimatePresence>
+                {showAdminsModal && (
+                    <ViewAdminsModal
+                        schoolId={showAdminsModal.schoolId}
+                        schoolName={showAdminsModal.schoolName}
+                        onClose={() => setShowAdminsModal(null)}
+                        onPasswordReset={(creds) => {
+                            setCredentials(creds);
+                            setShowCredentialsModal(true);
+                        }}
+                    />
+                )}
+            </AnimatePresence>
+
             {/* Credentials Modal */}
             <AnimatePresence>
                 {showCredentialsModal && credentials && (
@@ -245,6 +264,7 @@ function CreateSchoolModal({ onClose, onSubmit }) {
         address: '',
         adminName: '',
         adminEmail: '',
+        adminAccessCode: '',
     });
 
     const handleSubmit = async (e) => {
@@ -264,6 +284,7 @@ function CreateSchoolModal({ onClose, onSubmit }) {
                 admin: {
                     name: formData.adminName.trim(),
                     email: formData.adminEmail.trim() || undefined,
+                    accessCode: formData.adminAccessCode.trim() || undefined,
                 },
             });
         } catch (err) {
@@ -336,6 +357,13 @@ function CreateSchoolModal({ onClose, onSubmit }) {
                         placeholder={t('super_admin.admin_email')}
                     />
 
+                    <Input
+                        label={t('super_admin.custom_access_code')}
+                        value={formData.adminAccessCode}
+                        onChange={(e) => setFormData({ ...formData, adminAccessCode: e.target.value })}
+                        placeholder={t('super_admin.username_hint')}
+                    />
+
                     <div className={styles.modalFooter}>
                         <Button variant="ghost" type="button" onClick={onClose}>
                             {t('super_admin.cancel')}
@@ -358,6 +386,7 @@ function AddAdminModal({ schoolName, onClose, onSubmit }) {
     const [formData, setFormData] = useState({
         name: '',
         email: '',
+        accessCode: '',
     });
 
     const handleSubmit = async (e) => {
@@ -374,6 +403,7 @@ function AddAdminModal({ schoolName, onClose, onSubmit }) {
             await onSubmit({
                 name: formData.name.trim(),
                 email: formData.email.trim() || undefined,
+                accessCode: formData.accessCode.trim() || undefined,
             });
         } catch (err) {
             setError(err instanceof Error ? err.message : t('super_admin.failed_add_admin'));
@@ -431,6 +461,13 @@ function AddAdminModal({ schoolName, onClose, onSubmit }) {
                         placeholder={t('super_admin.admin_email')}
                     />
 
+                    <Input
+                        label={t('super_admin.custom_access_code')}
+                        value={formData.accessCode}
+                        onChange={(e) => setFormData({ ...formData, accessCode: e.target.value })}
+                        placeholder={t('super_admin.username_hint')}
+                    />
+
                     <div className={styles.modalFooter}>
                         <Button variant="ghost" type="button" onClick={onClose}>
                             {t('super_admin.cancel')}
@@ -440,6 +477,118 @@ function AddAdminModal({ schoolName, onClose, onSubmit }) {
                         </Button>
                     </div>
                 </form>
+            </motion.div>
+        </motion.div>
+    );
+}
+
+// View Admins Modal
+function ViewAdminsModal({ schoolId, schoolName, onClose, onPasswordReset }) {
+    const { t } = useTranslation();
+    const [admins, setAdmins] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [resettingId, setResettingId] = useState(null);
+
+    useEffect(() => {
+        loadAdmins();
+    }, [schoolId]);
+
+    const loadAdmins = async () => {
+        try {
+            const data = await schoolService.getAdmins(schoolId);
+            setAdmins(Array.isArray(data) ? data : []);
+        } catch (error) {
+            console.error('Failed to load admins:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleResetPassword = async (adminId, adminName) => {
+        if (!confirm(t('admin.reset_password_confirm'))) return;
+
+        setResettingId(adminId);
+        try {
+            const result = await schoolService.resetAdminPassword(schoolId, adminId);
+            onPasswordReset({
+                accessCode: result.accessCode,
+                temporaryPassword: result.temporaryPassword,
+                userName: adminName,
+            });
+        } catch (error) {
+            console.error('Failed to reset password:', error);
+            alert(t('admin.password_reset_failed'));
+        } finally {
+            setResettingId(null);
+        }
+    };
+
+    return (
+        <motion.div
+            className={styles.modalOverlay}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+        >
+            <motion.div
+                className={styles.modalLarge}
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className={styles.modalHeader}>
+                    <div>
+                        <h2>{t('super_admin.school_admins')}</h2>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{schoolName}</p>
+                    </div>
+                    <button className={styles.closeBtn} onClick={onClose}>
+                        <X size={20} />
+                    </button>
+                </div>
+
+                <div className={styles.modalBody}>
+                    {isLoading ? (
+                        <div className={styles.centered}>{t('common.loading')}</div>
+                    ) : admins.length === 0 ? (
+                        <div className={styles.centered}>
+                            <ShieldCheck size={48} style={{ opacity: 0.3 }} />
+                            <p>{t('super_admin.no_admins')}</p>
+                        </div>
+                    ) : (
+                        <div className={styles.adminsList}>
+                            {admins.map(admin => (
+                                <div key={admin.id} className={styles.adminItem}>
+                                    <div className={styles.adminInfo}>
+                                        <div className={styles.adminAvatar}>
+                                            {admin.name.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div>
+                                            <div className={styles.adminName}>{admin.name}</div>
+                                            <div className={styles.adminCode}>{admin.accessCode}</div>
+                                        </div>
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleResetPassword(admin.id, admin.name)}
+                                        isLoading={resettingId === admin.id}
+                                    >
+                                        <RefreshCw size={14} />
+                                        {t('admin.reset_password_button')}
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <div className={styles.modalFooter}>
+                    <Button onClick={onClose} fullWidth>
+                        {t('common.close')}
+                    </Button>
+                </div>
             </motion.div>
         </motion.div>
     );
@@ -456,6 +605,8 @@ function CredentialsModal({ credentials, onClose }) {
         setTimeout(() => setCopiedField(null), 2000);
     };
 
+    const isPasswordReset = !!credentials.userName;
+
     return (
         <motion.div
             className={styles.modalOverlay}
@@ -464,46 +615,53 @@ function CredentialsModal({ credentials, onClose }) {
             exit={{ opacity: 0 }}
         >
             <motion.div
-                className={styles.modal}
+                className={styles.credentialsModal}
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
             >
-                <div className={styles.modalHeader}>
-                    <h2>{t('super_admin.admin_created')}</h2>
+                {/* Success Icon */}
+                <div className={styles.successIcon}>
+                    <Check size={32} />
                 </div>
 
-                <div className={styles.modalBody}>
-                    <div className={styles.warningBanner}>
-                        <AlertCircle size={20} />
-                        <p>{t('super_admin.save_credentials')}</p>
-                    </div>
+                <h2 className={styles.credentialsTitle}>
+                    {isPasswordReset ? t('admin.password_reset_success') : t('super_admin.admin_created')}
+                </h2>
 
-                    <div className={styles.credentialField}>
-                        <label>{t('admin.access_code')}</label>
-                        <div className={styles.credentialValue}>
-                            <code>{credentials.accessCode}</code>
-                            <button onClick={() => copyToClipboard(credentials.accessCode, 'code')}>
-                                {copiedField === 'code' ? <Check size={16} /> : <Copy size={16} />}
-                            </button>
-                        </div>
-                    </div>
+                {credentials.userName && (
+                    <p className={styles.credentialsSubtitle}>{credentials.userName}</p>
+                )}
 
-                    <div className={styles.credentialField}>
-                        <label>{t('super_admin.temp_password')}</label>
-                        <div className={styles.credentialValue}>
-                            <code>{credentials.temporaryPassword}</code>
-                            <button onClick={() => copyToClipboard(credentials.temporaryPassword, 'password')}>
-                                {copiedField === 'password' ? <Check size={16} /> : <Copy size={16} />}
-                            </button>
-                        </div>
-                    </div>
+                <div className={styles.warningBanner}>
+                    <AlertCircle size={20} />
+                    <p>{t('super_admin.save_credentials')}</p>
+                </div>
 
-                    <div className={styles.modalFooter}>
-                        <Button onClick={onClose} fullWidth>
-                            {t('super_admin.done')}
-                        </Button>
+                <div className={styles.credentialField}>
+                    <label>{t('admin.access_code')}</label>
+                    <div className={styles.credentialValue}>
+                        <code>{credentials.accessCode}</code>
+                        <button onClick={() => copyToClipboard(credentials.accessCode, 'code')}>
+                            {copiedField === 'code' ? <Check size={16} /> : <Copy size={16} />}
+                        </button>
                     </div>
+                </div>
+
+                <div className={styles.credentialField}>
+                    <label>{t('super_admin.temp_password')}</label>
+                    <div className={styles.credentialValue}>
+                        <code>{credentials.temporaryPassword}</code>
+                        <button onClick={() => copyToClipboard(credentials.temporaryPassword, 'password')}>
+                            {copiedField === 'password' ? <Check size={16} /> : <Copy size={16} />}
+                        </button>
+                    </div>
+                </div>
+
+                <div className={styles.modalFooter}>
+                    <Button onClick={onClose} fullWidth>
+                        {t('super_admin.done')}
+                    </Button>
                 </div>
             </motion.div>
         </motion.div>

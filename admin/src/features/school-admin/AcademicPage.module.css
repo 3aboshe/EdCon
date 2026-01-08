@@ -213,3 +213,66 @@
         align-items: stretch;
     }
 }
+
+/* Subject Selection Checkboxes */
+.subjectSelection {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.fieldLabel {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--color-text);
+}
+
+.checkboxGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-2);
+    max-height: 200px;
+    overflow-y: auto;
+    padding: var(--space-2);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+}
+
+.checkboxItem {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.checkboxItem:hover {
+    background: var(--color-surface);
+}
+
+.checkboxItem input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+}
+
+.checkboxItem span {
+    font-size: var(--text-sm);
+    color: var(--color-text);
+}
+
+.closeBtn {
+    color: var(--color-text-muted);
+    padding: var(--space-1);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+
+.closeBtn:hover {
+    background: var(--color-bg-secondary);
+    color: var(--color-text);
+}

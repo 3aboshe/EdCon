@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Plus, Search, User, Trash2,
-    X, AlertCircle
+    Plus, Search, User, Trash2, RefreshCw,
+    X, AlertCircle, Check
 } from 'lucide-react';
 import { useUsers, useClasses, useCreateUser, useDeleteUser } from '../../hooks/useSchoolData';
+import { userService } from '../../services/userService';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import styles from './UsersPage.module.css';
@@ -19,8 +20,9 @@ export function UsersPage() {
     const [credentials, setCredentials] = useState(null);
 
     // Data Hooks
-    const { data: users = [], isLoading } = useUsers(activeTab);
+    const { data: users = [], isLoading, refetch } = useUsers(activeTab);
     const { data: classes = [] } = useClasses();
+    const { data: parents = [] } = useUsers('PARENT');
 
     // Mutations
     const createUser = useCreateUser();
@@ -49,6 +51,22 @@ export function UsersPage() {
             await deleteUser.mutateAsync(id);
         } catch (error) {
             console.error('Failed to delete user:', error);
+        }
+    };
+
+    const handleResetPassword = async (userId, userName) => {
+        if (!confirm(t('admin.reset_password_confirm'))) return;
+        try {
+            const result = await userService.resetPassword(userId);
+            setCredentials({
+                accessCode: result.accessCode || result.data?.accessCode,
+                temporaryPassword: result.temporaryPassword || result.data?.temporaryPassword,
+                userName: userName
+            });
+            setShowCredentialsModal(true);
+        } catch (error) {
+            console.error('Failed to reset password:', error);
+            alert(t('admin.password_reset_failed'));
         }
     };
 
@@ -139,6 +157,17 @@ export function UsersPage() {
                                     </td>
                                     <td>
                                         <div className={styles.actions}>
+                                            {/* Password reset for teachers and parents */}
+                                            {(activeTab === 'TEACHER' || activeTab === 'PARENT') && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleResetPassword(user.id, user.name)}
+                                                    title={t('admin.reset_password_button')}
+                                                >
+                                                    <RefreshCw size={16} />
+                                                </Button>
+                                            )}
                                             <Button variant="ghost" size="sm" onClick={() => handleDeleteUser(user.id)}>
                                                 <Trash2 size={16} />
                                             </Button>
@@ -157,6 +186,7 @@ export function UsersPage() {
                     <CreateUserModal
                         role={activeTab}
                         classes={classes}
+                        parents={parents}
                         onClose={() => setShowCreateModal(false)}
                         onSubmit={handleCreateUser}
                     />
@@ -176,19 +206,34 @@ export function UsersPage() {
     );
 }
 
-// Create User Modal Component
-function CreateUserModal({ role, classes, onClose, onSubmit }) {
+// Create User Modal Component with Parent Search
+function CreateUserModal({ role, classes, parents = [], onClose, onSubmit }) {
     const { t } = useTranslation();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [parentSearch, setParentSearch] = useState('');
+    const [showParentDropdown, setShowParentDropdown] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         email: undefined,
         phone: '',
         role: role,
         classId: '',
-        accessCode: ''
+        parentId: '',
+        subject: ''
     });
+
+    // Filter parents based on search
+    const filteredParents = parents.filter(parent =>
+        parent.name?.toLowerCase().includes(parentSearch.toLowerCase()) ||
+        parent.accessCode?.toLowerCase().includes(parentSearch.toLowerCase())
+    ).slice(0, 5);
+
+    const selectParent = (parent) => {
+        setFormData({ ...formData, parentId: parent.id });
+        setParentSearch(parent.name);
+        setShowParentDropdown(false);
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -197,20 +242,16 @@ function CreateUserModal({ role, classes, onClose, onSubmit }) {
             return;
         }
 
-        if (formData.accessCode && formData.accessCode.trim().length > 0 && formData.accessCode.trim().length < 3) {
-            setError(t('admin.access_code_too_short'));
-            return;
-        }
-
         const submitData = { ...formData };
         if (!submitData.email) delete submitData.email;
-        if (!submitData.accessCode) delete submitData.accessCode;
+        if (!submitData.parentId) delete submitData.parentId;
+        if (!submitData.subject) delete submitData.subject;
 
         setIsLoading(true);
         try {
             await onSubmit(submitData);
         } catch (err) {
-            setError(err.response?.data?.message || t('admin.create_user_error'));
+            setError(err.response?.data?.message || err.message || t('admin.create_user_error'));
         } finally {
             setIsLoading(false);
         }
@@ -239,6 +280,8 @@ function CreateUserModal({ role, classes, onClose, onSubmit }) {
                         onChange={e => setFormData({ ...formData, email: e.target.value })}
                         placeholder="john@example.com"
                     />
+
+                    {/* Class selector for students */}
                     {role === 'STUDENT' && (
                         <div className={styles.inputGroup}>
                             <label className={styles.label}>{t('admin.class_label')}</label>
@@ -253,12 +296,60 @@ function CreateUserModal({ role, classes, onClose, onSubmit }) {
                             </select>
                         </div>
                     )}
-                    <Input
-                        label={t('admin.access_code') + ' (Optional)'}
-                        value={formData.accessCode || ''}
-                        onChange={e => setFormData({ ...formData, accessCode: e.target.value })}
-                        placeholder="e.g. S12345"
-                    />
+
+                    {/* Parent search for students */}
+                    {role === 'STUDENT' && parents.length > 0 && (
+                        <div className={styles.inputGroup}>
+                            <label className={styles.label}>{t('admin.link_parent')}</label>
+                            <div className={styles.autocompleteWrapper}>
+                                <input
+                                    type="text"
+                                    className={styles.autocompleteInput}
+                                    value={parentSearch}
+                                    onChange={(e) => {
+                                        setParentSearch(e.target.value);
+                                        setShowParentDropdown(true);
+                                        if (!e.target.value) {
+                                            setFormData({ ...formData, parentId: '' });
+                                        }
+                                    }}
+                                    onFocus={() => setShowParentDropdown(true)}
+                                    placeholder={t('admin.search_parent_hint')}
+                                />
+                                {showParentDropdown && parentSearch && filteredParents.length > 0 && (
+                                    <div className={styles.autocompleteDropdown}>
+                                        {filteredParents.map(parent => (
+                                            <div
+                                                key={parent.id}
+                                                className={styles.autocompleteItem}
+                                                onClick={() => selectParent(parent)}
+                                            >
+                                                <span className={styles.parentName}>{parent.name}</span>
+                                                <span className={styles.parentCode}>{parent.accessCode}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                {formData.parentId && (
+                                    <div className={styles.selectedParent}>
+                                        <Check size={14} />
+                                        <span>{t('admin.parent_linked')}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Subject field for teachers */}
+                    {role === 'TEACHER' && (
+                        <Input
+                            label={t('admin.subject_label')}
+                            value={formData.subject || ''}
+                            onChange={e => setFormData({ ...formData, subject: e.target.value })}
+                            placeholder={t('admin.subject_name_hint_2')}
+                        />
+                    )}
+
                     <div className={styles.modalFooter}>
                         <Button variant="ghost" type="button" onClick={onClose}>{t('common.cancel')}</Button>
                         <Button type="submit" isLoading={isLoading}>{t('common.create')}</Button>
@@ -303,6 +394,8 @@ function CredentialsModal({ credentials, onClose }) {
         }, 2000);
     };
 
+    const isPasswordReset = !!credentials.userName;
+
     return (
         <motion.div
             className={styles.modalOverlay}
@@ -326,7 +419,13 @@ function CredentialsModal({ credentials, onClose }) {
                     </svg>
                 </div>
 
-                <h2 className={styles.credentialsTitle}>{t('admin.user_created_success')}</h2>
+                <h2 className={styles.credentialsTitle}>
+                    {isPasswordReset ? t('admin.password_reset_success') : t('admin.user_created_success')}
+                </h2>
+
+                {credentials.userName && (
+                    <p className={styles.credentialsSubtitle}>{credentials.userName}</p>
+                )}
 
                 {/* Warning Banner */}
                 <div className={styles.warningBanner}>
