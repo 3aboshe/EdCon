@@ -26,7 +26,7 @@ export function NotificationsPage() {
 
     const loadNotifications = async () => {
         try {
-            const data = await systemService.getAnnouncements();
+            const data = await systemService.getGlobalHistory();
             setHistory(data);
         } catch (err) {
             console.error('Failed to load notifications history:', err);

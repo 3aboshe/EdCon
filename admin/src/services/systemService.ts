@@ -51,6 +51,11 @@ class SystemService {
         await api.post('/global-notifications', notification);
     }
 
+    async getGlobalHistory(): Promise<Announcement[]> {
+        const { data } = await api.get<{ success: boolean; data: Announcement[] }>('/global-notifications');
+        return data.data;
+    }
+
     // Backup & Restore (Super Admin)
     async getBackups(): Promise<Backup[]> {
         const { data } = await api.get<{ success: boolean; backups: Backup[] }>('/backup/list');
