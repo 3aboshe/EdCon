@@ -78,6 +78,7 @@ model User {
   sentMessages     Message[] @relation("MessageSender")
   receivedMessages Message[] @relation("MessageReceiver")
   submittedHomework Homework[] @relation("HomeworkSubmissions")
+  encryptionKeys   EncryptionKey[]
 
   @@map("users")
 }
@@ -199,23 +200,45 @@ model Attendance {
 }
 
 model Message {
-  id         String      @id @default(cuid())
-  senderId   String
-  receiverId String
-  schoolId   String
-  timestamp  DateTime    @default(now())
-  isRead     Boolean     @default(false)
-  type       MessageType @default(TEXT)
-  content    String?
-  audioSrc   String?
-  attachments Json?
-  createdAt  DateTime    @default(now())
+  id                String      @id @default(cuid())
+  senderId          String
+  receiverId        String
+  schoolId          String
+  timestamp         DateTime    @default(now())
+  isRead            Boolean     @default(false)
+  type              MessageType @default(TEXT)
+  content           String?
+  audioSrc          String?
+  attachments       Json?
+  createdAt         DateTime    @default(now())
+
+  // Encryption fields for end-to-end encryption
+  encryptedContent  String?
+  encryptedAesKey   String?
+  iv                String?
+  encryptionVersion Int         @default(1)
+  isEncrypted       Boolean     @default(false)
 
   school   School @relation(fields: [schoolId], references: [id])
   sender   User   @relation("MessageSender", fields: [senderId], references: [id])
   receiver User   @relation("MessageReceiver", fields: [receiverId], references: [id])
 
   @@map("messages")
+}
+
+// Encryption key management for end-to-end encryption
+model EncryptionKey {
+  id         String   @id @default(cuid())
+  userId     String
+  publicKey  String
+  keyVersion Int      @default(1)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, keyVersion])
+  @@map("encryption_keys")
 }
 
 // Enums

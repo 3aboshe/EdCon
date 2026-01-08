@@ -55,15 +55,46 @@ const upload = multer({
 router.use(authenticate);
 router.use(resolveSchoolContext);
 
-// Get all messages
+// Get messages for authenticated user only
 router.get('/', async (req, res) => {
   try {
+    const authenticatedUserId = req.user.id;
+    const { userId, otherUserId } = req.query;
+
+    // If userId is provided, verify it matches authenticated user
+    const targetUserId = userId || authenticatedUserId;
+
+    // SECURITY: Users can only access their own messages
+    if (targetUserId !== authenticatedUserId) {
+      return res.status(403).json({
+        message: 'Access denied: You can only view your own messages'
+      });
+    }
+
+    let whereClause = {
+      schoolId: req.school.id,
+      OR: [
+        { senderId: targetUserId },
+        { receiverId: targetUserId }
+      ]
+    };
+
+    // If otherUserId is specified, filter to conversation between two users
+    if (otherUserId) {
+      whereClause = {
+        schoolId: req.school.id,
+        OR: [
+          { senderId: targetUserId, receiverId: otherUserId },
+          { senderId: otherUserId, receiverId: targetUserId }
+        ]
+      };
+    }
+
     const messages = await prisma.message.findMany({
-      where: { schoolId: req.school.id },
-      orderBy: {
-        createdAt: 'asc'
-      }
+      where: whereClause,
+      orderBy: { createdAt: 'asc' }
     });
+
     res.json(messages);
   } catch (error) {
     console.error('Error fetching messages:', error);
@@ -148,7 +179,14 @@ router.post('/', upload.array('files', 5), async (req, res) => {
       console.error('Sender not found:', senderId);
       return res.status(400).json({ message: 'Sender user not found' });
     }
-    
+
+    // SECURITY: Verify sender is the authenticated user
+    if (senderId !== req.user.id) {
+      return res.status(403).json({
+        message: 'Access denied: You can only send messages as yourself'
+      });
+    }
+
     const receiver = await prisma.user.findFirst({ where: { id: receiverId, schoolId: req.school.id } });
     if (!receiver) {
       console.error('Receiver not found:', receiverId);
@@ -227,17 +265,24 @@ router.post('/', upload.array('files', 5), async (req, res) => {
 router.put('/:id/read', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const message = await prisma.message.findFirst({ where: { id, schoolId: req.school.id } });
     if (!message) {
       return res.status(404).json({ message: 'Message not found' });
+    }
+
+    // SECURITY: Only receiver can mark message as read
+    if (message.receiverId !== req.user.id) {
+      return res.status(403).json({
+        message: 'Access denied: Only the message recipient can mark it as read'
+      });
     }
 
     const updatedMessage = await prisma.message.update({
       where: { id: message.id },
       data: { isRead: true }
     });
-    
+
     res.json(updatedMessage);
   } catch (error) {
     console.error('Mark message as read error:', error);
@@ -249,10 +294,17 @@ router.put('/:id/read', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const message = await prisma.message.findFirst({ where: { id, schoolId: req.school.id } });
     if (!message) {
       return res.status(404).json({ message: 'Message not found' });
+    }
+
+    // SECURITY: Only sender or receiver can delete message
+    if (message.senderId !== req.user.id && message.receiverId !== req.user.id) {
+      return res.status(403).json({
+        message: 'Access denied: You can only delete messages you sent or received'
+      });
     }
 
     await prisma.message.delete({

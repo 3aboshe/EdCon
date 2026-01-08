@@ -21,6 +21,7 @@ import userManagementRoutes from './routes/users.js';
 import analyticsRoutes from './routes/analytics.js';
 import globalNotificationRoutes from './routes/global-notifications.js';
 import dashboardRoutes from './routes/dashboard.js';
+import encryptionRoutes from './routes/encryption.js';
 
 dotenv.config();
 
@@ -101,6 +102,7 @@ app.use('/api/global-notifications', globalNotificationRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/backup', backupRoutes);
 app.use('/api/admin/dashboard', dashboardRoutes);
+app.use('/api/encryption', encryptionRoutes);
 
 // File serving route
 app.get('/uploads/:filename', (req, res) => {
