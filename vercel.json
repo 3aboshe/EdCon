@@ -1,8 +1,7 @@
 {
-    "rewrites": [
-        {
-            "source": "/(.*)",
-            "destination": "/admin/$1"
-        }
-    ]
+    "$schema": "https://openapi.vercel.sh/vercel.json",
+    "buildCommand": "cd admin && npm install && npm run build",
+    "outputDirectory": "admin/dist",
+    "installCommand": "echo 'skip'",
+    "framework": null
 }
