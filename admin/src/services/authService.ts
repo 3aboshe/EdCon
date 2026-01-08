@@ -29,49 +29,6 @@ export interface ResetPasswordData {
 
 class AuthService {
     async login(credentials: LoginCredentials): Promise<LoginResponse> {
-        // Local bypass for testing
-        if (credentials.accessCode === 'admin' && credentials.password === 'admin') {
-            const mockData: LoginResponse = {
-                success: true,
-                token: 'mock-token-super',
-                user: {
-                    id: 'mock-super-id',
-                    accessCode: 'admin',
-                    name: 'Local Super Admin',
-                    email: 'super@local.test',
-                    role: 'SUPER_ADMIN',
-                    schoolId: null,
-                    schoolCode: null,
-                    requiresPasswordReset: false,
-                }
-            };
-
-            localStorage.setItem('edcon-token', mockData.token);
-            localStorage.setItem('edcon-user', JSON.stringify(mockData.user));
-            return mockData;
-        }
-
-        if (credentials.accessCode === 'school' && credentials.password === 'school') {
-            const mockData: LoginResponse = {
-                success: true,
-                token: 'mock-token-school',
-                user: {
-                    id: 'mock-school-id',
-                    accessCode: 'school',
-                    name: 'Local School Admin',
-                    email: 'school@local.test',
-                    role: 'SCHOOL_ADMIN',
-                    schoolId: 'mock-school-id',
-                    schoolCode: 'MOCK123',
-                    requiresPasswordReset: false,
-                }
-            };
-
-            localStorage.setItem('edcon-token', mockData.token);
-            localStorage.setItem('edcon-user', JSON.stringify(mockData.user));
-            return mockData;
-        }
-
         const { data } = await api.post<LoginResponse>('/auth/login', credentials);
 
         // Store token and user
