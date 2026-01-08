@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
@@ -6,38 +5,12 @@ import {
     Plus, UserPlus, School
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { dashboardService } from '../../services/dashboardService';
-import type { DashboardStats } from '../../services/dashboardService';
 import styles from './DashboardPage.module.css';
+import { useSchoolDashboard } from '../../hooks/useSchoolData';
 
 export function DashboardPage() {
     const { t } = useTranslation();
-    const [stats, setStats] = useState<DashboardStats | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        loadStats();
-    }, []);
-
-    const loadStats = async () => {
-        try {
-            const data = await dashboardService.getSchoolDashboard();
-            setStats(data);
-        } catch (error) {
-            console.error('Failed to load dashboard:', error);
-            // Set default values on error
-            setStats({
-                totalStudents: 0,
-                totalTeachers: 0,
-                totalParents: 0,
-                totalClasses: 0,
-                activeHomework: 0,
-                attendanceRate: 0,
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    const { data: stats, isLoading } = useSchoolDashboard();
 
     const statCards = [
         {
