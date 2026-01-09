@@ -40,7 +40,8 @@
     "passwords_mismatch": "كلمتا المرور غير متطابقتين",
     "submit": "تعيين كلمة مرور جديدة",
     "success": "تم تغيير كلمة المرور بنجاح!",
-    "failed": "فشل في تغيير كلمة المرور"
+    "failed": "فشل في تغيير كلمة المرور",
+    "redirecting": "جاري التوجيه إلى لوحة التحكم..."
   },
   "parent": {
     "welcome": "أهلاً بك في بوابة ولي الأمر",
@@ -429,7 +430,6 @@
     "submitted": "تاريخ التسليم",
     "overdue": "متأخر",
     "copy": "نسخ",
-    "confirm": "تأكيد",
     "confirm_delete": "هل أنت متأكد من حذف هذا العنصر؟",
     "status": "الحالة",
     "active": "نشط",
@@ -529,7 +529,8 @@
     "tab_students": "الطلاب",
     "tab_teachers": "المعلمون",
     "tab_parents": "أولياء الأمور",
-    "create_user_error": "فشل في إنشاء المستخدم",
+    "user_created_success": "تم إنشاء {} بنجاح!",
+    "create_user_error": "فشل في إنشاء المستخدم: ",
     "academic_management_title": "الإدارة الأكاديمية",
     "add_subject_button": "إضافة مادة",
     "add_class_button": "إضافة صف",
@@ -575,7 +576,7 @@
     "add_subject_desc": "إنشاء مادة دراسية جديدة",
     "attendance_rate": "نسبة الحضور",
     "user_created_title": "تم إنشاء {} بنجاح",
-    "save_credentials_warning": "هام: احفظ بيانات الدخول هذه الآن. لن يتم عرضها مرة أخرى!",
+    "save_credentials_warning": "⚠️ هام: احفظ بيانات الدخول هذه الآن. لن يتم عرضها مرة أخرى!",
     "access_code": "رمز الدخول",
     "temporary_password": "كلمة المرور المؤقتة",
     "copied_to_clipboard": "تم النسخ إلى الحافظة",
@@ -601,10 +602,7 @@
     "user_created_success": "تم إنشاء المستخدم بنجاح!",
     "copy_all": "نسخ جميع البيانات",
     "email_optional": "البريد الإلكتروني (اختياري)",
-    "access_code_too_short": "يجب أن يكون رمز الدخول 3 أحرف على الأقل",
-    "link_parent": "ربط بولي الأمر (اختياري)",
-    "search_parent_hint": "ابحث عن ولي أمر...",
-    "parent_linked": "تم ربط ولي الأمر"
+    "access_code_too_short": "يجب أن يكون رمز الدخول 3 أحرف على الأقل"
   },
   "days": {
     "mon": "الإثنين",
@@ -726,9 +724,6 @@
     "error_occurred": "حدث خطأ",
     "email_optional": "البريد الإلكتروني (اختياري)",
     "school_code": "رمز المدرسة",
-    "admin_management_info": "أنشئ مسؤولين بأسماء مستخدمين مخصصة لإدارة هذه المدرسة. سيحصل كل مسؤول على بيانات تسجيل الدخول.",
-    "add_admin_short": "إضافة مسؤول",
-    "admin_created": "تم إنشاء المسؤول بنجاح",
-    "custom_access_code": "رمز دخول مخصص (اختياري)"
+    "admin_management_info": "أنشئ مسؤولين بأسماء مستخدمين مخصصة لإدارة هذه المدرسة. سيحصل كل مسؤول على بيانات تسجيل الدخول."
   }
 }

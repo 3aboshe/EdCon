@@ -36,9 +36,15 @@ export function LoginPage() {
         setIsLoading(true);
 
         try {
-            await login({ accessCode: accessCode.trim(), password });
-            // Navigate based on role (handled in App.jsx routes)
-            navigate('/');
+            const response = await login({ accessCode: accessCode.trim(), password });
+
+            // Check if user needs to reset password
+            if (response.user.requiresPasswordReset) {
+                navigate('/force-password-change');
+            } else {
+                // Navigate based on role (handled in App.jsx routes)
+                navigate('/');
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : t('login.error_invalid'));
         } finally {

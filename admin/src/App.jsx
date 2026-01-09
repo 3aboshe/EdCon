@@ -7,6 +7,7 @@ import './styles/global.css';
 
 // Lazy load pages for better performance
 const LoginPage = lazy(() => import('./features/auth/LoginPage'));
+const ForcePasswordChangePage = lazy(() => import('./features/auth/ForcePasswordChangePage'));
 const SuperAdminLayout = lazy(() => import('./features/super-admin/SuperAdminLayout'));
 const OverviewPage = lazy(() => import('./features/super-admin/OverviewPage'));
 const SchoolsPage = lazy(() => import('./features/super-admin/SchoolsPage'));
@@ -50,6 +51,11 @@ function ProtectedRoute({ allowedRoles }) {
         return <Navigate to="/login" replace />;
     }
 
+    // Check if user requires password reset
+    if (user?.requiresPasswordReset) {
+        return <Navigate to="/force-password-change" replace />;
+    }
+
     if (allowedRoles && user && !allowedRoles.includes(user.role)) {
         // Redirect to appropriate dashboard based on role
         if (user.role === 'SUPER_ADMIN') {
@@ -67,6 +73,11 @@ function RootRedirect() {
 
     if (!isAuthenticated) {
         return <Navigate to="/login" replace />;
+    }
+
+    // Check if user requires password reset
+    if (user?.requiresPasswordReset) {
+        return <Navigate to="/force-password-change" replace />;
     }
 
     if (user?.role === 'SUPER_ADMIN') {
@@ -87,6 +98,16 @@ function App() {
                     <Routes>
                         {/* Public Routes */}
                         <Route path="/login" element={<LoginPage />} />
+
+                        {/* Force Password Change Route (protected but accessible to all authenticated users requiring reset) */}
+                        <Route
+                            path="/force-password-change"
+                            element={
+                                <Suspense fallback={<LoadingFallback />}>
+                                    <ForcePasswordChangePage />
+                                </Suspense>
+                            }
+                        />
 
                         {/* Root Redirect */}
                         <Route path="/" element={<RootRedirect />} />

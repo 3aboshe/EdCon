@@ -27,6 +27,9 @@ export function AuthProvider({ children }) {
         }
 
         setUser(response.user);
+
+        // Return full response so LoginPage can check requiresPasswordReset
+        return response;
     }, []);
 
     const logout = useCallback(() => {

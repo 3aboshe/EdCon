@@ -353,7 +353,8 @@
     "passwords_mismatch": "Passwords do not match",
     "submit": "Set New Password",
     "success": "Password changed successfully!",
-    "failed": "Failed to change password"
+    "failed": "Failed to change password",
+    "redirecting": "Redirecting to dashboard..."
   },
   "messages": {
     "start_conversation_button": "Start the conversation",
@@ -735,5 +736,17 @@
     "fri": "Fri",
     "sat": "Sat",
     "sun": "Sun"
+  },
+  "password_reset": {
+    "title": "Set Permanent Password",
+    "subtitle": "You are using a temporary password. Please set a new permanent password to secure your account.",
+    "current_password": "Current Password",
+    "new_password": "New Password",
+    "confirm_password": "Confirm New Password",
+    "submit": "Update Password",
+    "success": "Your password has been updated successfully.",
+    "error_mismatch": "Passwords do not match",
+    "error_too_short": "Password must be at least 8 characters",
+    "error_generic": "Failed to update password. Please try again."
   }
 }

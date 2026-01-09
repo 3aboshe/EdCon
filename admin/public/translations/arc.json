@@ -696,7 +696,8 @@
     "passwords_mismatch": "ܡܠܘܬ̈ܐ ܕܥܒܪܐ ܠܐ ܡܬܠܒܒ̈ܐ",
     "submit": "ܦܣܘܬܐ ܕܡܠܬܐ ܚܕܬܐ ܕܥܒܪܐ",
     "success": "ܡܠܬܐ ܕܥܒܪܐ ܫܘܚܠܦܬ ܒܥܒܘܪܬܐ!",
-    "failed": "ܚܦܪܐ ܫܘܚܠܦܘܬܐ ܕܡܠܬܐ ܕܥܒܪܐ"
+    "failed": "ܚܦܪܐ ܫܘܚܠܦܘܬܐ ܕܡܠܬܐ ܕܥܒܪܐ",
+    "redirecting": "ܦܢܝܐ ܠܦܘܫܐ..."
   },
   "messages": {
     "start_conversation_button": "ܫܪܐ ܡܡܠܠܐ",
