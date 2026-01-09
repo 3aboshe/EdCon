@@ -240,9 +240,12 @@ router.post('/:id/admins/:adminId/reset-password', async (req, res) => {
     const tempPassword = generateTempPassword(6);
     const hashedPassword = await hashPassword(tempPassword);
 
+    // SECURITY: We replace BOTH passwordHash AND temporaryPasswordHash
+    // This ensures the old password no longer works
     await prisma.user.update({
       where: { id: adminId },
       data: {
+        passwordHash: hashedPassword, // Replace main password so old one doesn't work
         temporaryPasswordHash: hashedPassword,
         temporaryPasswordIssuedAt: new Date(),
         requiresPasswordReset: true,

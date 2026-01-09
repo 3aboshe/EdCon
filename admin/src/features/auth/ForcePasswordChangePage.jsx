@@ -109,9 +109,11 @@ export function ForcePasswordChangePage() {
             >
                 {/* Icon */}
                 <div className={styles.iconWrapper}>
-                    <div className={styles.icon}>
-                        <Lock size={32} />
-                    </div>
+                    <img
+                        src="/blue_logo_lock.png"
+                        alt="EdCona"
+                        className={styles.logoImage}
+                    />
                 </div>
 
                 {success ? (
