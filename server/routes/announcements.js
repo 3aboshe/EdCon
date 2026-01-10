@@ -14,6 +14,15 @@ router.get('/', async (req, res) => {
   try {
     const announcements = await prisma.announcement.findMany({
       where: { schoolId: req.school.id },
+      include: {
+        teacher: {
+          select: {
+            id: true,
+            name: true,
+            subject: true,
+          },
+        },
+      },
       orderBy: {
         createdAt: 'desc'
       }
@@ -31,6 +40,15 @@ router.get('/teacher/:teacherId', async (req, res) => {
     const { teacherId } = req.params;
     const announcements = await prisma.announcement.findMany({
       where: { teacherId, schoolId: req.school.id },
+      include: {
+        teacher: {
+          select: {
+            id: true,
+            name: true,
+            subject: true,
+          },
+        },
+      },
       orderBy: {
         createdAt: 'desc'
       }
