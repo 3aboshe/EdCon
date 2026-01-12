@@ -137,35 +137,29 @@ app.use('/api/backup', backupRoutes);
 app.use('/api/admin/dashboard', dashboardRoutes);
 app.use('/api/encryption', encryptionRoutes);
 
-// File serving route - secured against path traversal
-app.get('/uploads/:filename', (req, res) => {
-  try {
-    const { filename } = req.params;
-
-    // SECURITY: Prevent path traversal by using basename
-    const sanitizedFilename = path.basename(filename);
-    const filePath = path.join(process.cwd(), 'uploads', sanitizedFilename);
-
-    // Check if file exists
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ message: 'File not found' });
+// Static file serving for uploads directory
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
+  setHeaders: (res, filePath) => {
+    // Set appropriate content types for common file types
+    const ext = path.extname(filePath).toLowerCase();
+    const mimeTypes = {
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.gif': 'image/gif',
+      '.webp': 'image/webp',
+      '.pdf': 'application/pdf',
+      '.doc': 'application/msword',
+      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      '.xls': 'application/vnd.ms-excel',
+      '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      '.txt': 'text/plain',
+    };
+    if (mimeTypes[ext]) {
+      res.setHeader('Content-Type', mimeTypes[ext]);
     }
-
-    // Get file stats
-    const stats = fs.statSync(filePath);
-
-    // Set appropriate headers
-    res.setHeader('Content-Disposition', `inline; filename="${sanitizedFilename}"`);
-    res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader('Content-Length', stats.size);
-
-    res.sendFile(filePath);
-  } catch (error) {
-    console.error('File serving error:', error);
-    const message = isProduction ? 'Error serving file' : error.message;
-    res.status(500).json({ message });
   }
-});
+}));
 
 // Health check routes (public)
 app.get('/', (req, res) => {
