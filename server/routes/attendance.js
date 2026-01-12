@@ -31,11 +31,47 @@ router.get('/student/:studentId', async (req, res) => {
     const { studentId } = req.params;
     const attendance = await prisma.attendance.findMany({
       where: { studentId, schoolId: req.school.id },
+      include: {
+        student: {
+          select: { id: true, name: true }
+        }
+      },
       orderBy: {
         createdAt: 'desc'
       }
     });
-    res.json(attendance);
+
+    // Fetch teacher info for each attendance record
+    const attendanceWithTeacher = await Promise.all(
+      attendance.map(async (att) => {
+        let teacherInfo = null;
+        let classInfo = null;
+
+        if (att.teacherId) {
+          const teacher = await prisma.user.findUnique({
+            where: { id: att.teacherId },
+            select: { id: true, name: true, subject: true }
+          });
+          teacherInfo = teacher;
+        }
+
+        if (att.classId) {
+          const classData = await prisma.class.findUnique({
+            where: { id: att.classId },
+            select: { id: true, name: true }
+          });
+          classInfo = classData;
+        }
+
+        return {
+          ...att,
+          teacher: teacherInfo,
+          class: classInfo
+        };
+      })
+    );
+
+    res.json(attendanceWithTeacher);
   } catch (error) {
     console.error('Error fetching attendance by student:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
