@@ -138,7 +138,9 @@ app.use('/api/admin/dashboard', dashboardRoutes);
 app.use('/api/encryption', encryptionRoutes);
 
 // Static file serving for uploads directory
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
+// Use /app/uploads in production (Railway persistent volume)
+const uploadsPath = isProduction ? '/app/uploads' : path.join(process.cwd(), 'uploads');
+app.use('/uploads', express.static(uploadsPath, {
   setHeaders: (res, filePath) => {
     // Set appropriate content types for common file types
     const ext = path.extname(filePath).toLowerCase();

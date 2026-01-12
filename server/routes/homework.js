@@ -13,10 +13,16 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
+// Get upload directory - use /app/uploads in production (Railway volume)
+const getUploadDir = () => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  return isProduction ? '/app/uploads/homework' : './uploads/homework';
+};
+
 // Configure multer for homework file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = './uploads/homework';
+    const uploadDir = getUploadDir();
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
