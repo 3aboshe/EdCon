@@ -7,7 +7,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("DATABASE_PUBLIC_URL")
 }
 
 model School {
@@ -152,6 +152,7 @@ model Exam {
 model Homework {
   id           String   @id @default(cuid())
   title        String
+  description  String?
   subject      String
   dueDate      DateTime
   assignedDate DateTime
@@ -159,6 +160,7 @@ model Homework {
   schoolId     String
   classIds     String[] @default([])
   submitted    String[] @default([])
+  attachments  Json?    @default("[]")
   createdAt    DateTime @default(now())
 
   school      School @relation(fields: [schoolId], references: [id])

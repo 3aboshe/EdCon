@@ -3,8 +3,55 @@ import { prisma } from '../config/db.js';
 import authenticate from '../middleware/authenticate.js';
 import resolveSchoolContext from '../middleware/schoolContext.js';
 import requireRole from '../middleware/requireRole.js';
+import multer from 'multer';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = express.Router();
+
+// Configure multer for homework file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = './uploads/homework';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'homework-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    // Allow images and documents
+    const allowedTypes = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/plain'
+    ];
+
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only images, PDFs, Word, Excel, and text files are allowed.'), false);
+    }
+  }
+});
 
 router.use(authenticate);
 router.use(resolveSchoolContext);
@@ -21,6 +68,34 @@ router.get('/', async (req, res) => {
     res.json(homework);
   } catch (error) {
     console.error('Error fetching homework:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Get single homework by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const homework = await prisma.homework.findFirst({
+      where: { id, schoolId: req.school.id },
+      include: {
+        teacher: {
+          select: {
+            id: true,
+            name: true,
+            subject: true
+          }
+        }
+      }
+    });
+
+    if (!homework) {
+      return res.status(404).json({ message: 'Homework not found' });
+    }
+
+    res.json(homework);
+  } catch (error) {
+    console.error('Error fetching homework by ID:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
@@ -70,6 +145,15 @@ router.get('/student/:studentId', async (req, res) => {
           { classIds: { equals: [] } }
         ]
       },
+      include: {
+        teacher: {
+          select: {
+            id: true,
+            name: true,
+            subject: true
+          }
+        }
+      },
       orderBy: {
         createdAt: 'desc'
       }
@@ -82,13 +166,15 @@ router.get('/student/:studentId', async (req, res) => {
   }
 });
 
-// Create homework
-router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
+// Create homework with file upload support
+router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), upload.array('files', 5), async (req, res) => {
   try {
-    const { title, subject, dueDate, assignedDate, teacherId, classIds } = req.body;
+    const { title, subject, description, dueDate, assignedDate, teacherId, classIds } = req.body;
+    const files = req.files || [];
 
     console.log('=== CREATE HOMEWORK DEBUG ===');
     console.log('Request body:', req.body);
+    console.log('Files:', files.length);
 
     if (!title || !dueDate) {
       return res.status(400).json({ message: 'Title and due date are required' });
@@ -108,17 +194,40 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async 
       return res.status(404).json({ message: 'Teacher not found in this school' });
     }
 
-    if (Array.isArray(classIds) && classIds.length > 0) {
+    // Parse classIds if it's a string
+    let parsedClassIds = classIds;
+    if (typeof classIds === 'string') {
+      try {
+        parsedClassIds = JSON.parse(classIds);
+      } catch {
+        parsedClassIds = [classIds];
+      }
+    }
+
+    if (Array.isArray(parsedClassIds) && parsedClassIds.length > 0) {
       const classes = await prisma.class.findMany({
         where: {
-          id: { in: classIds },
+          id: { in: parsedClassIds },
           schoolId: req.school.id
         }
       });
 
-      if (classes.length !== classIds.length) {
-        console.warn(`Mismatch in classes found. Requested ${classIds.length}, found ${classes.length}`);
+      if (classes.length !== parsedClassIds.length) {
+        console.warn(`Mismatch in classes found. Requested ${parsedClassIds.length}, found ${classes.length}`);
       }
+    }
+
+    // Process uploaded files
+    let attachments = [];
+    if (files.length > 0) {
+      attachments = files.map(file => ({
+        filename: file.originalname,
+        path: file.path,
+        mimetype: file.mimetype,
+        size: file.size,
+        url: `/uploads/homework/${file.filename}`
+      }));
+      console.log('Processed attachments:', attachments.length, 'files');
     }
 
     // Generate a unique ID for the homework
@@ -128,11 +237,13 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async 
       data: {
         id: homeworkId,
         title,
+        description: description || null,
         subject: subject || teacher.subject || 'General',
         dueDate: new Date(dueDate),
         assignedDate: assignedDate ? new Date(assignedDate) : new Date(),
         teacherId: resolvedTeacherId,
-        classIds: classIds || [],
+        classIds: parsedClassIds || [],
+        attachments: attachments.length > 0 ? attachments : [],
         schoolId: req.school.id
       }
     });
