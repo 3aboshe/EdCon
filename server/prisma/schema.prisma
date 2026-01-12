@@ -358,3 +358,15 @@ model BulkOperation {
 
   @@map("bulk_operations")
 }
+
+model File {
+  id        String   @id @default(cuid())
+  filename  String
+  mimetype  String
+  size      Int
+  data      String   @db.Text  // Base64 encoded file data
+  schoolId  String?
+  createdAt DateTime @default(now())
+
+  @@map("files")
+}

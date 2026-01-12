@@ -4,38 +4,12 @@ import authenticate from '../middleware/authenticate.js';
 import resolveSchoolContext from '../middleware/schoolContext.js';
 import requireRole from '../middleware/requireRole.js';
 import multer from 'multer';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
-// Get upload directory - use /app/uploads in production (Railway volume)
-const getUploadDir = () => {
-  const isProduction = process.env.NODE_ENV === 'production';
-  return isProduction ? '/app/uploads/homework' : './uploads/homework';
-};
-
-// Configure multer for homework file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadDir = getUploadDir();
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'homework-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
+// Configure multer to store files in memory for database storage
 const upload = multer({
-  storage: storage,
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB limit
   },
@@ -61,6 +35,32 @@ const upload = multer({
 
 router.use(authenticate);
 router.use(resolveSchoolContext);
+
+// Serve file from database
+router.get('/file/:fileId', async (req, res) => {
+  try {
+    const { fileId } = req.params;
+    
+    const file = await prisma.file.findUnique({
+      where: { id: fileId }
+    });
+    
+    if (!file) {
+      return res.status(404).json({ message: 'File not found' });
+    }
+    
+    // Convert base64 back to buffer
+    const buffer = Buffer.from(file.data, 'base64');
+    
+    res.setHeader('Content-Type', file.mimetype);
+    res.setHeader('Content-Length', buffer.length);
+    res.setHeader('Content-Disposition', `inline; filename="${file.filename}"`);
+    res.send(buffer);
+  } catch (error) {
+    console.error('Error serving file:', error);
+    res.status(500).json({ message: 'Error serving file' });
+  }
+});
 
 // Get all homework
 router.get('/', async (req, res) => {
@@ -223,17 +223,30 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), upload
       }
     }
 
-    // Process uploaded files
+    // Process uploaded files - store in database
     let attachments = [];
     if (files.length > 0) {
-      attachments = files.map(file => ({
-        filename: file.originalname,
-        path: file.path,
-        mimetype: file.mimetype,
-        size: file.size,
-        url: `/uploads/homework/${file.filename}`
-      }));
-      console.log('Processed attachments:', attachments.length, 'files');
+      for (const file of files) {
+        // Store file in database
+        const savedFile = await prisma.file.create({
+          data: {
+            filename: file.originalname,
+            mimetype: file.mimetype,
+            size: file.size,
+            data: file.buffer.toString('base64'),
+            schoolId: req.school.id
+          }
+        });
+        
+        attachments.push({
+          id: savedFile.id,
+          filename: file.originalname,
+          mimetype: file.mimetype,
+          size: file.size,
+          url: `/api/homework/file/${savedFile.id}`
+        });
+      }
+      console.log('Saved attachments to database:', attachments.length, 'files');
     }
 
     // Generate a unique ID for the homework

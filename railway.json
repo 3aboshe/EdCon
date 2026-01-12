@@ -8,8 +8,5 @@
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   },
-  "sourceDirectory": "server",
-  "volumes": {
-    "/app/uploads": {}
-  }
+  "sourceDirectory": "server"
 } 

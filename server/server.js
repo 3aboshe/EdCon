@@ -3,8 +3,6 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
-import path from 'path';
-import fs from 'fs';
 import connectDB from './config/db.js';
 import authRoutes from './routes/auth.js';
 import classRoutes from './routes/classes.js';
@@ -136,32 +134,6 @@ app.use('/api/health', healthRoutes);
 app.use('/api/backup', backupRoutes);
 app.use('/api/admin/dashboard', dashboardRoutes);
 app.use('/api/encryption', encryptionRoutes);
-
-// Static file serving for uploads directory
-// Use /app/uploads in production (Railway persistent volume)
-const uploadsPath = isProduction ? '/app/uploads' : path.join(process.cwd(), 'uploads');
-app.use('/uploads', express.static(uploadsPath, {
-  setHeaders: (res, filePath) => {
-    // Set appropriate content types for common file types
-    const ext = path.extname(filePath).toLowerCase();
-    const mimeTypes = {
-      '.png': 'image/png',
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.gif': 'image/gif',
-      '.webp': 'image/webp',
-      '.pdf': 'application/pdf',
-      '.doc': 'application/msword',
-      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      '.xls': 'application/vnd.ms-excel',
-      '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      '.txt': 'text/plain',
-    };
-    if (mimeTypes[ext]) {
-      res.setHeader('Content-Type', mimeTypes[ext]);
-    }
-  }
-}));
 
 // Health check routes (public)
 app.get('/', (req, res) => {
