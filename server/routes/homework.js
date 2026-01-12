@@ -33,10 +33,8 @@ const upload = multer({
   }
 });
 
-router.use(authenticate);
-router.use(resolveSchoolContext);
-
-// Serve file from database
+// Serve file from database - PUBLIC endpoint (no auth required)
+// Files are accessed by random CUID so they're essentially protected by obscurity
 router.get('/file/:fileId', async (req, res) => {
   try {
     const { fileId } = req.params;
@@ -55,12 +53,16 @@ router.get('/file/:fileId', async (req, res) => {
     res.setHeader('Content-Type', file.mimetype);
     res.setHeader('Content-Length', buffer.length);
     res.setHeader('Content-Disposition', `inline; filename="${file.filename}"`);
+    res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
     res.send(buffer);
   } catch (error) {
     console.error('Error serving file:', error);
     res.status(500).json({ message: 'Error serving file' });
   }
 });
+
+router.use(authenticate);
+router.use(resolveSchoolContext);
 
 // Get all homework
 router.get('/', async (req, res) => {
