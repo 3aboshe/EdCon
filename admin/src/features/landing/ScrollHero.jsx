@@ -1,18 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
 
-const FRAME_COUNT = 137; // Matches actual number of files (0-136) plus buffer
-// Note: Files are frame_000.jpg to frame_172.jpg but there are gaps. 
-// We need to map the scroll index to the existing files or ensure sequential naming.
-// The previous rename script might have left gaps if some frames were missing.
-// Let's assume we want to map strictly to available files.
-
-// RE-VERIFY: The `ls` showed files up to frame_172, but total count was 137.
-// This means there are massive gaps (e.g., 63 -> 100).
-// Simpler approach: We should re-renormalize the files to be perfectly sequential 0..136.
-// But first, let's update the code to handle the *current* state if we can't run scripts easily.
-// Actually, re-running the rename script properly is safer. 
-// For now, I will assume we run a fix script. I will set FRAME_COUNT to 137.
+const FRAME_COUNT = 137;
 const IMAGE_PATH_PREFIX = '/hero-assets/animation/frame_';
 
 export default function ScrollHero() {
@@ -28,11 +17,11 @@ export default function ScrollHero() {
         offset: ["start start", "end end"]
     });
 
-    // Smooth scroll for frame interpolation
+    // Much smoother scroll for frame interpolation (slower response)
     const smoothProgress = useSpring(scrollYProgress, {
-        stiffness: 100, // Reduced stiffness for smoother scrubbing
-        damping: 30,    // Higher damping to prevent jitter
-        restDelta: 0.001
+        stiffness: 30,  // Much lower stiffness for slower, smoother scrubbing
+        damping: 50,    // Higher damping to prevent jitter
+        restDelta: 0.0001
     });
 
     // Preload Images
@@ -58,8 +47,13 @@ export default function ScrollHero() {
                         resolve();
                     };
                     img.onerror = () => {
-                        // Skip frame if error, or handle gracefully (maybe reuse prev frame)
                         console.error('Failed to load frame', i);
+                        loadedCount++;
+                        setImagesLoaded(loadedCount);
+                        if (loadedCount === FRAME_COUNT) {
+                            setImages(loadedImages);
+                            setIsLoading(false);
+                        }
                         resolve();
                     }
                 });
@@ -144,35 +138,87 @@ export default function ScrollHero() {
 
 
     return (
-        <div ref={containerRef} className="relative h-[400vh] bg-[#003366]"> {/* 400vh scroll track */}
-
+        <div
+            ref={containerRef}
+            style={{
+                position: 'relative',
+                height: '600vh', // Much longer scroll track for slower animation
+                backgroundColor: '#003366'
+            }}
+        >
             {/* Loading Screen */}
             {isLoading && (
-                <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#003366] text-white">
-                    <div className="w-16 h-16 mb-4 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
-                    <p className="font-mono text-sm opacity-70">
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    zIndex: 50,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#003366',
+                    color: 'white',
+                }}>
+                    <div style={{
+                        width: '64px',
+                        height: '64px',
+                        marginBottom: '1rem',
+                        border: '4px solid rgba(255,255,255,0.2)',
+                        borderTopColor: 'white',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite',
+                    }} />
+                    <p style={{ fontFamily: 'monospace', fontSize: '0.875rem', opacity: 0.7 }}>
                         Loading Experience... {Math.round((imagesLoaded / FRAME_COUNT) * 100)}%
                     </p>
                 </div>
             )}
 
             {/* Sticky Canvas Container */}
-            <div className="sticky top-0 left-0 w-full h-screen overflow-hidden">
+            <div style={{
+                position: 'sticky',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100vh',
+                overflow: 'hidden',
+            }}>
                 <canvas
                     ref={canvasRef}
-                    className="block w-full h-full object-cover"
+                    style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }}
                 />
 
                 {/* Scroll Prompt (Only visible at start) */}
                 <motion.div
-                    style={{ opacity: useTransform(scrollYProgress, [0, 0.1], [1, 0]) }}
-                    className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none"
+                    style={{
+                        opacity: useTransform(scrollYProgress, [0, 0.05], [1, 0]),
+                        position: 'absolute',
+                        bottom: '40px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        pointerEvents: 'none',
+                    }}
                 >
-                    <span className="text-white/60 text-xs uppercase tracking-[0.2em]">Scroll to Explore</span>
-                    <div className="w-[1px] h-12 bg-gradient-to-b from-white/0 via-white/50 to-white/0 animate-pulse" />
+                    <span style={{
+                        color: 'rgba(255,255,255,0.6)',
+                        fontSize: '0.75rem',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.2em'
+                    }}>
+                        Scroll to Explore
+                    </span>
+                    <div style={{
+                        width: '1px',
+                        height: '48px',
+                        background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.5), transparent)',
+                        animation: 'pulse 2s ease-in-out infinite',
+                    }} />
                 </motion.div>
             </div>
-
         </div>
     );
 }

@@ -11,31 +11,82 @@ export default function PublicNavbar() {
             initial={{ y: -100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-6 md:px-12"
+            style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                zIndex: 50,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '1.5rem 3rem',
+                background: 'linear-gradient(to bottom, rgba(0,51,102,0.9), transparent)',
+            }}
         >
             {/* Brand */}
-            <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-lg">
-                    <img src="/hero-assets/logo_2d_start.png" alt="EdCona" className="w-6 h-6 object-contain brightness-200" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '12px',
+                    background: 'rgba(255,255,255,0.1)',
+                    backdropFilter: 'blur(12px)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+                }}>
+                    <img
+                        src="/EdconaIcon.png"
+                        alt="EdCona"
+                        style={{ width: '24px', height: '24px', objectFit: 'contain' }}
+                    />
                 </div>
-                <span className="text-2xl font-bold text-white tracking-tight">EdCona</span>
+                <span style={{ fontSize: '1.5rem', fontWeight: 700, color: 'white', letterSpacing: '-0.02em' }}>
+                    EdCona
+                </span>
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-4">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <button
                     onClick={() => navigate('/contact')}
-                    className="hidden md:block px-6 py-2.5 text-sm font-medium text-white/80 hover:text-white transition-colors"
+                    style={{
+                        padding: '0.625rem 1.5rem',
+                        fontSize: '0.875rem',
+                        fontWeight: 500,
+                        color: 'rgba(255,255,255,0.8)',
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'color 0.2s',
+                    }}
+                    onMouseOver={(e) => e.target.style.color = 'white'}
+                    onMouseOut={(e) => e.target.style.color = 'rgba(255,255,255,0.8)'}
                 >
                     {t('Contact Sales') || 'Contact Sales'}
                 </button>
 
                 <button
                     onClick={() => navigate('/login')}
-                    className="group relative px-6 py-2.5 rounded-full bg-white text-[#003366] text-sm font-bold shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] transition-all duration-300 active:scale-95 overflow-hidden"
+                    style={{
+                        padding: '0.625rem 1.5rem',
+                        borderRadius: '9999px',
+                        background: 'white',
+                        color: '#003366',
+                        fontSize: '0.875rem',
+                        fontWeight: 700,
+                        border: 'none',
+                        cursor: 'pointer',
+                        boxShadow: '0 0 20px rgba(255,255,255,0.3)',
+                        transition: 'all 0.3s',
+                    }}
+                    onMouseOver={(e) => e.target.style.boxShadow = '0 0 30px rgba(255,255,255,0.5)'}
+                    onMouseOut={(e) => e.target.style.boxShadow = '0 0 20px rgba(255,255,255,0.3)'}
                 >
-                    <span className="relative z-10">{t('Login') || 'Login'}</span>
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent translate-x-[-100%] group-hover:animate-shimmer" />
+                    {t('Login') || 'Login'}
                 </button>
             </div>
         </motion.nav>
