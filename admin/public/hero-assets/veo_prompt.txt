@@ -1,0 +1,16 @@
+Prompt for Veo:
+
+"Create a stunning, high-quality cinematic scroll animation video that seamlessly bridges the gap between teachers and parents.
+
+Start with the provided Start Frame: A deep blue, ethereal abstract scene featuring the EdCona shield logo glowing softly, with connecting lines of light representing the 'bridge'.
+
+Transition smoothly into a journey across this digital bridge. The camera should move forward, gliding along the connections, symbolizing communication and unity. The motion should be fluid and elegant, perfectly suited for a scroll-triggered animation.
+
+Conclude with the provided End Frame: The camera arrives at a sleek, floating smartphone displaying the EdCona app dashboard in sharp detail. The phone should gently float into the center of the frame, solidifying the idea that the app is the tool that connects both worlds.
+
+Key details:
+- Maintain the deep blue, premium color palette throughout.
+- Ensure the transition is seamless and the pacing is consistent.
+- The final phone screen must be crisp and readable.
+- No text overlays other than what is on the app screen.
+- High resolution, 16:9 aspect ratio."

@@ -1,0 +1,30 @@
+Prompt for Veo:
+
+"Generate a high-end, minimalist 2D vector animation optimized for a web hero section scroll interaction. 4k resolution, 60fps, smooth easing.
+
+**Visual Style:**
+- **Aesthetic:** Flat, ultra-clean vector graphics. No shading, lighting, gradients, or 3D depth. Pure geometric elegance.
+- **Color Palette:** Primary background is a solid Deep Blue (#003366). Lines are crisp Optical White (#FFFFFF) or pale Sky Blue.
+- **Line Quality:** Constant stroke width, rounded caps, seamless vector paths.
+
+**Animation Sequence:**
+
+1.  **0:00 - 0:02 (The Source):**
+    -   Begin with the 'Logo Start Frame'. The EdCona shield logo is vertically centered, floating in the deep blue void.
+    -   It pulsates gently (scale up 105% then back) to establish it as the 'heart' of the system.
+
+2.  **0:02 - 0:05 (The Bridge Connection):**
+    -   **Action:** Trigger a 'growth' animation. The internal lines of the logo (the graph/network nodes) fluidly extend outwards horizontally to the left and right.
+    -   **Motion:** Use a 'ease-in-out' curve. The lines elongate to form the parallel tracks of a bridge, stretching infinitely off-screen.
+    -   The nodes (dots) on the bridge lines blink or flow along the paths, symbolizing data transmission and communication between the two sides (Teachers & Parents).
+    -   The camera pans horizontally along this newly formed bridge, creating a sense of forward momentum.
+
+3.  **0:05 - 0:08 (The Destination):**
+    -   As the camera continues panning, the 'End Frame' (Smartphone) smoothly slides into view from the right side.
+    -   **Transition:** The vector bridge lines appear to 'plug into' or fade behind the phone, implying the app is the destination of this connection.
+    -   The phone settles in the center with a subtle 'damped spring' stop. The screen content is crisp, showing the dashboard.
+
+**Technical Constraints:**
+- **Aspect Ratio & Composition:** Strict 16:9 Landscape (or wider). The content MUST extend edge-to-edge. **ABSOLUTELY NO BLACK BORDERS, LETTERBOXING, OR VIGNETTING.** The Deep Blue background must fill the entire frame to ensure seamless integration with a full-width website container.
+- The transition from the 2D logo lines to the realistic phone render must feel deliberate—a mix of distinct 2D vector art transforming into a window of reality (the phone screen).
+- **Keywords:** Flat design, Vector Motion, After Effects Style, Ui/Ux Animation, Connectivity, Educational Tech, Deep Blue, Clean Lines."

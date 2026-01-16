@@ -16,6 +16,7 @@ const SchoolAdminLayout = lazy(() => import('./features/school-admin/SchoolAdmin
 const DashboardPage = lazy(() => import('./features/school-admin/DashboardPage'));
 const UsersPage = lazy(() => import('./features/school-admin/UsersPage'));
 const AcademicPage = lazy(() => import('./features/school-admin/AcademicPage'));
+const LandingPage = lazy(() => import('./features/landing/LandingPage'));
 
 // Loading Fallback
 function LoadingFallback() {
@@ -97,9 +98,10 @@ function App() {
                 <Suspense fallback={<LoadingFallback />}>
                     <Routes>
                         {/* Public Routes */}
+                        <Route path="/" element={<LandingPage />} />
                         <Route path="/login" element={<LoginPage />} />
 
-                        {/* Force Password Change Route (protected but accessible to all authenticated users requiring reset) */}
+                        {/* Force Password Change Route */}
                         <Route
                             path="/force-password-change"
                             element={
@@ -108,9 +110,6 @@ function App() {
                                 </Suspense>
                             }
                         />
-
-                        {/* Root Redirect */}
-                        <Route path="/" element={<RootRedirect />} />
 
                         {/* Super Admin Routes */}
                         <Route element={<ProtectedRoute allowedRoles={['SUPER_ADMIN']} />}>
