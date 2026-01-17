@@ -392,30 +392,6 @@ export default function ScrollHero() {
                     />
                 ))}
 
-                {/* Vertical Scroll Progress Bar (Minimalist) */}
-                <div
-                    style={{
-                        position: 'absolute',
-                        right: '4rem',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        height: '30vh',
-                        width: '1px',
-                        background: 'rgba(255,255,255,0.05)',
-                        zIndex: 30
-                    }}
-                >
-                    <motion.div
-                        style={{
-                            width: '4px',
-                            background: 'white',
-                            height: '24px',
-                            position: 'absolute',
-                            left: '-2px',
-                            top: useTransform(scrollYProgress, [0, 1], ['0%', '100%']),
-                        }}
-                    />
-                </div>
             </div>
         </section>
     );
