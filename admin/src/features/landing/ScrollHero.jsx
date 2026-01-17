@@ -324,6 +324,13 @@ export default function ScrollHero() {
         });
     }, [smoothProgress, render]);
 
+    // Trigger initial render once loading is complete
+    useEffect(() => {
+        if (!isLoading && images.length > 0) {
+            render(smoothProgress.get());
+        }
+    }, [isLoading, images, render, smoothProgress]);
+
     useEffect(() => {
         const handleResize = () => {
             const canvas = canvasRef.current;
