@@ -20,6 +20,7 @@ const HERO_SECTIONS = [
         title: 'REDEFINING',
         highlight: 'EDUCATION',
         subtitle: 'The ultimate ecosystem for modern educational management.',
+        align: 'center',
     },
     {
         id: 'intelligence',
@@ -27,6 +28,7 @@ const HERO_SECTIONS = [
         title: 'DATA',
         highlight: 'INTELLIGENCE',
         subtitle: 'Real-time performance analytics that empower decision making.',
+        align: 'left',
     },
     {
         id: 'connection',
@@ -34,6 +36,7 @@ const HERO_SECTIONS = [
         title: 'SEAMLESS',
         highlight: 'CONNECTION',
         subtitle: 'Bridging the gap between schools, parents, and students.',
+        align: 'right',
     },
     {
         id: 'future',
@@ -41,6 +44,7 @@ const HERO_SECTIONS = [
         title: 'THE',
         highlight: 'FUTURE',
         subtitle: 'Start your transformation with EdCona today.',
+        align: 'center',
         isFinal: true
     },
 ];
@@ -112,10 +116,12 @@ function LuxuryLoader({ progress }) {
 function SectionText({ section, scrollProgress }) {
     const [start, end] = section.range;
 
-    // Smooth opacity and Y transitions with wide visibility windows
     const opacity = useTransform(scrollProgress, [start, start + 0.04, end - 0.04, end], [0, 1, 1, 0]);
-    const y = useTransform(scrollProgress, [start, start + 0.04, end - 0.04, end], [60, 0, 0, -60]);
-    const scale = useTransform(scrollProgress, [start, end], [1.1, 0.9]);
+    const y = useTransform(scrollProgress, [start, start + 0.04, end - 0.04, end], [40, 0, 0, -40]);
+    const scale = useTransform(scrollProgress, [start, end], [1.05, 1]);
+
+    const isLeft = section.align === 'left';
+    const isRight = section.align === 'right';
 
     return (
         <motion.div
@@ -124,60 +130,57 @@ function SectionText({ section, scrollProgress }) {
                 inset: 0,
                 display: 'flex',
                 flexDirection: 'column',
-                alignItems: 'center',
+                alignItems: isLeft ? 'flex-start' : isRight ? 'flex-end' : 'center',
                 justifyContent: 'center',
-                textAlign: 'center',
+                textAlign: isLeft ? 'left' : isRight ? 'right' : 'center',
                 zIndex: 20,
                 opacity,
                 y,
                 scale,
                 pointerEvents: 'none',
-                padding: '0 2rem'
+                padding: '0 8vw' // More generous padding for edge alignment
             }}
         >
-            {/* High-contrast text with depth */}
             <h2 style={{
-                fontSize: 'clamp(2.5rem, 12vw, 10rem)',
+                fontSize: 'clamp(2rem, 8vw, 6rem)', // Smaller, more elegant size
                 fontWeight: 900,
                 color: 'white',
-                lineHeight: 0.85,
+                lineHeight: 0.9,
                 margin: 0,
-                letterSpacing: '-0.06em',
+                letterSpacing: '-0.04em',
                 fontFamily: 'system-ui, sans-serif',
-                textShadow: '0 20px 60px rgba(0,0,0,0.8), 0 0 20px rgba(0,82,204,0.3)'
+                textShadow: '0 10px 30px rgba(0,0,0,0.5)'
             }}>
                 {section.title}
             </h2>
             <h2 style={{
-                fontSize: 'clamp(2.5rem, 12vw, 10rem)',
+                fontSize: 'clamp(2rem, 8vw, 6rem)',
                 fontWeight: 900,
                 color: 'white',
                 background: 'linear-gradient(180deg, #fff 40%, rgba(255,255,255,0.4) 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
-                lineHeight: 0.85,
-                margin: '0.5rem 0',
-                letterSpacing: '-0.06em',
+                lineHeight: 0.9,
+                margin: '0.2rem 0',
+                letterSpacing: '-0.04em',
                 fontFamily: 'system-ui, sans-serif',
-                filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.8))'
+                filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.4))'
             }}>
                 {section.highlight}
             </h2>
             <p style={{
-                fontSize: 'clamp(0.9rem, 1.4vw, 1.2rem)',
-                color: 'white',
-                maxWidth: '700px',
-                marginTop: '4rem',
-                lineHeight: 1.8,
-                letterSpacing: '0.15em',
+                fontSize: 'clamp(0.8rem, 1.2vw, 1rem)',
+                color: 'rgba(255,255,255,0.8)',
+                maxWidth: '450px', // Narrower for better layout
+                marginTop: '2.5rem',
+                lineHeight: 1.6,
+                letterSpacing: '0.1em',
                 textTransform: 'uppercase',
-                fontWeight: 800,
-                textShadow: '0 5px 15px rgba(0,0,0,1)',
-                background: 'rgba(10, 25, 48, 0.6)',
-                padding: '1rem 2rem',
-                borderRadius: '2px',
-                backdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255,255,255,0.1)'
+                fontWeight: 700,
+                // Minimalist hint of background instead of heavy box
+                borderLeft: isLeft ? '2px solid white' : 'none',
+                borderRight: isRight ? '2px solid white' : 'none',
+                padding: isLeft ? '0 0 0 1.5rem' : isRight ? '0 1.5rem 0 0' : '0',
             }}>
                 {section.subtitle}
             </p>
@@ -185,23 +188,23 @@ function SectionText({ section, scrollProgress }) {
             {section.isFinal && (
                 <motion.button
                     style={{
-                        marginTop: '5rem',
-                        padding: '1.5rem 4rem',
+                        marginTop: '4rem',
+                        padding: '1.2rem 3rem',
                         background: 'white',
                         color: BG_COLOR,
                         border: 'none',
                         fontWeight: 900,
-                        letterSpacing: '0.3em',
+                        letterSpacing: '0.2em',
                         textTransform: 'uppercase',
-                        fontSize: '0.8rem',
+                        fontSize: '0.75rem',
                         cursor: 'pointer',
                         pointerEvents: 'auto',
-                        boxShadow: '0 30px 60px rgba(0,0,0,0.5)',
+                        boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
                     }}
-                    whileHover={{ scale: 1.1, boxShadow: '0 40px 80px rgba(0,0,0,0.6)' }}
-                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.05, boxShadow: '0 25px 50px rgba(0,0,0,0.4)' }}
+                    whileTap={{ scale: 0.98 }}
                 >
-                    Initialize EdCona
+                    Get Started
                 </motion.button>
             )}
         </motion.div>
