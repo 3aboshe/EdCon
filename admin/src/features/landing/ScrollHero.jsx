@@ -352,7 +352,7 @@ export default function ScrollHero() {
     const loadingProgress = (loadedCount / FRAME_COUNT) * 100;
 
     return (
-        <section ref={sectionRef} style={{ position: 'relative', height: '1200vh', background: BG_COLOR }}>
+        <section ref={sectionRef} style={{ position: 'relative', height: '800vh', background: BG_COLOR }}>
             <AnimatePresence>
                 {isLoading && <LuxuryLoader progress={loadingProgress} />}
             </AnimatePresence>
