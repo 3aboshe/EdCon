@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import authenticate from '../middleware/authenticate.js';
 import resolveSchoolContext from '../middleware/schoolContext.js';
+import { sendNotificationToUser } from '../utils/notificationHelper.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -257,6 +258,9 @@ router.post('/', upload.array('files', 5), async (req, res) => {
         schoolId: req.school.id
       }
     });
+
+    // Send notification to receiver
+    sendNotificationToUser(receiverId, 'message', { senderName: sender.name });
 
     console.log('Created message successfully:', {
       id: newMessage.id,

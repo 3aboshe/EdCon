@@ -3,6 +3,7 @@ import { prisma } from '../config/db.js';
 import authenticate from '../middleware/authenticate.js';
 import resolveSchoolContext from '../middleware/schoolContext.js';
 import requireRole from '../middleware/requireRole.js';
+import { sendNotificationToUsers, getParentIdsForClasses } from '../utils/notificationHelper.js';
 
 const router = express.Router();
 
@@ -117,6 +118,10 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async 
         schoolId: req.school.id
       }
     });
+
+    // Send push notifications to parents
+    const parentIds = await getParentIdsForClasses(req.school.id, [classId]);
+    sendNotificationToUsers(parentIds, 'exam', { title });
 
     res.status(201).json(newExam);
   } catch (error) {

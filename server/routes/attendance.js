@@ -3,6 +3,7 @@ import { prisma } from '../config/db.js';
 import authenticate from '../middleware/authenticate.js';
 import resolveSchoolContext from '../middleware/schoolContext.js';
 import requireRole from '../middleware/requireRole.js';
+import { sendNotificationToUser, getParentIdForStudent, getLocalizedAttendanceStatus } from '../utils/notificationHelper.js';
 
 const router = express.Router();
 
@@ -135,6 +136,7 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async 
     });
 
     let attendance;
+    let isNewRecord = false;
     if (existingAttendance) {
       // Update existing record
       attendance = await prisma.attendance.update({
@@ -146,6 +148,7 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async 
       });
     } else {
       // Create new record
+      isNewRecord = true;
       attendance = await prisma.attendance.create({
         data: {
           date: attendanceDate,
@@ -156,6 +159,25 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async 
           schoolId: req.school.id
         }
       });
+    }
+
+    // Send notification to parent (only for new records)
+    if (isNewRecord) {
+      const parentId = await getParentIdForStudent(studentId);
+      if (parentId) {
+        // Get parent's language for status translation
+        const parent = await prisma.user.findUnique({
+          where: { id: parentId },
+          select: { preferredLanguage: true }
+        });
+        const lang = parent?.preferredLanguage || 'en';
+        const localizedStatus = getLocalizedAttendanceStatus(status, lang);
+
+        sendNotificationToUser(parentId, 'attendance', {
+          studentName: student.name,
+          status: localizedStatus
+        });
+      }
     }
 
     res.status(201).json(attendance);

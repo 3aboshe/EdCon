@@ -119,6 +119,32 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
+// Update FCM token and preferred language for push notifications
+router.post('/fcm-token', async (req, res) => {
+  try {
+    const { token, language } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ message: 'FCM token is required' });
+    }
+
+    const updateData = { fcmToken: token };
+    if (language && ['en', 'ar', 'ckb', 'bhn', 'arc'].includes(language)) {
+      updateData.preferredLanguage = language;
+    }
+
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: updateData,
+    });
+
+    res.json({ success: true, message: 'FCM token updated' });
+  } catch (error) {
+    console.error('FCM token update error:', error);
+    res.status(500).json({ message: 'Unable to update FCM token' });
+  }
+});
+
 // Get parent's children - mobile app endpoint
 router.get('/parent/:parentId/children', resolveSchoolContext, async (req, res) => {
   try {

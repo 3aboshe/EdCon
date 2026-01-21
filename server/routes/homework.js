@@ -4,6 +4,7 @@ import authenticate from '../middleware/authenticate.js';
 import resolveSchoolContext from '../middleware/schoolContext.js';
 import requireRole from '../middleware/requireRole.js';
 import multer from 'multer';
+import { sendNotificationToUsers, getParentIdsForClasses } from '../utils/notificationHelper.js';
 
 const router = express.Router();
 
@@ -38,18 +39,18 @@ const upload = multer({
 router.get('/file/:fileId', async (req, res) => {
   try {
     const { fileId } = req.params;
-    
+
     const file = await prisma.file.findUnique({
       where: { id: fileId }
     });
-    
+
     if (!file) {
       return res.status(404).json({ message: 'File not found' });
     }
-    
+
     // Convert base64 back to buffer
     const buffer = Buffer.from(file.data, 'base64');
-    
+
     res.setHeader('Content-Type', file.mimetype);
     res.setHeader('Content-Length', buffer.length);
     res.setHeader('Content-Disposition', `inline; filename="${file.filename}"`);
@@ -239,7 +240,7 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), upload
             schoolId: req.school.id
           }
         });
-        
+
         attachments.push({
           id: savedFile.id,
           filename: file.originalname,
@@ -268,6 +269,13 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), upload
         schoolId: req.school.id
       }
     });
+
+    // Send push notifications to parents
+    const targetClassIds = parsedClassIds && parsedClassIds.length > 0 ? parsedClassIds : [];
+    if (targetClassIds.length > 0) {
+      const parentIds = await getParentIdsForClasses(req.school.id, targetClassIds);
+      sendNotificationToUsers(parentIds, 'homework', { title });
+    }
 
     console.log('Created homework:', newHomework);
     res.status(201).json(newHomework);
