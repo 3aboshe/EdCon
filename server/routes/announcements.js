@@ -63,18 +63,19 @@ router.get('/', async (req, res) => {
     // Filter announcements:
     // - Include if classIds is empty (school-wide announcement)
     // - Include if any of the announcement's classIds matches user's classIds
-    let filteredAnnouncements = announcements;
-    if (filterClassIds.length > 0) {
-      filteredAnnouncements = announcements.filter(ann => {
-        // School-wide announcements (empty classIds) are shown to everyone
-        if (!ann.classIds || ann.classIds.length === 0) {
-          return true;
-        }
-        // Class-specific announcements are shown only to matching classes
+    const filteredAnnouncements = announcements.filter(ann => {
+      // School-wide announcements (empty classIds) are shown to everyone
+      if (!ann.classIds || ann.classIds.length === 0) {
+        return true;
+      }
+      // Class-specific announcements: only if filterClassIds is not empty and matches
+      if (filterClassIds.length > 0) {
         return ann.classIds.some(cid => filterClassIds.includes(cid));
-      });
-    }
-    
+      }
+      // If child has no class assigned, don't show class-specific announcements
+      return false;
+    });
+
     console.log('Announcements GET - After filter:', filteredAnnouncements.length);
     
     res.json(filteredAnnouncements);
