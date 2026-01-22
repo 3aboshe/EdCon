@@ -78,9 +78,13 @@ const corsOptions = {
       return callback(null, true);
     }
 
-    // In development, allow localhost
+    // In development, allow localhost and Flutter web
     if (!isProduction) {
-      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      if (origin.includes('localhost') ||
+          origin.includes('127.0.0.1') ||
+          origin.includes('chrome-launch') ||
+          origin.includes('web-entrypoint') ||
+          origin.includes('chrome-extension')) {
         return callback(null, true);
       }
     }
