@@ -77,6 +77,7 @@ model User {
   exams         Exam[]   @relation("ExamTeacher")
   grades        Grade[]  @relation("StudentGrades")
   attendance    Attendance[] @relation("StudentAttendance")
+  markedAttendance Attendance[] @relation("AttendanceTeacher")
   sentMessages     Message[] @relation("MessageSender")
   receivedMessages Message[] @relation("MessageReceiver")
   submittedHomework Homework[] @relation("HomeworkSubmissions")
@@ -96,6 +97,7 @@ model Class {
   school  School @relation(fields: [schoolId], references: [id])
   students User[] @relation("StudentClass")
   exams    Exam[]
+  attendance Attendance[]
 
   @@map("classes")
 }
@@ -202,6 +204,8 @@ model Attendance {
 
   school  School @relation(fields: [schoolId], references: [id])
   student User   @relation("StudentAttendance", fields: [studentId], references: [id])
+  class   Class? @relation(fields: [classId], references: [id])
+  teacher User?  @relation("AttendanceTeacher", fields: [teacherId], references: [id])
 
   @@unique([date, studentId, classId])
   @@map("attendance")
