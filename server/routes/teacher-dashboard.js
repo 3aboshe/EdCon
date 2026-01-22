@@ -177,9 +177,7 @@ router.get('/:teacherId/class/:classId', async (req, res) => {
         where: { classId: classId, role: 'STUDENT', schoolId: req.school.id },
         select: {
           id: true,
-          name: true,
-          grade: true,
-          section: true
+          name: true
         },
         orderBy: { name: 'asc' }
       }),
