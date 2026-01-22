@@ -31,6 +31,12 @@ const app = express();
 const PORT = process.env.PORT || 5005;
 const isProduction = process.env.NODE_ENV === 'production';
 
+// Trust proxy - required for Railway/Vercel deployment behind load balancer
+// This ensures correct client IP detection for rate limiting
+if (isProduction) {
+  app.set('trust proxy', 1);
+}
+
 // Security: Helmet adds various HTTP headers for security
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow file serving
