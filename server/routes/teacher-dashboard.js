@@ -25,13 +25,14 @@ router.get('/:teacherId', async (req, res) => {
   try {
     const { teacherId } = req.params;
 
-    // Verify teacher exists in this school
+    // Verify teacher exists in this school and get their classIds
     const teacher = await prisma.user.findFirst({
       where: { id: teacherId, role: 'TEACHER', schoolId: req.school.id },
       select: {
         id: true,
         name: true,
-        subject: true
+        subject: true,
+        classIds: true
       }
     });
 
@@ -39,19 +40,23 @@ router.get('/:teacherId', async (req, res) => {
       return res.status(404).json({ message: 'Teacher not found' });
     }
 
+    const teacherClassIds = teacher.classIds || [];
+
     // Parallel fetch all dashboard data
     const [classes, homework, exams, announcements] = await Promise.all([
-      // Classes taught by this teacher
-      prisma.class.findMany({
-        where: { teacherId: teacherId, schoolId: req.school.id },
-        select: {
-          id: true,
-          name: true,
-          grade: true,
-          section: true
-        },
-        orderBy: { name: 'asc' }
-      }),
+      // Classes taught by this teacher (from their classIds array)
+      teacherClassIds.length > 0
+        ? prisma.class.findMany({
+            where: { id: { in: teacherClassIds }, schoolId: req.school.id },
+            select: {
+              id: true,
+              name: true,
+              grade: true,
+              section: true
+            },
+            orderBy: { name: 'asc' }
+          })
+        : [],
       // Recent homework by this teacher (last 20)
       prisma.homework.findMany({
         where: { teacherId: teacherId, schoolId: req.school.id },
@@ -74,15 +79,17 @@ router.get('/:teacherId', async (req, res) => {
 
     // Get student count for each class
     const classIds = classes.map(c => c.id);
-    const studentsPerClass = await prisma.user.groupBy({
-      by: ['classId'],
-      where: {
-        classId: { in: classIds },
-        role: 'STUDENT',
-        schoolId: req.school.id
-      },
-      _count: { id: true }
-    });
+    const studentsPerClass = classIds.length > 0
+      ? await prisma.user.groupBy({
+          by: ['classId'],
+          where: {
+            classId: { in: classIds },
+            role: 'STUDENT',
+            schoolId: req.school.id
+          },
+          _count: { id: true }
+        })
+      : [];
 
     // Create a map of classId -> student count
     const studentCountMap = {};
@@ -140,23 +147,29 @@ router.get('/:teacherId/class/:classId', async (req, res) => {
   try {
     const { teacherId, classId } = req.params;
 
-    // Verify teacher exists
+    // Verify teacher exists and has access to this class via their classIds array
     const teacher = await prisma.user.findFirst({
       where: { id: teacherId, role: 'TEACHER', schoolId: req.school.id },
-      select: { id: true }
+      select: { id: true, classIds: true }
     });
 
     if (!teacher) {
       return res.status(404).json({ message: 'Teacher not found' });
     }
 
-    // Verify class belongs to this teacher
+    // Check if teacher has this class in their classIds
+    const teacherClassIds = teacher.classIds || [];
+    if (!teacherClassIds.includes(classId)) {
+      return res.status(403).json({ message: 'Access denied to this class' });
+    }
+
+    // Get class data
     const classData = await prisma.class.findFirst({
-      where: { id: classId, teacherId: teacherId, schoolId: req.school.id }
+      where: { id: classId, schoolId: req.school.id }
     });
 
     if (!classData) {
-      return res.status(403).json({ message: 'Access denied to this class' });
+      return res.status(404).json({ message: 'Class not found' });
     }
 
     // Parallel fetch all class data
