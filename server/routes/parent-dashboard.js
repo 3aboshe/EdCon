@@ -53,6 +53,8 @@ router.get('/:parentId', async (req, res) => {
 
     // Get classes for children
     const classIds = children.map(c => c.classId).filter(Boolean);
+    console.log('Parent dashboard - Children classIds:', classIds);
+    
     const classes = await prisma.class.findMany({
       where: { id: { in: classIds } },
       select: {
@@ -67,7 +69,7 @@ router.get('/:parentId', async (req, res) => {
       classMap[cls.id] = cls;
     });
 
-    // Get recent announcements (last 10)
+    // Get recent announcements (last 50 to filter)
     // Include school-wide (empty classIds) and class-specific ones for parent's children
     const allAnnouncements = await prisma.announcement.findMany({
       where: { schoolId: req.school.id },
@@ -84,15 +86,23 @@ router.get('/:parentId', async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
+    console.log('Parent dashboard - Total announcements found:', allAnnouncements.length);
+    console.log('Parent dashboard - Sample announcement classIds:', allAnnouncements.slice(0, 3).map(a => ({ id: a.id, classIds: a.classIds })));
+
     // Filter announcements:
     // - School-wide (empty classIds) shown to all
     // - Class-specific shown only if child is in that class
     const announcements = allAnnouncements.filter(ann => {
+      // School-wide announcements (empty or null classIds) are shown to everyone
       if (!ann.classIds || ann.classIds.length === 0) {
-        return true; // School-wide announcement
+        return true;
       }
-      return ann.classIds.some(cid => classIds.includes(cid));
+      // Class-specific announcements: check if ANY of announcement's classIds matches ANY of children's classIds
+      const matches = ann.classIds.some(announcementClassId => classIds.includes(announcementClassId));
+      return matches;
     }).slice(0, 10);
+
+    console.log('Parent dashboard - Filtered announcements count:', announcements.length);
 
     // Calculate summary statistics
     const summary = {

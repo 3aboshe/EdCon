@@ -15,6 +15,7 @@ router.use(resolveSchoolContext);
 router.get('/', async (req, res) => {
   try {
     const { classIds, parentId } = req.query;
+    console.log('Announcements GET - parentId:', parentId, 'classIds:', classIds);
     
     let filterClassIds = [];
     
@@ -25,12 +26,15 @@ router.get('/', async (req, res) => {
         select: { childrenIds: true }
       });
       
+      console.log('Announcements GET - Parent childrenIds:', parent?.childrenIds);
+      
       if (parent && parent.childrenIds?.length > 0) {
         const children = await prisma.user.findMany({
           where: { id: { in: parent.childrenIds }, schoolId: req.school.id },
           select: { classId: true }
         });
         filterClassIds = children.map(c => c.classId).filter(Boolean);
+        console.log('Announcements GET - Children classIds:', filterClassIds);
       }
     } else if (classIds) {
       // Parse comma-separated classIds
@@ -54,6 +58,8 @@ router.get('/', async (req, res) => {
       }
     });
     
+    console.log('Announcements GET - Total found:', announcements.length);
+    
     // Filter announcements:
     // - Include if classIds is empty (school-wide announcement)
     // - Include if any of the announcement's classIds matches user's classIds
@@ -68,6 +74,8 @@ router.get('/', async (req, res) => {
         return ann.classIds.some(cid => filterClassIds.includes(cid));
       });
     }
+    
+    console.log('Announcements GET - After filter:', filteredAnnouncements.length);
     
     res.json(filteredAnnouncements);
   } catch (error) {
@@ -106,6 +114,7 @@ router.get('/teacher/:teacherId', async (req, res) => {
 router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async (req, res) => {
   try {
     const { title, content, date, teacherId, priority, classIds } = req.body;
+    console.log('Creating announcement:', { title, classIds, teacherId, priority });
 
     let resolvedTeacherId = teacherId;
     if (req.user.role === 'TEACHER') {
@@ -120,8 +129,6 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async 
     const announcementId = `ANN${Date.now()}`;
 
     // Map frontend priority values to Prisma enum values
-    // Frontend: normal, high, urgent
-    // Prisma: LOW, MEDIUM, HIGH
     const priorityMap = {
       'normal': 'MEDIUM',
       'high': 'HIGH',
@@ -131,6 +138,10 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async 
     };
     const priorityValue = priorityMap[priority?.toLowerCase()] || 'MEDIUM';
 
+    // Ensure classIds is an array
+    const normalizedClassIds = Array.isArray(classIds) ? classIds : (classIds ? [classIds] : []);
+    console.log('Normalized classIds:', normalizedClassIds);
+
     const newAnnouncement = await prisma.announcement.create({
       data: {
         id: announcementId,
@@ -138,11 +149,13 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async 
         content,
         date: date ? new Date(date) : new Date(),
         teacherId: resolvedTeacherId,
-        classIds: classIds || [],
+        classIds: normalizedClassIds,
         priority: priorityValue,
         schoolId: req.school.id
       }
     });
+
+    console.log('Created announcement:', newAnnouncement.id, 'with classIds:', newAnnouncement.classIds);
 
     // Send push notifications to parents
     const targetClassIds = classIds && classIds.length > 0 ? classIds : [];
