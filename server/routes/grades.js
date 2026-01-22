@@ -10,40 +10,68 @@ const router = express.Router();
 router.use(authenticate);
 router.use(resolveSchoolContext);
 
-// Get all grades
+// Get all grades with pagination
 router.get('/', async (req, res) => {
   try {
-    const grades = await prisma.grade.findMany({
-      where: { schoolId: req.school.id },
-      orderBy: {
-        date: 'desc'
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = (page - 1) * limit;
+
+    const [grades, total] = await Promise.all([
+      prisma.grade.findMany({
+        where: { schoolId: req.school.id },
+        skip,
+        take: limit,
+        orderBy: { date: 'desc' }
+      }),
+      prisma.grade.count({ where: { schoolId: req.school.id } })
+    ]);
+
+    res.json({
+      data: grades,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
       }
     });
-    res.json(grades);
   } catch (error) {
     console.error('Error fetching grades:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
-// Get grades for a student
+// Get grades for a student with pagination
 router.get('/student/:studentId', async (req, res) => {
   try {
     const { studentId } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = (page - 1) * limit;
 
-    // Get all grades with their associated exams in a single query (optimized)
-    const grades = await prisma.grade.findMany({
-      where: {
-        studentId,
-        schoolId: req.school.id
-      },
-      include: {
-        exam: true
-      },
-      orderBy: {
-        date: 'desc'
-      }
-    });
+    const [grades, total] = await Promise.all([
+      prisma.grade.findMany({
+        where: {
+          studentId,
+          schoolId: req.school.id
+        },
+        include: {
+          exam: true
+        },
+        skip,
+        take: limit,
+        orderBy: {
+          date: 'desc'
+        }
+      }),
+      prisma.grade.count({
+        where: {
+          studentId,
+          schoolId: req.school.id
+        }
+      })
+    ]);
 
     // Filter: include grades without examId OR with valid (non-deleted) exam
     // Then remove the exam object from response to maintain API compatibility
@@ -54,7 +82,15 @@ router.get('/student/:studentId', async (req, res) => {
       })
       .map(({ exam, ...gradeData }) => gradeData); // Remove exam from response
 
-    res.json(validGrades);
+    res.json({
+      data: validGrades,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     console.error('Get grades error:', error);
     res.status(500).json({ message: 'Server error' });

@@ -10,30 +10,56 @@ const router = express.Router();
 router.use(authenticate);
 router.use(resolveSchoolContext);
 
-// Get all attendance
+// Get all attendance with pagination
 router.get('/', async (req, res) => {
   try {
-    const attendance = await prisma.attendance.findMany({
-      where: { schoolId: req.school.id },
-      orderBy: {
-        createdAt: 'desc'
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = (page - 1) * limit;
+
+    const [attendance, total] = await Promise.all([
+      prisma.attendance.findMany({
+        where: { schoolId: req.school.id },
+        skip,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc'
+        }
+      }),
+      prisma.attendance.count({ where: { schoolId: req.school.id } })
+    ]);
+
+    res.json({
+      data: attendance,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
       }
     });
-    res.json(attendance);
   } catch (error) {
     console.error('Error fetching attendance:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
-// Get attendance by student
+// Get attendance by student (optimized - single query with includes)
 router.get('/student/:studentId', async (req, res) => {
   try {
     const { studentId } = req.params;
+
+    // Single query with all includes - fixes N+1 query problem
     const attendance = await prisma.attendance.findMany({
       where: { studentId, schoolId: req.school.id },
       include: {
         student: {
+          select: { id: true, name: true }
+        },
+        teacher: {
+          select: { id: true, name: true, subject: true }
+        },
+        class: {
           select: { id: true, name: true }
         }
       },
@@ -42,35 +68,12 @@ router.get('/student/:studentId', async (req, res) => {
       }
     });
 
-    // Fetch teacher info for each attendance record
-    const attendanceWithTeacher = await Promise.all(
-      attendance.map(async (att) => {
-        let teacherInfo = null;
-        let classInfo = null;
-
-        if (att.teacherId) {
-          const teacher = await prisma.user.findUnique({
-            where: { id: att.teacherId },
-            select: { id: true, name: true, subject: true }
-          });
-          teacherInfo = teacher;
-        }
-
-        if (att.classId) {
-          const classData = await prisma.class.findUnique({
-            where: { id: att.classId },
-            select: { id: true, name: true }
-          });
-          classInfo = classData;
-        }
-
-        return {
-          ...att,
-          teacher: teacherInfo,
-          class: classInfo
-        };
-      })
-    );
+    // Transform to match existing response format (teacher/class nested objects)
+    const attendanceWithTeacher = attendance.map((att) => ({
+      ...att,
+      teacher: att.teacher || null,
+      class: att.class || null
+    }));
 
     res.json(attendanceWithTeacher);
   } catch (error) {

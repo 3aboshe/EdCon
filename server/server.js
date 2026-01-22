@@ -22,6 +22,8 @@ import analyticsRoutes from './routes/analytics.js';
 import globalNotificationRoutes from './routes/global-notifications.js';
 import dashboardRoutes from './routes/dashboard.js';
 import encryptionRoutes from './routes/encryption.js';
+import parentDashboardRoutes from './routes/parent-dashboard.js';
+import teacherDashboardRoutes from './routes/teacher-dashboard.js';
 
 dotenv.config();
 
@@ -134,6 +136,8 @@ app.use('/api/health', healthRoutes);
 app.use('/api/backup', backupRoutes);
 app.use('/api/admin/dashboard', dashboardRoutes);
 app.use('/api/encryption', encryptionRoutes);
+app.use('/api/parent/dashboard', parentDashboardRoutes);
+app.use('/api/teacher/dashboard', teacherDashboardRoutes);
 
 // Health check routes (public)
 app.get('/', (req, res) => {

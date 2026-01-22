@@ -65,16 +65,34 @@ router.get('/file/:fileId', async (req, res) => {
 router.use(authenticate);
 router.use(resolveSchoolContext);
 
-// Get all homework
+// Get all homework with pagination
 router.get('/', async (req, res) => {
   try {
-    const homework = await prisma.homework.findMany({
-      where: { schoolId: req.school.id },
-      orderBy: {
-        createdAt: 'desc'
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = (page - 1) * limit;
+
+    const [homework, total] = await Promise.all([
+      prisma.homework.findMany({
+        where: { schoolId: req.school.id },
+        skip,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc'
+        }
+      }),
+      prisma.homework.count({ where: { schoolId: req.school.id } })
+    ]);
+
+    res.json({
+      data: homework,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
       }
     });
-    res.json(homework);
   } catch (error) {
     console.error('Error fetching homework:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -109,30 +127,56 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Get homework by teacher
+// Get homework by teacher with pagination
 router.get('/teacher/:teacherId', async (req, res) => {
   try {
     const { teacherId } = req.params;
-    const homework = await prisma.homework.findMany({
-      where: {
-        teacherId: teacherId,
-        schoolId: req.school.id
-      },
-      orderBy: {
-        createdAt: 'desc'
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = (page - 1) * limit;
+
+    const [homework, total] = await Promise.all([
+      prisma.homework.findMany({
+        where: {
+          teacherId: teacherId,
+          schoolId: req.school.id
+        },
+        skip,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc'
+        }
+      }),
+      prisma.homework.count({
+        where: {
+          teacherId: teacherId,
+          schoolId: req.school.id
+        }
+      })
+    ]);
+
+    res.json({
+      data: homework,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
       }
     });
-    res.json(homework);
   } catch (error) {
     console.error('Error fetching homework by teacher:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
-// Get homework by student
+// Get homework by student with pagination
 router.get('/student/:studentId', async (req, res) => {
   try {
     const { studentId } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = (page - 1) * limit;
 
     // First, get the student to find their classIds
     const student = await prisma.user.findFirst({
@@ -143,32 +187,47 @@ router.get('/student/:studentId', async (req, res) => {
       return res.status(404).json({ message: 'Student not found' });
     }
 
-    // Get homework assigned to any of the student's classes
-    const homework = await prisma.homework.findMany({
-      where: {
-        schoolId: req.school.id,
-        OR: [
-          // Homework assigned to the student's class
-          { classIds: { has: student.classId } },
-          // Or homework assigned to all classes (empty array means all classes)
-          { classIds: { equals: [] } }
-        ]
-      },
-      include: {
-        teacher: {
-          select: {
-            id: true,
-            name: true,
-            subject: true
+    // Build where clause for homework
+    const whereClause = {
+      schoolId: req.school.id,
+      OR: [
+        // Homework assigned to the student's class
+        { classIds: { has: student.classId } },
+        // Or homework assigned to all classes (empty array means all classes)
+        { classIds: { equals: [] } }
+      ]
+    };
+
+    const [homework, total] = await Promise.all([
+      prisma.homework.findMany({
+        where: whereClause,
+        skip,
+        take: limit,
+        include: {
+          teacher: {
+            select: {
+              id: true,
+              name: true,
+              subject: true
+            }
           }
+        },
+        orderBy: {
+          createdAt: 'desc'
         }
-      },
-      orderBy: {
-        createdAt: 'desc'
+      }),
+      prisma.homework.count({ where: whereClause })
+    ]);
+
+    res.json({
+      data: homework,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
       }
     });
-
-    res.json(homework);
   } catch (error) {
     console.error('Error fetching homework by student:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
