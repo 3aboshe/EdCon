@@ -96,6 +96,11 @@ const corsOptions = {
       return callback(null, true);
     }
 
+    // Allow localhost origins (for development/testing against production)
+    if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+      return callback(null, true);
+    }
+
     // In production, reject unknown web origins
     if (isProduction) {
       console.warn(`CORS blocked origin: ${origin}`);
