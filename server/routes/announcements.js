@@ -10,9 +10,34 @@ const router = express.Router();
 router.use(authenticate);
 router.use(resolveSchoolContext);
 
-// Get all announcements
+// Get all announcements (with optional filtering by class)
+// Query params: classIds (comma-separated), parentId (to auto-filter by children's classes)
 router.get('/', async (req, res) => {
   try {
+    const { classIds, parentId } = req.query;
+    
+    let filterClassIds = [];
+    
+    // If parentId is provided, get their children's classIds
+    if (parentId) {
+      const parent = await prisma.user.findFirst({
+        where: { id: parentId, role: 'PARENT', schoolId: req.school.id },
+        select: { childrenIds: true }
+      });
+      
+      if (parent && parent.childrenIds?.length > 0) {
+        const children = await prisma.user.findMany({
+          where: { id: { in: parent.childrenIds }, schoolId: req.school.id },
+          select: { classId: true }
+        });
+        filterClassIds = children.map(c => c.classId).filter(Boolean);
+      }
+    } else if (classIds) {
+      // Parse comma-separated classIds
+      filterClassIds = classIds.split(',').filter(Boolean);
+    }
+    
+    // Fetch all announcements for the school
     const announcements = await prisma.announcement.findMany({
       where: { schoolId: req.school.id },
       include: {
@@ -28,7 +53,23 @@ router.get('/', async (req, res) => {
         createdAt: 'desc'
       }
     });
-    res.json(announcements);
+    
+    // Filter announcements:
+    // - Include if classIds is empty (school-wide announcement)
+    // - Include if any of the announcement's classIds matches user's classIds
+    let filteredAnnouncements = announcements;
+    if (filterClassIds.length > 0) {
+      filteredAnnouncements = announcements.filter(ann => {
+        // School-wide announcements (empty classIds) are shown to everyone
+        if (!ann.classIds || ann.classIds.length === 0) {
+          return true;
+        }
+        // Class-specific announcements are shown only to matching classes
+        return ann.classIds.some(cid => filterClassIds.includes(cid));
+      });
+    }
+    
+    res.json(filteredAnnouncements);
   } catch (error) {
     console.error('Error fetching announcements:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
