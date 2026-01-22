@@ -123,9 +123,8 @@ app.use(express.json({ limit: '10mb' }));
 // Apply general rate limiting to all API routes
 app.use('/api/', apiLimiter);
 
-// Apply stricter rate limiting to auth endpoints
-// Rate limiter disabled for login attempts
-// app.use('/api/auth/login', authLimiter);
+// Apply stricter rate limiting to reset-password endpoint
+// Login rate limiting is handled within auth route (tracks failed attempts only)
 app.use('/api/auth/reset-password', authLimiter);
 
 // Error handling middleware - hide details in production

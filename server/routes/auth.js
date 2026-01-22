@@ -5,6 +5,7 @@ import requireRole from '../middleware/requireRole.js';
 import resolveSchoolContext from '../middleware/schoolContext.js';
 import { comparePassword, hashPassword } from '../utils/password.js';
 import { signSessionToken } from '../utils/token.js';
+import { loginRateLimiter, recordFailedAttempt, clearFailedAttempts } from '../middleware/loginRateLimiter.js';
 
 const router = express.Router();
 
@@ -14,7 +15,8 @@ const sanitizeUser = (user) => {
   return safeUser;
 };
 
-router.post('/login', async (req, res) => {
+// Apply rate limiter to login endpoint
+router.post('/login', loginRateLimiter, async (req, res) => {
   try {
     const { accessCode, password } = req.body;
     if (!accessCode || !password) {
@@ -27,15 +29,19 @@ router.post('/login', async (req, res) => {
     });
 
     if (!user) {
+      // Record failed attempt
+      recordFailedAttempt(req.clientIp);
       return res.status(404).json({ message: 'Invalid credentials' });
     }
 
     // Students are not allowed to login - they don't have credentials
     if (user.role === 'STUDENT') {
+      recordFailedAttempt(req.clientIp);
       return res.status(403).json({ message: 'Students cannot login directly. Please contact your parent or school administrator.' });
     }
 
     if (user.status === 'DISABLED' || user.status === 'SUSPENDED') {
+      recordFailedAttempt(req.clientIp);
       return res.status(403).json({ message: 'Account is not active' });
     }
 
@@ -45,8 +51,13 @@ router.post('/login', async (req, res) => {
       : false;
 
     if (!passwordMatches && !tempPasswordMatches) {
+      // Record failed attempt
+      recordFailedAttempt(req.clientIp);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
+
+    // Clear failed attempts on successful login
+    clearFailedAttempts(req.clientIp);
 
     const token = signSessionToken(user);
 
