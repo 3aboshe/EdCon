@@ -47,9 +47,7 @@ router.get('/:parentId', async (req, res) => {
         id: true,
         name: true,
         role: true,
-        classId: true,
-        grade: true,
-        section: true
+        classId: true
       }
     });
 
