@@ -68,6 +68,8 @@ const allowedOrigins = [
   'https://edcon-app.vercel.app',
   'https://edcon-app.netlify.app',
   'https://ed-eb22y6x9n-3aboshes-projects.vercel.app',
+  'http://localhost:*', // Allow localhost for development/testing
+  'https://ed-co.vercel.app',
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
