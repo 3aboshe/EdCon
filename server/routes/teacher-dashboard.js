@@ -199,7 +199,7 @@ router.get('/:teacherId/class/:classId', async (req, res) => {
         where: {
           teacherId: teacherId,
           schoolId: req.school.id,
-          classIds: { has: classId }
+          classId: classId
         },
         take: 20,
         orderBy: { createdAt: 'desc' }
