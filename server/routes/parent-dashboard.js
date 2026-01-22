@@ -161,9 +161,7 @@ router.get('/:parentId/child/:childId', async (req, res) => {
       select: {
         id: true,
         name: true,
-        classId: true,
-        grade: true,
-        section: true
+        classId: true
       }
     });
 
