@@ -70,11 +70,31 @@ router.get('/:parentId', async (req, res) => {
     });
 
     // Get recent announcements (last 10)
-    const announcements = await prisma.announcement.findMany({
+    // Include school-wide (empty classIds) and class-specific ones for parent's children
+    const allAnnouncements = await prisma.announcement.findMany({
       where: { schoolId: req.school.id },
-      take: 10,
+      include: {
+        teacher: {
+          select: {
+            id: true,
+            name: true,
+            subject: true
+          }
+        }
+      },
+      take: 50,
       orderBy: { createdAt: 'desc' }
     });
+
+    // Filter announcements:
+    // - School-wide (empty classIds) shown to all
+    // - Class-specific shown only if child is in that class
+    const announcements = allAnnouncements.filter(ann => {
+      if (!ann.classIds || ann.classIds.length === 0) {
+        return true; // School-wide announcement
+      }
+      return ann.classIds.some(cid => classIds.includes(cid));
+    }).slice(0, 10);
 
     // Calculate summary statistics
     const summary = {
