@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSearchParams } from 'react-router-dom';
 import {
     Plus, Search, User, Trash2, RefreshCw,
     X, AlertCircle, Check
@@ -21,6 +22,7 @@ export function UsersPage() {
     const [credentials, setCredentials] = useState(null);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, onConfirm: null, title: '', message: '' });
     const [isResetting, setIsResetting] = useState(false);
+    const [searchParams] = useSearchParams();
 
     // Data Hooks
     const { data: users = [], isLoading, refetch } = useUsers(activeTab);
@@ -30,6 +32,31 @@ export function UsersPage() {
     // Mutations
     const createUser = useCreateUser();
     const deleteUser = useDeleteUser();
+
+    useEffect(() => {
+        const tabParam = (searchParams.get('tab') || '').toLowerCase();
+        const actionParam = (searchParams.get('action') || '').toLowerCase();
+
+        if (tabParam) {
+            const tabMap = {
+                student: 'STUDENT',
+                students: 'STUDENT',
+                teacher: 'TEACHER',
+                teachers: 'TEACHER',
+                parent: 'PARENT',
+                parents: 'PARENT',
+            };
+
+            const mappedTab = tabMap[tabParam];
+            if (mappedTab) {
+                setActiveTab(mappedTab);
+            }
+        }
+
+        if (actionParam === 'create') {
+            setShowCreateModal(true);
+        }
+    }, [searchParams]);
 
     const handleCreateUser = async (data) => {
         try {

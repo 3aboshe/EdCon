@@ -13,20 +13,30 @@ class DashboardService {
     }
 
     async getSuperAdminStats() {
-        // Super admin stats can be derived from schools list
-        const { data } = await api.get('/schools');
-        const schools = data.data;
+        try {
+            const { data } = await api.get('/analytics/super-admin');
+            const metrics = data?.data || {};
 
-        let totalUsers = 0;
-        schools.forEach((school) => {
-            totalUsers += school._count?.users || 0;
-        });
+            return {
+                totalSchools: metrics.totalSchools || 0,
+                totalUsers: metrics.totalUsers || 0,
+                activeNow: metrics.activeUsers || 0,
+            };
+        } catch {
+            const { data } = await api.get('/schools');
+            const schools = data.data || [];
 
-        return {
-            totalSchools: schools.length,
-            totalUsers,
-            activeNow: Math.floor(totalUsers * 0.1), // Estimate
-        };
+            let totalUsers = 0;
+            schools.forEach((school) => {
+                totalUsers += school._count?.users || 0;
+            });
+
+            return {
+                totalSchools: schools.length,
+                totalUsers,
+                activeNow: 0,
+            };
+        }
     }
 
     async getClasses() {

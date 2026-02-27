@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSearchParams } from 'react-router-dom';
 import {
     Plus, Search, Book, GraduationCap, BookOpen,
     Trash2, X
@@ -17,10 +18,34 @@ export function AcademicPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [searchParams] = useSearchParams();
 
     useEffect(() => {
         loadData();
     }, []);
+
+    useEffect(() => {
+        const tabParam = (searchParams.get('tab') || '').toLowerCase();
+        const actionParam = (searchParams.get('action') || '').toLowerCase();
+
+        if (tabParam) {
+            const tabMap = {
+                class: 'CLASS',
+                classes: 'CLASS',
+                subject: 'SUBJECT',
+                subjects: 'SUBJECT',
+            };
+
+            const mappedTab = tabMap[tabParam];
+            if (mappedTab) {
+                setActiveTab(mappedTab);
+            }
+        }
+
+        if (actionParam === 'create') {
+            setShowCreateModal(true);
+        }
+    }, [searchParams]);
 
     const loadData = async () => {
         setIsLoading(true);

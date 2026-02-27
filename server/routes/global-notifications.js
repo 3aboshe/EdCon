@@ -26,25 +26,64 @@ const normalizeTarget = (target, targetRole) => {
 
 router.get('/', requireSuperAdmin, async (req, res) => {
   try {
-    const announcements = await prisma.announcement.findMany({
-      where: {
-        teacherId: req.user.id,
-        priority: 'HIGH',
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-      select: {
-        id: true,
-        title: true,
-        content: true,
-        createdAt: true,
-      },
-    });
+    const [announcements, adminMessages] = await Promise.all([
+      prisma.announcement.findMany({
+        where: {
+          teacherId: req.user.id,
+          priority: 'HIGH',
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+        select: {
+          id: true,
+          title: true,
+          content: true,
+          createdAt: true,
+        },
+      }),
+      prisma.message.findMany({
+        where: {
+          senderId: req.user.id,
+          type: 'TEXT',
+          content: {
+            startsWith: '[SYSTEM NOTIFICATION] ',
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+        select: {
+          id: true,
+          content: true,
+          createdAt: true,
+        },
+      }),
+    ]);
 
-    const history = announcements.map((item) => ({
-      ...item,
+    const allUsersHistory = announcements.map((item) => ({
+      id: item.id,
+      title: item.title,
+      content: item.content,
+      createdAt: item.createdAt,
       targetRole: 'ALL',
     }));
+
+    const schoolAdminHistory = adminMessages.map((item) => {
+      const raw = item.content || '';
+      const withoutPrefix = raw.replace(/^\[SYSTEM NOTIFICATION\]\s*/, '');
+      const [titlePart, ...bodyParts] = withoutPrefix.split('\n\n');
+
+      return {
+        id: item.id,
+        title: (titlePart || 'System Notification').trim(),
+        content: bodyParts.join('\n\n').trim() || withoutPrefix.trim(),
+        createdAt: item.createdAt,
+        targetRole: 'SCHOOL_ADMIN',
+      };
+    });
+
+    const history = [...allUsersHistory, ...schoolAdminHistory]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 50);
 
     res.json({ success: true, data: history });
   } catch (error) {
@@ -84,7 +123,11 @@ router.post('/', requireSuperAdmin, async (req, res) => {
         data: announcements
       });
 
-      return res.json({ success: true, message: `Announcement sent to ${schools.length} schools.` });
+      return res.json({
+        success: true,
+        message: `Announcement sent to ${schools.length} schools.`,
+        data: { targetRole: 'ALL' },
+      });
 
     } else if (normalizedTarget === 'SCHOOL_ADMINS') {
       // Send message to all school admins
@@ -112,7 +155,11 @@ router.post('/', requireSuperAdmin, async (req, res) => {
         });
       }
 
-      return res.json({ success: true, message: `Message sent to ${messages.length} admins.` });
+      return res.json({
+        success: true,
+        message: `Message sent to ${messages.length} admins.`,
+        data: { targetRole: 'SCHOOL_ADMIN' },
+      });
     } else {
       return res.status(400).json({ message: 'Invalid target' });
     }

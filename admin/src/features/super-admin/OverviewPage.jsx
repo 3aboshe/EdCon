@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Building2, Users, Activity, Bell, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { schoolService } from '../../services/schoolService';
+import { dashboardService } from '../../services/dashboardService';
 import styles from './OverviewPage.module.css';
 
 export function OverviewPage() {
@@ -17,17 +17,8 @@ export function OverviewPage() {
 
     const loadStats = async () => {
         try {
-            const schools = await schoolService.getSchools();
-            let totalUsers = 0;
-            schools.forEach(school => {
-                totalUsers += school._count?.users || 0;
-            });
-
-            setStats({
-                totalSchools: schools.length,
-                totalUsers,
-                activeNow: Math.floor(totalUsers * 0.1),
-            });
+            const summary = await dashboardService.getSuperAdminStats();
+            setStats(summary);
         } catch (error) {
             console.error('Failed to load stats:', error);
         } finally {
