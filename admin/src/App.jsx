@@ -88,6 +88,16 @@ function RootRedirect() {
     return <Navigate to="/admin" replace />;
 }
 
+function HomeRoute() {
+    const { isAuthenticated } = useAuth();
+
+    if (isAuthenticated) {
+        return <RootRedirect />;
+    }
+
+    return <LandingPage />;
+}
+
 
 
 
@@ -98,7 +108,7 @@ function App() {
                 <Suspense fallback={<LoadingFallback />}>
                     <Routes>
                         {/* Public Routes */}
-                        <Route path="/" element={<LandingPage />} />
+                        <Route path="/" element={<HomeRoute />} />
                         <Route path="/login" element={<LoginPage />} />
 
                         {/* Force Password Change Route */}

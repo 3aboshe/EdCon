@@ -101,6 +101,27 @@ function LuxuryLoader({ progress }) {
             >
                 Initializing Experience
             </motion.p>
+
+            <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => window.location.href = '/login'}
+                style={{
+                    marginTop: '2rem',
+                    padding: '0.9rem 1.8rem',
+                    background: 'transparent',
+                    color: 'white',
+                    border: '1px solid rgba(255,255,255,0.4)',
+                    borderRadius: '999px',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                }}
+            >
+                Login Now
+            </motion.button>
         </motion.div>
     );
 }

@@ -42,8 +42,11 @@ export function LoginPage() {
             if (response.user.requiresPasswordReset) {
                 navigate('/force-password-change');
             } else {
-                // Navigate based on role (handled in App.jsx routes)
-                navigate('/');
+                if (response.user.role === 'SUPER_ADMIN') {
+                    navigate('/super-admin');
+                } else {
+                    navigate('/admin');
+                }
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : t('login.error_invalid'));
