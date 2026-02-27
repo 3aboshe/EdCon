@@ -72,7 +72,7 @@ class DashboardService {
     }
 
     async deleteUser(userId) {
-        await api.delete(`/classes/users/${userId}`);
+        await api.delete(`/users/${userId}`);
     }
 
     async resetUserPassword(userId) {

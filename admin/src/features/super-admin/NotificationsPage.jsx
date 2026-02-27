@@ -47,6 +47,7 @@ export function NotificationsPage() {
             await systemService.sendGlobalNotification({
                 title: formData.title.trim(),
                 content: formData.content.trim(),
+                targetRole: formData.targetRole,
             });
             setFormData({ title: '', content: '', targetRole: 'ALL' });
             loadNotifications();

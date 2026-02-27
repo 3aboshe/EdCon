@@ -24,6 +24,17 @@ const ensureClassBelongsToSchool = async (classId, schoolId) => {
   return klass;
 };
 
+const ensureParentBelongsToSchool = async (parentId, schoolId) => {
+  if (!parentId) return null;
+  const parent = await prisma.user.findFirst({
+    where: { id: parentId, schoolId, role: 'PARENT' },
+  });
+  if (!parent) {
+    throw new Error('Parent not found in this school');
+  }
+  return parent;
+};
+
 router.use(authenticate);
 router.use(requireRole(['SCHOOL_ADMIN', 'SUPER_ADMIN']));
 router.use(resolveSchoolContext);
@@ -322,6 +333,152 @@ router.post('/:userId/reset-password', async (req, res) => {
   } catch (error) {
     console.error('Reset user password error:', error);
     res.status(500).json({ message: 'Unable to reset password' });
+  }
+});
+
+router.put('/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const {
+      name,
+      email,
+      phone,
+      status,
+      subject,
+      classId,
+      classIds,
+      parentId,
+      metadata,
+    } = req.body;
+
+    const existingUser = await prisma.user.findFirst({
+      where: { id: userId, schoolId: req.school.id },
+    });
+
+    if (!existingUser) {
+      return res.status(404).json({ message: 'User not found in this school' });
+    }
+
+    if (name !== undefined) {
+      const nameValidation = validateName(name);
+      if (!nameValidation.valid) {
+        return res.status(400).json({ message: nameValidation.error });
+      }
+    }
+
+    if (classId !== undefined && classId !== null && classId !== '') {
+      await ensureClassBelongsToSchool(classId, req.school.id);
+    }
+
+    if (Array.isArray(classIds) && classIds.length > 0) {
+      await Promise.all(classIds.map((cid) => ensureClassBelongsToSchool(cid, req.school.id)));
+    }
+
+    if (parentId !== undefined && parentId !== null && parentId !== '') {
+      await ensureParentBelongsToSchool(parentId, req.school.id);
+    }
+
+    const updateData = {};
+    if (name !== undefined) updateData.name = name.trim();
+    if (email !== undefined) updateData.email = email ? email.toLowerCase() : null;
+    if (phone !== undefined) updateData.phone = phone || null;
+    if (status !== undefined) updateData.status = status;
+    if (subject !== undefined) updateData.subject = subject || null;
+    if (classId !== undefined) updateData.classId = classId || null;
+    if (classIds !== undefined) updateData.classIds = Array.isArray(classIds) ? classIds : [];
+    if (parentId !== undefined) updateData.parentId = parentId || null;
+    if (metadata !== undefined) updateData.metadata = metadata || null;
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+    });
+
+    res.json({ success: true, user: sanitize(updatedUser) });
+  } catch (error) {
+    console.error('Update user error:', error);
+    res.status(500).json({ message: error.message || 'Unable to update user' });
+  }
+});
+
+router.delete('/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const schoolId = req.school.id;
+
+    const user = await prisma.user.findFirst({
+      where: { id: userId, schoolId },
+      select: { id: true, role: true, parentId: true, childrenIds: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found in this school' });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      if (user.role === 'PARENT') {
+        await tx.user.updateMany({
+          where: { parentId: user.id, schoolId },
+          data: { parentId: null },
+        });
+      }
+
+      if (user.role === 'STUDENT' && user.parentId) {
+        const parent = await tx.user.findUnique({
+          where: { id: user.parentId },
+          select: { childrenIds: true },
+        });
+        if (parent) {
+          await tx.user.update({
+            where: { id: user.parentId },
+            data: { childrenIds: (parent.childrenIds || []).filter((id) => id !== user.id) },
+          });
+        }
+      }
+
+      await tx.user.updateMany({
+        where: { createdById: user.id, schoolId },
+        data: { createdById: null },
+      });
+
+      await tx.grade.deleteMany({ where: { studentId: user.id, schoolId } });
+      await tx.attendance.deleteMany({
+        where: {
+          schoolId,
+          OR: [{ studentId: user.id }, { teacherId: user.id }],
+        },
+      });
+      await tx.message.deleteMany({
+        where: {
+          schoolId,
+          OR: [{ senderId: user.id }, { receiverId: user.id }],
+        },
+      });
+
+      if (user.role === 'TEACHER') {
+        const teacherExams = await tx.exam.findMany({
+          where: { teacherId: user.id, schoolId },
+          select: { id: true },
+        });
+        const teacherExamIds = teacherExams.map((exam) => exam.id);
+
+        if (teacherExamIds.length > 0) {
+          await tx.grade.deleteMany({ where: { examId: { in: teacherExamIds }, schoolId } });
+        }
+
+        await tx.exam.deleteMany({ where: { teacherId: user.id, schoolId } });
+        await tx.homework.deleteMany({ where: { teacherId: user.id, schoolId } });
+        await tx.announcement.deleteMany({ where: { teacherId: user.id, schoolId } });
+      }
+
+      await tx.encryptionKey.deleteMany({ where: { userId: user.id } });
+      await tx.user.delete({ where: { id: user.id } });
+    });
+
+    res.json({ success: true, message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ message: error.message || 'Unable to delete user' });
   }
 });
 

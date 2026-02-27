@@ -14,15 +14,55 @@ const requireSuperAdmin = (req, res, next) => {
   next();
 };
 
-router.post('/', requireSuperAdmin, async (req, res) => {
-  const { title, content, target } = req.body; // target: 'ALL_USERS' | 'SCHOOL_ADMINS'
+const normalizeTarget = (target, targetRole) => {
+  const raw = (target || targetRole || '').toString().trim().toUpperCase();
+  if (!raw) return null;
 
-  if (!title || !content || !target) {
+  if (raw === 'ALL' || raw === 'ALL_USERS') return 'ALL_USERS';
+  if (raw === 'SCHOOL_ADMIN' || raw === 'SCHOOL_ADMINS') return 'SCHOOL_ADMINS';
+
+  return null;
+};
+
+router.get('/', requireSuperAdmin, async (req, res) => {
+  try {
+    const announcements = await prisma.announcement.findMany({
+      where: {
+        teacherId: req.user.id,
+        priority: 'HIGH',
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        createdAt: true,
+      },
+    });
+
+    const history = announcements.map((item) => ({
+      ...item,
+      targetRole: 'ALL',
+    }));
+
+    res.json({ success: true, data: history });
+  } catch (error) {
+    console.error('Global notifications history error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+router.post('/', requireSuperAdmin, async (req, res) => {
+  const { title, content, target, targetRole } = req.body; // target: 'ALL_USERS' | 'SCHOOL_ADMINS'
+  const normalizedTarget = normalizeTarget(target, targetRole);
+
+  if (!title || !content || !normalizedTarget) {
     return res.status(400).json({ message: 'Missing required fields' });
   }
 
   try {
-    if (target === 'ALL_USERS') {
+    if (normalizedTarget === 'ALL_USERS') {
       // Create announcement for all schools
       const schools = await prisma.school.findMany({ select: { id: true } });
       
@@ -46,7 +86,7 @@ router.post('/', requireSuperAdmin, async (req, res) => {
 
       return res.json({ success: true, message: `Announcement sent to ${schools.length} schools.` });
 
-    } else if (target === 'SCHOOL_ADMINS') {
+    } else if (normalizedTarget === 'SCHOOL_ADMINS') {
       // Send message to all school admins
       const admins = await prisma.user.findMany({
         where: { role: 'SCHOOL_ADMIN' },

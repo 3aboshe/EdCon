@@ -24,7 +24,12 @@ class SystemService {
 
     // Global Notifications (Super Admin)
     async sendGlobalNotification(notification) {
-        await api.post('/global-notifications', notification);
+        const payload = {
+            title: notification.title,
+            content: notification.content,
+            targetRole: notification.targetRole || 'ALL',
+        };
+        await api.post('/global-notifications', payload);
     }
 
     async getGlobalHistory() {
