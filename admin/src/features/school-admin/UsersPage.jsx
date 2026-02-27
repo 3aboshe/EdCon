@@ -22,6 +22,7 @@ export function UsersPage() {
     const [credentials, setCredentials] = useState(null);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, onConfirm: null, title: '', message: '' });
     const [isResetting, setIsResetting] = useState(false);
+    const [feedback, setFeedback] = useState({ type: '', text: '' });
     const [searchParams] = useSearchParams();
 
     // Data Hooks
@@ -61,6 +62,7 @@ export function UsersPage() {
     const handleCreateUser = async (data) => {
         try {
             const response = await createUser.mutateAsync(data);
+            setFeedback({ type: 'success', text: 'User created successfully' });
             if (response.credentials) {
                 setCredentials({
                     accessCode: response.credentials.accessCode,
@@ -71,6 +73,7 @@ export function UsersPage() {
             setShowCreateModal(false);
         } catch (error) {
             console.error('Failed to create user:', error);
+            setFeedback({ type: 'error', text: error?.message || t('admin.create_user_error') });
             throw error;
         }
     };
@@ -84,9 +87,11 @@ export function UsersPage() {
             onConfirm: async () => {
                 try {
                     await deleteUser.mutateAsync(id);
+                    setFeedback({ type: 'success', text: 'User deleted successfully' });
                     setConfirmModal({ isOpen: false });
                 } catch (error) {
                     console.error('Failed to delete user:', error);
+                    setFeedback({ type: 'error', text: error?.message || 'Failed to delete user' });
                     setConfirmModal({ isOpen: false });
                 }
             }
@@ -103,6 +108,7 @@ export function UsersPage() {
                 setIsResetting(true);
                 try {
                     const result = await userService.resetPassword(userId);
+                    setFeedback({ type: 'success', text: 'Password reset successfully' });
                     setCredentials({
                         accessCode: result.accessCode || result.data?.accessCode,
                         temporaryPassword: result.temporaryPassword || result.data?.temporaryPassword,
@@ -112,6 +118,7 @@ export function UsersPage() {
                     setShowCredentialsModal(true);
                 } catch (error) {
                     console.error('Failed to reset password:', error);
+                    setFeedback({ type: 'error', text: error?.message || 'Failed to reset password' });
                     setConfirmModal({ isOpen: false });
                 } finally {
                     setIsResetting(false);
@@ -137,6 +144,13 @@ export function UsersPage() {
                     {t(`admin.create_${activeTab.toLowerCase()}`)}
                 </Button>
             </div>
+
+            {feedback.text && (
+                <div className={`${styles.message} ${feedback.type === 'error' ? styles.messageError : styles.messageSuccess}`}>
+                    <AlertCircle size={16} />
+                    <span>{feedback.text}</span>
+                </div>
+            )}
 
             <div className={styles.controls}>
                 <div className={styles.tabs}>

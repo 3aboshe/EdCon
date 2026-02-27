@@ -22,6 +22,7 @@ export function SchoolsPage() {
     const [showCredentialsModal, setShowCredentialsModal] = useState(false);
     const [credentials, setCredentials] = useState(null);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
+    const [feedback, setFeedback] = useState({ type: '', text: '' });
 
     useEffect(() => {
         loadSchools();
@@ -33,6 +34,7 @@ export function SchoolsPage() {
             setSchools(data);
         } catch (error) {
             console.error('Failed to load schools:', error);
+            setFeedback({ type: 'error', text: error?.message || t('super_admin.failed_load_schools') });
         } finally {
             setIsLoading(false);
         }
@@ -45,8 +47,10 @@ export function SchoolsPage() {
             setCredentials(response.credentials);
             setShowCreateModal(false);
             setShowCredentialsModal(true);
+            setFeedback({ type: 'success', text: 'School created successfully' });
         } catch (error) {
             console.error('Failed to create school:', error);
+            setFeedback({ type: 'error', text: error?.message || t('super_admin.failed_create_school') });
             throw error;
         }
     };
@@ -57,9 +61,11 @@ export function SchoolsPage() {
             setCredentials(response.credentials);
             setShowAddAdminModal(null);
             setShowCredentialsModal(true);
+            setFeedback({ type: 'success', text: 'School admin added successfully' });
             loadSchools();
         } catch (error) {
             console.error('Failed to add school admin:', error);
+            setFeedback({ type: 'error', text: error?.message || t('super_admin.failed_add_admin') });
             throw error;
         }
     };
@@ -69,8 +75,10 @@ export function SchoolsPage() {
             await schoolService.deleteSchool(schoolId);
             setSchools(schools.filter(s => s.id !== schoolId));
             setDeleteConfirm(null);
+            setFeedback({ type: 'success', text: 'School deleted successfully' });
         } catch (error) {
             console.error('Failed to delete school:', error);
+            setFeedback({ type: 'error', text: error?.message || 'Failed to delete school' });
         }
     };
 
@@ -92,6 +100,13 @@ export function SchoolsPage() {
                     {t('super_admin.create_school')}
                 </Button>
             </div>
+
+            {feedback.text && (
+                <div className={`${styles.message} ${feedback.type === 'error' ? styles.messageError : styles.messageSuccess}`}>
+                    <AlertCircle size={16} />
+                    <span>{feedback.text}</span>
+                </div>
+            )}
 
             {/* Search */}
             <div className={styles.searchBar}>

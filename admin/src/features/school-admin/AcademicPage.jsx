@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
 import {
-    Plus, Search, Book, GraduationCap, BookOpen,
+    Plus, Search, Book, GraduationCap, BookOpen, AlertCircle,
     Trash2, X
 } from 'lucide-react';
 import { academicService } from '../../services/academicService';
@@ -18,6 +18,7 @@ export function AcademicPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [feedback, setFeedback] = useState({ type: '', text: '' });
     const [searchParams] = useSearchParams();
 
     useEffect(() => {
@@ -61,6 +62,7 @@ export function AcademicPage() {
         } catch (error) {
             console.error('Failed to load academic data:', error);
             setData({ classes: [], subjects: [] });
+            setFeedback({ type: 'error', text: error?.message || 'Failed to load academic data' });
         } finally {
             setIsLoading(false);
         }
@@ -73,9 +75,14 @@ export function AcademicPage() {
                 case 'CLASS': await academicService.deleteClass(id); break;
                 case 'SUBJECT': await academicService.deleteSubject(id); break;
             }
+            setFeedback({
+                type: 'success',
+                text: activeTab === 'CLASS' ? 'Class deleted successfully' : 'Subject deleted successfully',
+            });
             loadData();
         } catch (error) {
             console.error('Delete failed:', error);
+            setFeedback({ type: 'error', text: error?.message || 'Delete failed' });
         }
     };
 
@@ -102,6 +109,13 @@ export function AcademicPage() {
                     {t('common.add')} {t(`common.${activeTab.toLowerCase()}`)}
                 </Button>
             </div>
+
+            {feedback.text && (
+                <div className={`${styles.message} ${feedback.type === 'error' ? styles.messageError : styles.messageSuccess}`}>
+                    <AlertCircle size={16} />
+                    <span>{feedback.text}</span>
+                </div>
+            )}
 
             <div className={styles.controls}>
                 <div className={styles.tabs}>
@@ -169,9 +183,14 @@ export function AcademicPage() {
                         subjects={data.subjects}
                         onClose={() => setShowCreateModal(false)}
                         onSuccess={() => {
+                            setFeedback({
+                                type: 'success',
+                                text: activeTab === 'CLASS' ? 'Class created successfully' : 'Subject created successfully',
+                            });
                             setShowCreateModal(false);
                             loadData();
                         }}
+                        onError={(message) => setFeedback({ type: 'error', text: message })}
                     />
                 )}
             </AnimatePresence>
@@ -179,9 +198,10 @@ export function AcademicPage() {
     );
 }
 
-function CreateAcademicModal({ type, onClose, onSuccess, subjects = [] }) {
+function CreateAcademicModal({ type, onClose, onSuccess, onError, subjects = [] }) {
     const { t } = useTranslation();
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
     const [formData, setFormData] = useState({ name: '', subjectIds: [] });
 
     const handleSubjectToggle = (subjectId) => {
@@ -195,6 +215,7 @@ function CreateAcademicModal({ type, onClose, onSuccess, subjects = [] }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
         setIsLoading(true);
         try {
             switch (type) {
@@ -208,6 +229,9 @@ function CreateAcademicModal({ type, onClose, onSuccess, subjects = [] }) {
             onSuccess();
         } catch (error) {
             console.error('Create failed:', error);
+            const message = error?.message || 'Create failed';
+            setError(message);
+            onError?.(message);
         } finally {
             setIsLoading(false);
         }
@@ -221,6 +245,13 @@ function CreateAcademicModal({ type, onClose, onSuccess, subjects = [] }) {
                     <button className={styles.closeBtn} onClick={onClose}><X size={20} /></button>
                 </div>
                 <form onSubmit={handleSubmit} className={styles.modalBody}>
+                    {error && (
+                        <div className={`${styles.message} ${styles.messageError}`}>
+                            <AlertCircle size={16} />
+                            <span>{error}</span>
+                        </div>
+                    )}
+
                     <Input
                         label={t('common.name')}
                         value={formData.name}

@@ -29,6 +29,7 @@ export function NotificationsPage() {
             setHistory(data);
         } catch (err) {
             console.error('Failed to load notifications history:', err);
+            setError(err instanceof Error ? err.message : t('super_admin.notification_failed'));
         } finally {
             setIsFetching(false);
         }
