@@ -4,6 +4,63 @@ import { prisma } from '../config/db.js';
 // Initialize Firebase Admin SDK
 let firebaseInitialized = false;
 
+function normalizePrivateKey(privateKey) {
+    if (!privateKey || typeof privateKey !== 'string') return privateKey;
+
+    let normalized = privateKey.trim();
+
+    if ((normalized.startsWith('"') && normalized.endsWith('"')) ||
+        (normalized.startsWith("'") && normalized.endsWith("'"))) {
+        normalized = normalized.slice(1, -1);
+    }
+
+    normalized = normalized
+        .replace(/\\r/g, '')
+        .replace(/\\n/g, '\n')
+        .replace(/\r/g, '');
+
+    if (!normalized.endsWith('\n')) {
+        normalized += '\n';
+    }
+
+    return normalized;
+}
+
+function parseServiceAccountFromEnv(rawValue) {
+    if (!rawValue || typeof rawValue !== 'string') return null;
+
+    let value = rawValue.trim();
+    if ((value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1);
+    }
+
+    const tryParseJson = (jsonText) => {
+        try {
+            return JSON.parse(jsonText);
+        } catch {
+            return null;
+        }
+    };
+
+    let parsed = tryParseJson(value);
+
+    if (!parsed) {
+        // Support base64-encoded JSON credentials as fallback
+        try {
+            const decoded = Buffer.from(value, 'base64').toString('utf8');
+            parsed = tryParseJson(decoded);
+        } catch {
+            parsed = null;
+        }
+    }
+
+    if (!parsed || typeof parsed !== 'object') return null;
+
+    parsed.private_key = normalizePrivateKey(parsed.private_key);
+    return parsed;
+}
+
 function initializeFirebase() {
     if (firebaseInitialized) return;
 
@@ -12,7 +69,13 @@ function initializeFirebase() {
         const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 
         if (serviceAccountJson) {
-            const serviceAccount = JSON.parse(serviceAccountJson);
+            const serviceAccount = parseServiceAccountFromEnv(serviceAccountJson);
+
+            if (!serviceAccount?.private_key || !serviceAccount?.client_email) {
+                console.error('❌ FIREBASE_SERVICE_ACCOUNT_JSON is invalid: missing required fields');
+                return;
+            }
+
             admin.initializeApp({
                 credential: admin.credential.cert(serviceAccount)
             });
@@ -202,10 +265,36 @@ export async function getParentIdsForClasses(schoolId, classIds) {
 export async function getParentIdForStudent(studentId) {
     const student = await prisma.user.findUnique({
         where: { id: studentId },
-        select: { parentId: true }
+        select: { id: true, schoolId: true, role: true, parentId: true }
     });
 
-    return student?.parentId;
+    if (!student || student.role !== 'STUDENT') {
+        return null;
+    }
+
+    if (student.parentId) {
+        const parent = await prisma.user.findUnique({
+            where: { id: student.parentId },
+            select: { id: true, role: true, schoolId: true }
+        });
+
+        if (parent && parent.role === 'PARENT' && parent.schoolId === student.schoolId) {
+            return parent.id;
+        }
+    }
+
+    const fallbackParent = await prisma.user.findFirst({
+        where: {
+            schoolId: student.schoolId,
+            role: 'PARENT',
+            childrenIds: {
+                has: student.id
+            }
+        },
+        select: { id: true }
+    });
+
+    return fallbackParent?.id || null;
 }
 
 /**

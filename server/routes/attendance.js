@@ -119,7 +119,13 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async 
   try {
     const { date, studentId, status, classId, teacherId } = req.body;
 
-    const student = await prisma.user.findFirst({ where: { id: studentId, schoolId: req.school.id } });
+    const normalizedStatus = String(status || '').toUpperCase();
+    const allowedStatuses = new Set(['PRESENT', 'ABSENT', 'LATE']);
+    if (!allowedStatuses.has(normalizedStatus)) {
+      return res.status(400).json({ message: 'Invalid attendance status' });
+    }
+
+    const student = await prisma.user.findFirst({ where: { id: studentId, schoolId: req.school.id, role: 'STUDENT' } });
     if (!student) {
       return res.status(404).json({ message: 'Student not found in this school' });
     }
@@ -140,12 +146,13 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async 
 
     let attendance;
     let isNewRecord = false;
+    const previousStatus = existingAttendance?.status;
     if (existingAttendance) {
       // Update existing record
       attendance = await prisma.attendance.update({
         where: { id: existingAttendance.id },
         data: {
-          status,
+          status: normalizedStatus,
           teacherId: teacherId || existingAttendance.teacherId
         }
       });
@@ -156,7 +163,7 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async 
         data: {
           date: attendanceDate,
           studentId,
-          status,
+          status: normalizedStatus,
           classId: classId || null,
           teacherId: teacherId || null,
           schoolId: req.school.id
@@ -164,8 +171,9 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async 
       });
     }
 
-    // Send notification to parent (only for new records)
-    if (isNewRecord) {
+    // Send notification to parent for new attendance and status changes
+    const shouldNotifyParent = isNewRecord || previousStatus !== normalizedStatus;
+    if (shouldNotifyParent) {
       const parentId = await getParentIdForStudent(studentId);
       if (parentId) {
         // Get parent's language for status translation
@@ -174,9 +182,9 @@ router.post('/', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), async 
           select: { preferredLanguage: true }
         });
         const lang = parent?.preferredLanguage || 'en';
-        const localizedStatus = getLocalizedAttendanceStatus(status, lang);
+        const localizedStatus = getLocalizedAttendanceStatus(normalizedStatus, lang);
 
-        sendNotificationToUser(parentId, 'attendance', {
+        await sendNotificationToUser(parentId, 'attendance', {
           studentName: student.name,
           status: localizedStatus
         });
@@ -196,6 +204,15 @@ router.put('/:id', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), asyn
     const { id } = req.params;
     const updateData = req.body;
 
+    if (updateData.status) {
+      const normalizedStatus = String(updateData.status).toUpperCase();
+      const allowedStatuses = new Set(['PRESENT', 'ABSENT', 'LATE']);
+      if (!allowedStatuses.has(normalizedStatus)) {
+        return res.status(400).json({ message: 'Invalid attendance status' });
+      }
+      updateData.status = normalizedStatus;
+    }
+
     const attendance = await prisma.attendance.findFirst({ where: { id, schoolId: req.school.id } });
     if (!attendance) {
       return res.status(404).json({ message: 'Attendance record not found' });
@@ -209,6 +226,30 @@ router.put('/:id', requireRole(['TEACHER', 'SCHOOL_ADMIN', 'SUPER_ADMIN']), asyn
       where: { id: attendance.id },
       data: updateData
     });
+
+    if (updateData.status && updateData.status !== attendance.status) {
+      const student = await prisma.user.findUnique({
+        where: { id: attendance.studentId },
+        select: { id: true, name: true }
+      });
+
+      if (student) {
+        const parentId = await getParentIdForStudent(student.id);
+        if (parentId) {
+          const parent = await prisma.user.findUnique({
+            where: { id: parentId },
+            select: { preferredLanguage: true }
+          });
+          const lang = parent?.preferredLanguage || 'en';
+          const localizedStatus = getLocalizedAttendanceStatus(updateData.status, lang);
+
+          await sendNotificationToUser(parentId, 'attendance', {
+            studentName: student.name,
+            status: localizedStatus
+          });
+        }
+      }
+    }
 
     res.json(updatedAttendance);
   } catch (error) {
